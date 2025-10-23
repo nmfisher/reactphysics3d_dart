@@ -1,0 +1,24 @@
+output: '../lib/src/bindings/src/rp3d_js_interop.g.dart'
+headers:
+  entry-points:
+    - '../native_plugins/reactphysics3d/include/c_api/rp3d_c_api.h'
+  include-directives:
+    - '../native_plugins/reactphysics3d/include/c_api/rp3d_c_api.h'
+compiler-opts:
+  - "-D__EMSCRIPTEN__"
+structs:
+  dependency-only: opaque
+  exclude:
+    - '.*'
+unions:
+  dependency-only: opaque
+  exclude:
+    - '.*'
+ignore-source-errors: true
+enums:
+  as-int:
+    include:
+      - .*
+comments:
+  style: any
+  length: full

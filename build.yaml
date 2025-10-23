@@ -1,0 +1,7 @@
+builders:
+  hook_builder:
+    import: "package:reactphysics3d_dart/src/hook_builder.dart"
+    builder_factories: ["hookBuilder"]
+    build_extensions: {".dart": [".rp3d_build.dart"]}
+    auto_apply: root_package
+    build_to: source

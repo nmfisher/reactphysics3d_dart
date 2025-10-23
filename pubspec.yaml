@@ -1,0 +1,24 @@
+name: reactphysics3d_dart
+description: Dart bindings for ReactPhysics3D - A 3D physics engine for simulations and games
+version: 0.1.0
+
+environment:
+  sdk: ^3.9.0-333.2.beta
+
+dependencies:
+  ffi: ^2.1.0
+  package_config: ^2.1.0
+  path: ^1.9.0
+  glob: ^2.1.3
+  code_assets: 0.19.7
+  hooks: 0.20.1
+  native_toolchain_c: ^0.17.1
+
+dev_dependencies:
+  ffigen: ^18.1.0
+  build: ^4.0.0
+  build_runner: ^2.8.0
+  source_gen: ^4.0.1
+  build_config: ^1.1.1
+  lints: ^6.0.0
+  test: ^1.25.6
