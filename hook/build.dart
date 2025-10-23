@@ -31,6 +31,12 @@ outputDirectory: ${outputDirectory.path}
 targetOS: $targetOS
 """);
 
+    List<String> thermionIncludeDirs =
+        (input.metadata["thermion_dart"]["includeDirs"] as List).cast<String>();
+    final thermionOutputDir = input.metadata["thermion_dart"]["outputDir"]
+        .toString();
+
+
     // Source files
     var sources = [
       path.join(
