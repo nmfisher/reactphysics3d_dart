@@ -32,12 +32,6 @@ outputDirectory: ${outputDirectory.path}
 targetOS: $targetOS
 """);
 
-    List<String> thermionIncludeDirs =
-        (input.metadata["thermion_dart"]["includeDirs"] as List).cast<String>();
-    final thermionOutputDir = input.metadata["thermion_dart"]["outputDir"]
-        .toString();
-
-
     // Source files
     var sources = [
       path.join(
@@ -49,10 +43,6 @@ targetOS: $targetOS
     // Include directories - need both our C API headers and ReactPhysics3D headers
     final includeDirs = [
       path.join(pkgRootFilePath, "native/include"),
-      // ReactPhysics3D headers from the main project
-      "/Volumes/T7/projects/reactphysics3d/include",
-      // Pipeline headers for input integration
-      "/Users/nickfisher/Documents/mixworld/thermion_input_handler_component/native/include",
     ];
 
     // Library directories
@@ -134,6 +124,9 @@ targetOS: $targetOS
       );
 
       logger.info("Running CBuilder...");
+
+      output.metadata.addAll({"includeDirs":includeDirs.map((dir) => path.join(pkgRootFilePath,dir)).toList()});
+      output.metadata.addAll({"outputDir":outputDirectory.path});
 
       await cbuilder.run(input: input, output: output, logger: logger);
       logger.info("Build completed successfully");
