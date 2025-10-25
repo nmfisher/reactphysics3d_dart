@@ -1,9 +1,9 @@
 output: '../lib/src/bindings/src/rp3d_ffi.g.dart'
 headers:
   entry-points:
-    - '../native_plugins/reactphysics3d/include/c_api/rp3d_c_api.h'
+    - '../native/include/c_api/rp3d_c_api.h'
   include-directives:
-    - '../native_plugins/reactphysics3d/include/c_api/rp3d_c_api.h'
+    - '../native/include/c_api/rp3d_c_api.h'
 ffi-native:
   asset-id: package:reactphysics3d_dart/reactphysics3d_dart.dart
 ignore-source-errors: true

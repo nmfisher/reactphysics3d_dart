@@ -315,6 +315,23 @@ uint8_t rp3d_body_get_is_sleeping_allowed(const RP3D_RigidBody* body) {
     return rb->isAllowedToSleep() ? 1 : 0;
 }
 
+// Gravity control
+void rp3d_body_enable_gravity(RP3D_RigidBody* body, uint8_t enableGravity) {
+    RigidBody* rb = reinterpret_cast<RigidBody*>(body);
+    rb->enableGravity(enableGravity != 0);
+}
+
+uint8_t rp3d_body_is_gravity_enabled(const RP3D_RigidBody* body) {
+    const RigidBody* rb = reinterpret_cast<const RigidBody*>(body);
+    return rb->isGravityEnabled() ? 1 : 0;
+}
+
+// Mass properties
+void rp3d_body_update_mass_properties_from_colliders(RP3D_RigidBody* body) {
+    RigidBody* rb = reinterpret_cast<RigidBody*>(body);
+    rb->updateMassPropertiesFromColliders();
+}
+
 // Collider management
 RP3D_Collider* rp3d_body_add_collider(RP3D_RigidBody* body, RP3D_CollisionShape* shape, const RP3D_Transform* transform) {
     RigidBody* rb = reinterpret_cast<RigidBody*>(body);

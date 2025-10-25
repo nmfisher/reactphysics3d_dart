@@ -200,6 +200,13 @@ EMSCRIPTEN_KEEPALIVE uint8_t rp3d_body_get_is_active(const RP3D_RigidBody* body)
 EMSCRIPTEN_KEEPALIVE void rp3d_body_set_is_sleeping_allowed(RP3D_RigidBody* body, uint8_t isAllowed);
 EMSCRIPTEN_KEEPALIVE uint8_t rp3d_body_get_is_sleeping_allowed(const RP3D_RigidBody* body);
 
+// Gravity control
+EMSCRIPTEN_KEEPALIVE void rp3d_body_enable_gravity(RP3D_RigidBody* body, uint8_t enableGravity);
+EMSCRIPTEN_KEEPALIVE uint8_t rp3d_body_is_gravity_enabled(const RP3D_RigidBody* body);
+
+// Mass properties
+EMSCRIPTEN_KEEPALIVE void rp3d_body_update_mass_properties_from_colliders(RP3D_RigidBody* body);
+
 // Collider management
 EMSCRIPTEN_KEEPALIVE RP3D_Collider* rp3d_body_add_collider(RP3D_RigidBody* body, RP3D_CollisionShape* shape, const RP3D_Transform* transform);
 EMSCRIPTEN_KEEPALIVE void rp3d_body_remove_collider(RP3D_RigidBody* body, RP3D_Collider* collider);

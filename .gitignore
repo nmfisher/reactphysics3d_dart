@@ -24,3 +24,4 @@ Thumbs.db
 *.lib
 *.wasm
 *.js.map
+**/CMakeFiles/

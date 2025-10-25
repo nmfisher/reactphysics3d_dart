@@ -5,6 +5,7 @@ import 'package:native_toolchain_c/native_toolchain_c.dart';
 import 'package:path/path.dart' as path;
 import 'log.dart';
 
+
 void main(List<String> args) async {
 
   await build(args, (BuildInput input, BuildOutputBuilder output) async {
@@ -41,21 +42,23 @@ targetOS: $targetOS
     var sources = [
       path.join(
         pkgRootFilePath,
-        "native_plugins/reactphysics3d/src/rp3d_c_api.cpp",
+        "native/src/rp3d_c_api.cpp",
       ),
     ];
 
     // Include directories - need both our C API headers and ReactPhysics3D headers
     final includeDirs = [
-      path.join(pkgRootFilePath, "native_plugins/reactphysics3d/include"),
+      path.join(pkgRootFilePath, "native/include"),
       // ReactPhysics3D headers from the main project
       "/Volumes/T7/projects/reactphysics3d/include",
+      // Pipeline headers for input integration
+      "/Users/nickfisher/Documents/mixworld/thermion_input_handler_component/native/include",
     ];
 
     // Library directories
     final libDirs = [
-      path.join(pkgRootFilePath, "native_plugins/reactphysics3d/lib/macos"),
-      path.join(pkgRootFilePath, "native_plugins/reactphysics3d/lib/wasm"),
+      path.join(pkgRootFilePath, "native/lib/macos"),
+      path.join(pkgRootFilePath, "native/lib/wasm"),
     ];
 
     // Libraries to link against

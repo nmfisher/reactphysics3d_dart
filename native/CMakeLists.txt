@@ -29,6 +29,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/reactphysics3d/include/c_api
     /Volumes/T7/projects/reactphysics3d/include
     ${CMAKE_CURRENT_SOURCE_DIR}/reactphysics3d/include
+    /Users/nickfisher/Documents/mixworld/thermion_input_handler_component/native/include
 )
 
 # Add Thermion include directories if specified
@@ -42,8 +43,20 @@ set(ENGINE_SOURCES
 )
 
 set(PHYSICS_MANAGER_SOURCES
+    # Core physics engine wrapper
     reactphysics3d/src/PhysicsComponentManager.cpp
+
+    # Component wrappers (3 types of physics entities)
+    reactphysics3d/src/StaticPhysicsComponent.cpp
+    reactphysics3d/src/DynamicPhysicsComponent.cpp
     reactphysics3d/src/CharacterController.cpp
+
+    # Central manager
+    reactphysics3d/src/PhysicsWorld.cpp
+
+    # Pipeline integration (optional)
+    reactphysics3d/src/PhysicsMovementExecutor.cpp
+    reactphysics3d/src/PhysicsPipelineAdapter.cpp
 )
 
 # Create library for the C API
@@ -75,6 +88,72 @@ add_executable(character_jump_test
 )
 
 target_link_libraries(character_jump_test
+    physics_component_manager
+    reactphysics3d_capi
+    ${CMAKE_CURRENT_SOURCE_DIR}/reactphysics3d/lib/macos/libreactphysics3d.a
+)
+
+# Create an executable for character collision testing
+add_executable(character_collision_test
+    test/character_collision_test.cpp
+)
+
+target_link_libraries(character_collision_test
+    physics_component_manager
+    reactphysics3d_capi
+    ${CMAKE_CURRENT_SOURCE_DIR}/reactphysics3d/lib/macos/libreactphysics3d.a
+)
+
+# Create an executable for character sliding testing
+add_executable(character_sliding_test
+    test/character_sliding_test.cpp
+)
+
+target_link_libraries(character_sliding_test
+    physics_component_manager
+    reactphysics3d_capi
+    ${CMAKE_CURRENT_SOURCE_DIR}/reactphysics3d/lib/macos/libreactphysics3d.a
+)
+
+# Create an executable for simple sliding testing
+add_executable(simple_sliding_test
+    test/simple_sliding_test.cpp
+)
+
+target_link_libraries(simple_sliding_test
+    physics_component_manager
+    reactphysics3d_capi
+    ${CMAKE_CURRENT_SOURCE_DIR}/reactphysics3d/lib/macos/libreactphysics3d.a
+)
+
+# Create an executable for debug sliding testing
+add_executable(debug_sliding_test
+    test/debug_sliding_test.cpp
+)
+
+target_link_libraries(debug_sliding_test
+    physics_component_manager
+    reactphysics3d_capi
+    ${CMAKE_CURRENT_SOURCE_DIR}/reactphysics3d/lib/macos/libreactphysics3d.a
+)
+
+# Create an executable for physics input integration testing
+add_executable(physics_input_integration_test
+    test/physics_input_integration_test.cpp
+)
+
+target_link_libraries(physics_input_integration_test
+    physics_component_manager
+    reactphysics3d_capi
+    ${CMAKE_CURRENT_SOURCE_DIR}/reactphysics3d/lib/macos/libreactphysics3d.a
+)
+
+# Create an executable for three-tier physics architecture testing
+add_executable(three_tier_physics_test
+    test/three_tier_physics_test.cpp
+)
+
+target_link_libraries(three_tier_physics_test
     physics_component_manager
     reactphysics3d_capi
     ${CMAKE_CURRENT_SOURCE_DIR}/reactphysics3d/lib/macos/libreactphysics3d.a
