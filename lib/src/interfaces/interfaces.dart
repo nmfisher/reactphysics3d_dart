@@ -1,0 +1,23 @@
+/// Barrel export for all ReactPhysics3D interface classes
+///
+/// This file provides a single convenient import point for all interface
+/// classes used in the ReactPhysics3D Dart binding.
+library;
+
+// Base interface
+export 'base_rp3d_type.dart';
+
+// Core physics interfaces
+export 'physics_common.dart';
+export 'physics_world.dart';
+
+// Body and component interfaces
+export 'rigid_body.dart';
+export 'collider.dart';
+
+// Shape and material interfaces
+export 'collision_shape.dart';
+export 'material.dart';
+
+// Math and transform interfaces
+export 'transform.dart';

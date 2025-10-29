@@ -131,6 +131,38 @@ void rp3d_world_set_is_sleeping_enabled(RP3D_PhysicsWorld* world, uint8_t isSlee
     pw->enableSleeping(isSleepingEnabled != 0);
 }
 
+// Gravity and sleep control
+void rp3d_world_set_is_gravity_enabled(RP3D_PhysicsWorld* world, uint8_t isGravityEnabled) {
+    PhysicsWorld* pw = reinterpret_cast<PhysicsWorld*>(world);
+    pw->setIsGravityEnabled(isGravityEnabled != 0);
+}
+
+void rp3d_world_set_sleep_linear_velocity(RP3D_PhysicsWorld* world, float sleepLinearVelocity) {
+    PhysicsWorld* pw = reinterpret_cast<PhysicsWorld*>(world);
+    pw->setSleepLinearVelocity(sleepLinearVelocity);
+}
+
+void rp3d_world_set_sleep_angular_velocity(RP3D_PhysicsWorld* world, float sleepAngularVelocity) {
+    PhysicsWorld* pw = reinterpret_cast<PhysicsWorld*>(world);
+    pw->setSleepAngularVelocity(sleepAngularVelocity);
+}
+
+void rp3d_world_set_time_before_sleep(RP3D_PhysicsWorld* world, float timeBeforeSleep) {
+    PhysicsWorld* pw = reinterpret_cast<PhysicsWorld*>(world);
+    pw->setTimeBeforeSleep(timeBeforeSleep);
+}
+
+uint32_t rp3d_world_get_nb_rigid_bodies(const RP3D_PhysicsWorld* world) {
+    const PhysicsWorld* pw = reinterpret_cast<const PhysicsWorld*>(world);
+    return pw->getNbRigidBodies();
+}
+
+RP3D_RigidBody* rp3d_world_get_rigid_body(RP3D_PhysicsWorld* world, uint32_t index) {
+    PhysicsWorld* pw = reinterpret_cast<PhysicsWorld*>(world);
+    RigidBody* body = pw->getRigidBody(index);
+    return reinterpret_cast<RP3D_RigidBody*>(body);
+}
+
 // Body creation/destruction
 RP3D_RigidBody* rp3d_world_create_rigid_body(RP3D_PhysicsWorld* world, const RP3D_Transform* transform) {
     PhysicsWorld* pw = reinterpret_cast<PhysicsWorld*>(world);

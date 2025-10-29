@@ -120,6 +120,48 @@ external void rp3d_world_set_is_sleeping_enabled(
   int isSleepingEnabled,
 );
 
+/// Gravity and sleep control
+@ffi.Native<ffi.Void Function(ffi.Pointer<RP3D_PhysicsWorld>, ffi.Uint8)>(
+    isLeaf: true)
+external void rp3d_world_set_is_gravity_enabled(
+  ffi.Pointer<RP3D_PhysicsWorld> world,
+  int isGravityEnabled,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<RP3D_PhysicsWorld>, ffi.Float)>(
+    isLeaf: true)
+external void rp3d_world_set_sleep_linear_velocity(
+  ffi.Pointer<RP3D_PhysicsWorld> world,
+  double sleepLinearVelocity,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<RP3D_PhysicsWorld>, ffi.Float)>(
+    isLeaf: true)
+external void rp3d_world_set_sleep_angular_velocity(
+  ffi.Pointer<RP3D_PhysicsWorld> world,
+  double sleepAngularVelocity,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<RP3D_PhysicsWorld>, ffi.Float)>(
+    isLeaf: true)
+external void rp3d_world_set_time_before_sleep(
+  ffi.Pointer<RP3D_PhysicsWorld> world,
+  double timeBeforeSleep,
+);
+
+@ffi.Native<ffi.Uint32 Function(ffi.Pointer<RP3D_PhysicsWorld>)>(isLeaf: true)
+external int rp3d_world_get_nb_rigid_bodies(
+  ffi.Pointer<RP3D_PhysicsWorld> world,
+);
+
+@ffi.Native<
+    ffi.Pointer<RP3D_RigidBody> Function(
+        ffi.Pointer<RP3D_PhysicsWorld>, ffi.Uint32)>(isLeaf: true)
+external ffi.Pointer<RP3D_RigidBody> rp3d_world_get_rigid_body(
+  ffi.Pointer<RP3D_PhysicsWorld> world,
+  int index,
+);
+
 /// Body creation/destruction
 @ffi.Native<
     ffi.Pointer<RP3D_RigidBody> Function(ffi.Pointer<RP3D_PhysicsWorld>,

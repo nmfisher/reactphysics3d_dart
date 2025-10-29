@@ -5,7 +5,8 @@
 /// - Web platform: Uses JS interop bindings
 /// - Unsupported platforms: Uses stub implementation
 
-// Export the appropriate bindings based on platform
+// Export factory function from appropriate implementation
 export 'rp3d_stub.dart'
     if (dart.library.ffi) 'rp3d_ffi.g.dart'
-    if (dart.library.js_interop) 'rp3d_js_interop.g.dart';
+    if (dart.library.js_interop) 'rp3d_js_interop.g.dart'
+    show rp3d_physics_common_create;

@@ -163,6 +163,14 @@ EMSCRIPTEN_KEEPALIVE void rp3d_world_get_gravity(const RP3D_PhysicsWorld* world,
 EMSCRIPTEN_KEEPALIVE uint8_t rp3d_world_get_is_sleeping_enabled(const RP3D_PhysicsWorld* world);
 EMSCRIPTEN_KEEPALIVE void rp3d_world_set_is_sleeping_enabled(RP3D_PhysicsWorld* world, uint8_t isSleepingEnabled);
 
+// Gravity and sleep control
+EMSCRIPTEN_KEEPALIVE void rp3d_world_set_is_gravity_enabled(RP3D_PhysicsWorld* world, uint8_t isGravityEnabled);
+EMSCRIPTEN_KEEPALIVE void rp3d_world_set_sleep_linear_velocity(RP3D_PhysicsWorld* world, float sleepLinearVelocity);
+EMSCRIPTEN_KEEPALIVE void rp3d_world_set_sleep_angular_velocity(RP3D_PhysicsWorld* world, float sleepAngularVelocity);
+EMSCRIPTEN_KEEPALIVE void rp3d_world_set_time_before_sleep(RP3D_PhysicsWorld* world, float timeBeforeSleep);
+EMSCRIPTEN_KEEPALIVE uint32_t rp3d_world_get_nb_rigid_bodies(const RP3D_PhysicsWorld* world);
+EMSCRIPTEN_KEEPALIVE RP3D_RigidBody* rp3d_world_get_rigid_body(RP3D_PhysicsWorld* world, uint32_t index);
+
 // Body creation/destruction
 EMSCRIPTEN_KEEPALIVE RP3D_RigidBody* rp3d_world_create_rigid_body(RP3D_PhysicsWorld* world, const RP3D_Transform* transform);
 EMSCRIPTEN_KEEPALIVE void rp3d_world_destroy_rigid_body(RP3D_PhysicsWorld* world, RP3D_RigidBody* body);
