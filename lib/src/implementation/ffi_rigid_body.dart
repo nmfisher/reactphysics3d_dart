@@ -1,13 +1,13 @@
 import 'dart:ffi' as ffi;
+import 'dart:ffi';
 import 'package:ffi/ffi.dart' as ffi_mem;
-import 'package:vector_math/vector_math.dart';
+import 'package:vector_math/vector_math.dart' hide Vector3;
 
+import '../../reactphysics3d_dart.dart';
 import '../bindings/src/rp3d_ffi.g.dart' as ffi_gen;
-import '../interfaces/rigid_body.dart';
-import '../interfaces/transform.dart';
-import '../interfaces/collision_shape.dart';
-import '../interfaces/collider.dart';
-import '../interfaces/material.dart';
+import '../ffi_reactphysics3d.dart';
+
+import 'ffi_collider.dart';
 
 /// FFI implementation of RigidBody
 class FFIRigidBody implements RigidBody {
@@ -20,23 +20,14 @@ class FFIRigidBody implements RigidBody {
 
   @override
   Transform get transform {
-    final outPtr = ffi_mem.calloc<ffi_gen.RP3D_Transform>();
-    try {
-      ffi_gen.rp3d_body_get_transform(_ptr, outPtr);
-      return _createTransform(outPtr);
-    } finally {
-      ffi_mem.calloc.free(outPtr);
-    }
+    final out = Struct.create<ffi_gen.RP3D_Transform>();
+    ffi_gen.rp3d_body_get_transform(_ptr, out.address);
+    return out.toDart();
   }
 
   @override
   set transform(Transform value) {
-    final transformPtr = _toFFITransform(value);
-    try {
-      ffi_gen.rp3d_body_set_transform(_ptr, transformPtr);
-    } finally {
-      ffi_mem.calloc.free(transformPtr);
-    }
+    ffi_gen.rp3d_body_set_transform(_ptr, value.position.x, value.position.y, value.position.z, value.orientation.x, value.orientation.y, value.orientation.z, value.orientation.z);
   }
 
   @override
@@ -101,8 +92,32 @@ class FFIRigidBody implements RigidBody {
     Vector3? position,
     Transform? orientation,
   }) {
-    // Not implemented yet
-    throw UnimplementedError('Collider implementation not yet complete');
+    // Default position and orientation if not provided
+    final pos = position ?? Vector3(0, 0, 0);
+    final orient = orientation ?? TransformIdentity.identity();
+
+    // Create transform for collider
+    final transform = (
+      position: pos,
+      orientation: orient.orientation,
+    );
+
+    // Add collider to the rigid body
+    final transformStruct = transform.toStruct();
+    final colliderPtr = ffi_gen.rp3d_body_add_collider(
+      _ptr,
+      shape.handle,
+      transformStruct.address,
+    );
+
+    final collider = FFICollider(colliderPtr);
+
+    // Set material if provided
+    if (material != null) {
+      collider.material = material;
+    }
+
+    return collider;
   }
 
   @override
@@ -119,40 +134,4 @@ class FFIRigidBody implements RigidBody {
     ptr.ref.z = v.z;
     return ptr;
   }
-
-  /// Helper function to convert Transform to FFI Transform
-  ffi.Pointer<ffi_gen.RP3D_Transform> _toFFITransform(Transform transform) {
-    final ptr = ffi_mem.calloc<ffi_gen.RP3D_Transform>();
-    ptr.ref.position.x = transform.position.x;
-    ptr.ref.position.y = transform.position.y;
-    ptr.ref.position.z = transform.position.z;
-    ptr.ref.orientation.x = transform.orientation.x;
-    ptr.ref.orientation.y = transform.orientation.y;
-    ptr.ref.orientation.z = transform.orientation.z;
-    ptr.ref.orientation.w = transform.orientation.w;
-    return ptr;
-  }
-
-  /// Create a Transform from FFI data
-  Transform _createTransform(ffi.Pointer<ffi_gen.RP3D_Transform> ffiTransform) {
-    // Create a simple transform implementation here
-    return _SimpleTransform(
-      Vector3(ffiTransform.ref.position.x, ffiTransform.ref.position.y, ffiTransform.ref.position.z),
-      Quaternion(ffiTransform.ref.orientation.x, ffiTransform.ref.orientation.y,
-                 ffiTransform.ref.orientation.z, ffiTransform.ref.orientation.w),
-    );
-  }
-}
-
-/// Simple Transform implementation for internal use
-class _SimpleTransform implements Transform {
-  @override
-  final Vector3 position;
-  @override
-  final Quaternion orientation;
-
-  _SimpleTransform(this.position, this.orientation);
-
-  @override
-  ffi.Pointer<ffi_gen.RP3D_Transform> get handle => ffi.nullptr; // No native handle for internal transform
 }

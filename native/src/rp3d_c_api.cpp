@@ -229,9 +229,12 @@ void rp3d_body_get_transform(const RP3D_RigidBody* body, RP3D_Transform* outTran
     from_rp3d_transform(rb->getTransform(), outTransform);
 }
 
-void rp3d_body_set_transform(RP3D_RigidBody* body, const RP3D_Transform* transform) {
+void rp3d_body_set_transform(RP3D_RigidBody* body, float posX, float posY, float posZ, float quatX, float quatY, float quatZ, float quatW) {
     RigidBody* rb = reinterpret_cast<RigidBody*>(body);
-    rb->setTransform(to_rp3d_transform(transform));
+    Vector3 position(posX, posY, posZ);
+    Quaternion orientation(quatX, quatY, quatZ, quatW);
+    Transform transform(position, orientation);
+    rb->setTransform(transform);
 }
 
 void rp3d_body_get_position(const RP3D_RigidBody* body, RP3D_Vector3* outPosition) {
@@ -380,6 +383,12 @@ void rp3d_body_remove_collider(RP3D_RigidBody* body, RP3D_Collider* collider) {
     rb->removeCollider(c);
 }
 
+void rp3d_collider_set_material(RP3D_Collider* collider, const RP3D_Material* material) {
+    Collider* c = reinterpret_cast<Collider*>(collider);
+    const Material* m = reinterpret_cast<const Material*>(material);
+    c->setMaterial(*m);
+}
+
 // ==================== Collider ====================
 
 RP3D_Material* rp3d_collider_get_material(RP3D_Collider* collider) {
@@ -407,6 +416,11 @@ uint8_t rp3d_collider_get_is_trigger(const RP3D_Collider* collider) {
 }
 
 // ==================== Material ====================
+
+void rp3d_material_destroy(RP3D_Material* material) {
+    Material* m = reinterpret_cast<Material*>(material);
+    delete m;
+}
 
 void rp3d_material_set_bounciness(RP3D_Material* material, float bounciness) {
     Material* m = reinterpret_cast<Material*>(material);

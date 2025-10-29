@@ -109,6 +109,7 @@ void main() {
       });
     });
 
+
     group('createRigidBody', () {
       late PhysicsWorld world;
 
@@ -121,104 +122,79 @@ void main() {
       });
 
       test('should create a RigidBody with default parameters', () {
-        expect(
-          () => physics3D.createRigidBody(world),
-          throwsA(isA<UnimplementedError>()),
-        );
+        final rigidBody = physics3D.createRigidBody(world);
+        expect(rigidBody, isNotNull);
+        expect(rigidBody, isA<RigidBody>());
       });
 
       test('should create a RigidBody with identity transform', () {
-        final transform = Transform.identity();
-        expect(
-          () => physics3D.createRigidBody(world, transform: transform),
-          throwsA(isA<UnimplementedError>()),
-        );
+        final transform = TransformIdentity.identity();
+        final rigidBody = physics3D.createRigidBody(world, transform: transform);
+        expect(rigidBody, isNotNull);
+        expect(rigidBody, isA<RigidBody>());
       });
 
       test('should create a RigidBody with custom mass', () {
         const customMass = 5.5;
-        expect(
-          () => physics3D.createRigidBody(world, mass: customMass),
-          throwsA(isA<UnimplementedError>()),
-        );
+        final rigidBody = physics3D.createRigidBody(world, mass: customMass);
+        expect(rigidBody, isNotNull);
+        expect(rigidBody, isA<RigidBody>());
+        expect(rigidBody.mass, equals(customMass));
       });
 
       test('should create a RigidBody with static body type', () {
-        expect(
-          () => physics3D.createRigidBody(
-            world,
-            type: RP3D_BodyType.RP3D_BODY_TYPE_STATIC,
-          ),
-          throwsA(isA<UnimplementedError>()),
+        final rigidBody = physics3D.createRigidBody(
+          world,
+          type: BodyType.STATIC,
         );
+        expect(rigidBody, isNotNull);
+        expect(rigidBody, isA<RigidBody>());
       });
 
       test('should create a RigidBody with kinematic body type', () {
-        expect(
-          () => physics3D.createRigidBody(
-            world,
-            type: RP3D_BodyType.RP3D_BODY_TYPE_KINEMATIC,
-          ),
-          throwsA(isA<UnimplementedError>()),
+        final rigidBody = physics3D.createRigidBody(
+          world,
+          type: BodyType.KINEMATIC,
         );
+        expect(rigidBody, isNotNull);
+        expect(rigidBody, isA<RigidBody>());
       });
 
       test('should create a RigidBody with dynamic body type (default)', () {
-        expect(
-          () => physics3D.createRigidBody(
-            world,
-            type: RP3D_BodyType.RP3D_BODY_TYPE_DYNAMIC,
-          ),
-          throwsA(isA<UnimplementedError>()),
+        final rigidBody = physics3D.createRigidBody(
+          world,
+          type: BodyType.DYNAMIC,
         );
+        expect(rigidBody, isNotNull);
+        expect(rigidBody, isA<RigidBody>());
       });
 
       test('should create a RigidBody with all custom parameters', () {
-        final transform = Transform.identity();
+        final transform = TransformIdentity.identity();
         const customMass = 10.0;
-        expect(
-          () => physics3D.createRigidBody(
-            world,
-            transform: transform,
-            type: RP3D_BodyType.RP3D_BODY_TYPE_DYNAMIC,
-            mass: customMass,
-          ),
-          throwsA(isA<UnimplementedError>()),
+        final rigidBody = physics3D.createRigidBody(
+          world,
+          transform: transform,
+          type: BodyType.DYNAMIC,
+          mass: customMass,
         );
+        expect(rigidBody, isNotNull);
+        expect(rigidBody, isA<RigidBody>());
+        expect(rigidBody.mass, equals(customMass));
       });
 
       test('should create multiple distinct RigidBody instances', () {
-        expect(
-          () => physics3D.createRigidBody(world),
-          throwsA(isA<UnimplementedError>()),
-        );
-        expect(
-          () => physics3D.createRigidBody(world),
-          throwsA(isA<UnimplementedError>()),
-        );
+        final rigidBody1 = physics3D.createRigidBody(world);
+        final rigidBody2 = physics3D.createRigidBody(world);
+
+        expect(rigidBody1, isNotNull);
+        expect(rigidBody1, isA<RigidBody>());
+        expect(rigidBody2, isNotNull);
+        expect(rigidBody2, isA<RigidBody>());
+        expect(rigidBody1, isNot(equals(rigidBody2)));
       });
     });
 
-    group('createMaterial', () {
-      test('should throw UnimplementedError when creating material', () {
-        expect(
-          () => physics3D.createMaterial(),
-          throwsA(isA<UnimplementedError>()),
-        );
-      });
-
-      test('should throw UnimplementedError even with custom parameters', () {
-        expect(
-          () => physics3D.createMaterial(
-            bounciness: 0.8,
-            frictionCoefficient: 0.5,
-            rollingResistance: 0.1,
-            massDensity: 2.0,
-          ),
-          throwsA(isA<UnimplementedError>()),
-        );
-      });
-    });
 
     group('dispose', () {
       test('should create objects without throwing exceptions', () {
@@ -232,11 +208,10 @@ void main() {
         expect(world, isNotNull);
         expect(boxShape, isNotNull);
 
-        // Verify RigidBody creation throws UnimplementedError as expected
-        expect(
-          () => testPhysics3D.createRigidBody(world),
-          throwsA(isA<UnimplementedError>()),
-        );
+        // Verify RigidBody creation works
+        final rigidBody = testPhysics3D.createRigidBody(world);
+        expect(rigidBody, isNotNull);
+        expect(rigidBody, isA<RigidBody>());
       });
     });
 
@@ -247,43 +222,43 @@ void main() {
         final sphereShape = physics3D.createSphereShape(1.5);
         final capsuleShape = physics3D.createCapsuleShape(1.0, 3.0);
 
-        final transform1 = Transform.identity();
-        final transform2 = Transform.identity();
-        final transform3 = Transform.identity();
+        final transform1 = TransformIdentity.identity();
+        final transform2 = TransformIdentity.identity();
+        final transform3 = TransformIdentity.identity();
 
         expect(world, isNotNull);
         expect(boxShape, isNotNull);
         expect(sphereShape, isNotNull);
         expect(capsuleShape, isNotNull);
 
-        // Verify that RigidBody creation throws UnimplementedError as expected
-        expect(
-          () => physics3D.createRigidBody(
-            world,
-            transform: transform1,
-            mass: 2.0,
-          ),
-          throwsA(isA<UnimplementedError>()),
+        // Verify that RigidBody creation works
+        final rigidBody1 = physics3D.createRigidBody(
+          world,
+          transform: transform1,
+          mass: 2.0,
+        );
+        final rigidBody2 = physics3D.createRigidBody(
+          world,
+          transform: transform2,
+          mass: 1.5,
+          type: BodyType.DYNAMIC,
+        );
+        final rigidBody3 = physics3D.createRigidBody(
+          world,
+          transform: transform3,
+          type: BodyType.KINEMATIC,
         );
 
-        expect(
-          () => physics3D.createRigidBody(
-            world,
-            transform: transform2,
-            mass: 1.5,
-            type: RP3D_BodyType.RP3D_BODY_TYPE_DYNAMIC,
-          ),
-          throwsA(isA<UnimplementedError>()),
-        );
+        expect(rigidBody1, isNotNull);
+        expect(rigidBody1, isA<RigidBody>());
+        expect(rigidBody1.mass, equals(2.0));
 
-        expect(
-          () => physics3D.createRigidBody(
-            world,
-            transform: transform3,
-            type: RP3D_BodyType.RP3D_BODY_TYPE_KINEMATIC,
-          ),
-          throwsA(isA<UnimplementedError>()),
-        );
+        expect(rigidBody2, isNotNull);
+        expect(rigidBody2, isA<RigidBody>());
+        expect(rigidBody2.mass, equals(1.5));
+
+        expect(rigidBody3, isNotNull);
+        expect(rigidBody3, isA<RigidBody>());
       });
     });
 

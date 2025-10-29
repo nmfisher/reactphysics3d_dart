@@ -1,3 +1,6 @@
+import 'dart:ffi';
+
+import 'package:reactphysics3d_dart/src/bindings/src/rp3d_ffi.g.dart';
 import 'package:reactphysics3d_dart/src/interfaces/physics_common.dart';
 import '../reactphysics3d_dart.dart';
 import 'interfaces/physics_world.dart';
@@ -6,6 +9,35 @@ import 'interfaces/rigid_body.dart';
 import 'interfaces/material.dart';
 import 'interfaces/transform.dart';
 import 'implementation/ffi_physics_common.dart';
+import 'implementation/ffi_material.dart';
+
+extension TransformStruct on Transform {
+  /// Helper function to convert Transform to FFI Transform
+  RP3D_Transform toStruct() {
+    final xform = Struct.create<RP3D_Transform>();
+    xform.position.x = position.x;
+    xform.position.y = position.y;
+    xform.position.z = position.z;
+    xform.orientation.x = orientation.x;
+    xform.orientation.y = orientation.y;
+    xform.orientation.z = orientation.z;
+    xform.orientation.w = orientation.w;
+    return xform;
+  }
+}
+
+extension TransformPointer on RP3D_Transform {
+  Transform toDart() {
+    var dartPosition = Vector3(position.x, position.y, position.z);
+    var dartOrientation = Quaternion(
+      orientation.x,
+      orientation.y,
+      orientation.z,
+      orientation.w,
+    );
+    return (position: dartPosition, orientation: dartOrientation);
+  }
+}
 
 class FFIReactPhysics3D implements ReactPhysics3D {
   final FFIPhysicsCommon _physicsCommon;
@@ -38,26 +70,13 @@ class FFIReactPhysics3D implements ReactPhysics3D {
   RigidBody createRigidBody(
     PhysicsWorld world, {
     Transform? transform,
-    RP3D_BodyType type = RP3D_BodyType.RP3D_BODY_TYPE_DYNAMIC,
+    BodyType type = BodyType.DYNAMIC,
     double mass = 1.0,
   }) {
-    final finalTransform = transform ?? Transform.identity();
+    final finalTransform = transform ?? TransformIdentity.identity();
     final rigidBody = world.createRigidBody(finalTransform);
     rigidBody.mass = mass;
     return rigidBody;
-  }
-
-  @override
-  Material createMaterial({
-    double bounciness = 0.0,
-    double frictionCoefficient = 0.3,
-    double rollingResistance = 0.0,
-    double massDensity = 1.0,
-  }) {
-    // Material creation not yet implemented in FFI bindings
-    throw UnimplementedError(
-      'Material creation not yet implemented in FFI bindings',
-    );
   }
 
   /// Dispose of the ReactPhysics3D instance

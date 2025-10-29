@@ -199,11 +199,17 @@ external void rp3d_body_get_transform(
 );
 
 @ffi.Native<
-    ffi.Void Function(
-        ffi.Pointer<RP3D_RigidBody>, ffi.Pointer<RP3D_Transform>)>(isLeaf: true)
+    ffi.Void Function(ffi.Pointer<RP3D_RigidBody>, ffi.Float, ffi.Float,
+        ffi.Float, ffi.Float, ffi.Float, ffi.Float, ffi.Float)>(isLeaf: true)
 external void rp3d_body_set_transform(
   ffi.Pointer<RP3D_RigidBody> body,
-  ffi.Pointer<RP3D_Transform> transform,
+  double posX,
+  double posY,
+  double posZ,
+  double quatX,
+  double quatY,
+  double quatZ,
+  double quatW,
 );
 
 @ffi.Native<
@@ -366,6 +372,14 @@ external void rp3d_body_remove_collider(
   ffi.Pointer<RP3D_Collider> collider,
 );
 
+@ffi.Native<
+    ffi.Void Function(
+        ffi.Pointer<RP3D_Collider>, ffi.Pointer<RP3D_Material>)>(isLeaf: true)
+external void rp3d_collider_set_material(
+  ffi.Pointer<RP3D_Collider> collider,
+  ffi.Pointer<RP3D_Material> material,
+);
+
 /// ==================== Collider ====================
 @ffi.Native<ffi.Pointer<RP3D_Material> Function(ffi.Pointer<RP3D_Collider>)>(
     isLeaf: true)
@@ -394,6 +408,20 @@ external int rp3d_collider_get_is_trigger(
 );
 
 /// ==================== Material ====================
+@ffi.Native<
+    ffi.Pointer<RP3D_Material> Function(
+        ffi.Float, ffi.Float, ffi.Float)>(isLeaf: true)
+external ffi.Pointer<RP3D_Material> rp3d_material_create(
+  double frictionCoefficient,
+  double bounciness,
+  double massDensity,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<RP3D_Material>)>(isLeaf: true)
+external void rp3d_material_destroy(
+  ffi.Pointer<RP3D_Material> material,
+);
+
 @ffi.Native<ffi.Void Function(ffi.Pointer<RP3D_Material>, ffi.Float)>(
     isLeaf: true)
 external void rp3d_material_set_bounciness(

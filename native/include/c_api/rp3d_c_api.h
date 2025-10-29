@@ -181,7 +181,7 @@ EMSCRIPTEN_KEEPALIVE uint8_t rp3d_world_raycast(const RP3D_PhysicsWorld* world, 
 // ==================== RigidBody ====================
 
 EMSCRIPTEN_KEEPALIVE void rp3d_body_get_transform(const RP3D_RigidBody* body, RP3D_Transform* outTransform);
-EMSCRIPTEN_KEEPALIVE void rp3d_body_set_transform(RP3D_RigidBody* body, const RP3D_Transform* transform);
+EMSCRIPTEN_KEEPALIVE void rp3d_body_set_transform(RP3D_RigidBody* body, float posX, float posY, float posZ, float quatX, float quatY, float quatZ, float quatW);
 
 EMSCRIPTEN_KEEPALIVE void rp3d_body_get_position(const RP3D_RigidBody* body, RP3D_Vector3* outPosition);
 EMSCRIPTEN_KEEPALIVE void rp3d_body_get_orientation(const RP3D_RigidBody* body, RP3D_Quaternion* outOrientation);
@@ -219,6 +219,8 @@ EMSCRIPTEN_KEEPALIVE void rp3d_body_update_mass_properties_from_colliders(RP3D_R
 EMSCRIPTEN_KEEPALIVE RP3D_Collider* rp3d_body_add_collider(RP3D_RigidBody* body, RP3D_CollisionShape* shape, const RP3D_Transform* transform);
 EMSCRIPTEN_KEEPALIVE void rp3d_body_remove_collider(RP3D_RigidBody* body, RP3D_Collider* collider);
 
+EMSCRIPTEN_KEEPALIVE void rp3d_collider_set_material(RP3D_Collider* collider, const RP3D_Material* material);
+
 // ==================== Collider ====================
 
 EMSCRIPTEN_KEEPALIVE RP3D_Material* rp3d_collider_get_material(RP3D_Collider* collider);
@@ -228,6 +230,9 @@ EMSCRIPTEN_KEEPALIVE void rp3d_collider_set_is_trigger(RP3D_Collider* collider, 
 EMSCRIPTEN_KEEPALIVE uint8_t rp3d_collider_get_is_trigger(const RP3D_Collider* collider);
 
 // ==================== Material ====================
+
+EMSCRIPTEN_KEEPALIVE RP3D_Material* rp3d_material_create(float frictionCoefficient, float bounciness, float massDensity);
+EMSCRIPTEN_KEEPALIVE void rp3d_material_destroy(RP3D_Material* material);
 
 EMSCRIPTEN_KEEPALIVE void rp3d_material_set_bounciness(RP3D_Material* material, float bounciness);
 EMSCRIPTEN_KEEPALIVE float rp3d_material_get_bounciness(const RP3D_Material* material);

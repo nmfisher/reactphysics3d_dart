@@ -1,5 +1,5 @@
 import 'dart:ffi' as ffi;
-import 'package:vector_math/vector_math.dart';
+import '../../reactphysics3d_dart.dart';
 import 'material.dart';
 import 'collision_shape.dart';
 import 'transform.dart';

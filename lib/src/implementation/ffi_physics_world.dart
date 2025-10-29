@@ -1,11 +1,11 @@
 import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart' as ffi_mem;
-import 'package:vector_math/vector_math_64.dart';
+import 'package:reactphysics3d_dart/src/implementation/ffi_rigid_body.dart';
 
 import '../bindings/src/rp3d_ffi.g.dart' as ffi_gen;
-import '../interfaces/physics_world.dart';
-import '../interfaces/rigid_body.dart';
-import '../interfaces/transform.dart';
+
+import '../ffi_reactphysics3d.dart';
+import '../reactphysics3d.dart';
 
 /// FFI implementation of PhysicsWorld
 class FFIPhysicsWorld implements PhysicsWorld {
@@ -44,22 +44,18 @@ class FFIPhysicsWorld implements PhysicsWorld {
 
   @override
   RigidBody createRigidBody(Transform transform) {
-    final transformPtr = _toFFITransform(transform);
-    try {
-      final bodyPtr = ffi_gen.rp3d_world_create_rigid_body(_ptr, transformPtr);
-      if (bodyPtr.address == 0) {
-        throw Exception('Failed to create RigidBody');
-      }
-      // TODO: Return FFIRigidBody implementation when created
-      throw UnimplementedError('RigidBody implementation not yet created');
-    } finally {
-      ffi_mem.calloc.free(transformPtr);
+    final struct = transform.toStruct();
+
+    final bodyPtr = ffi_gen.rp3d_world_create_rigid_body(_ptr, struct.address);
+    if (bodyPtr.address == 0) {
+      throw Exception('Failed to create RigidBody');
     }
+    return FFIRigidBody(bodyPtr);
   }
 
   @override
   void destroyRigidBody(RigidBody body) {
-    // TODO: Implement when FFIRigidBody is created
+
     throw UnimplementedError('RigidBody destruction not yet implemented');
   }
 
@@ -109,19 +105,6 @@ class FFIPhysicsWorld implements PhysicsWorld {
     ptr.ref.x = v.x;
     ptr.ref.y = v.y;
     ptr.ref.z = v.z;
-    return ptr;
-  }
-
-  /// Helper function to convert Transform to FFI Transform
-  ffi.Pointer<ffi_gen.RP3D_Transform> _toFFITransform(Transform transform) {
-    final ptr = ffi_mem.calloc<ffi_gen.RP3D_Transform>();
-    ptr.ref.position.x = transform.position.x;
-    ptr.ref.position.y = transform.position.y;
-    ptr.ref.position.z = transform.position.z;
-    ptr.ref.orientation.x = transform.orientation.x;
-    ptr.ref.orientation.y = transform.orientation.y;
-    ptr.ref.orientation.z = transform.orientation.z;
-    ptr.ref.orientation.w = transform.orientation.w;
     return ptr;
   }
 }
