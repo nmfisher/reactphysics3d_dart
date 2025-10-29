@@ -125,6 +125,8 @@ void main() {
         final rigidBody = physics3D.createRigidBody(world);
         expect(rigidBody, isNotNull);
         expect(rigidBody, isA<RigidBody>());
+        // Default type should be DYNAMIC
+        expect(rigidBody.type, equals(BodyType.DYNAMIC));
       });
 
       test('should create a RigidBody with identity transform', () {
@@ -149,6 +151,7 @@ void main() {
         );
         expect(rigidBody, isNotNull);
         expect(rigidBody, isA<RigidBody>());
+        expect(rigidBody.type, equals(BodyType.STATIC));
       });
 
       test('should create a RigidBody with kinematic body type', () {
@@ -158,6 +161,7 @@ void main() {
         );
         expect(rigidBody, isNotNull);
         expect(rigidBody, isA<RigidBody>());
+        expect(rigidBody.type, equals(BodyType.KINEMATIC));
       });
 
       test('should create a RigidBody with dynamic body type (default)', () {
@@ -167,6 +171,7 @@ void main() {
         );
         expect(rigidBody, isNotNull);
         expect(rigidBody, isA<RigidBody>());
+        expect(rigidBody.type, equals(BodyType.DYNAMIC));
       });
 
       test('should create a RigidBody with all custom parameters', () {

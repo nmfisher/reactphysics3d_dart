@@ -19,6 +19,38 @@ class FFIRigidBody implements RigidBody {
   ffi.Pointer<ffi_gen.RP3D_RigidBody> get handle => _ptr;
 
   @override
+  BodyType get type {
+    final typeInt = ffi_gen.rp3d_body_get_type(_ptr);
+    switch (typeInt) {
+      case ffi_gen.RP3D_BodyType.RP3D_BODY_TYPE_STATIC:
+        return BodyType.STATIC;
+      case ffi_gen.RP3D_BodyType.RP3D_BODY_TYPE_KINEMATIC:
+        return BodyType.KINEMATIC;
+      case ffi_gen.RP3D_BodyType.RP3D_BODY_TYPE_DYNAMIC:
+        return BodyType.DYNAMIC;
+      default:
+        return BodyType.DYNAMIC;
+    }
+  }
+
+  @override
+  set type(BodyType value) {
+    int typeInt;
+    switch (value) {
+      case BodyType.STATIC:
+        typeInt = ffi_gen.RP3D_BodyType.RP3D_BODY_TYPE_STATIC;
+        break;
+      case BodyType.KINEMATIC:
+        typeInt = ffi_gen.RP3D_BodyType.RP3D_BODY_TYPE_KINEMATIC;
+        break;
+      case BodyType.DYNAMIC:
+        typeInt = ffi_gen.RP3D_BodyType.RP3D_BODY_TYPE_DYNAMIC;
+        break;
+    }
+    ffi_gen.rp3d_body_set_type(_ptr, typeInt);
+  }
+
+  @override
   Transform get transform {
     final out = Struct.create<ffi_gen.RP3D_Transform>();
     ffi_gen.rp3d_body_get_transform(_ptr, out.address);

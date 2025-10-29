@@ -1,10 +1,15 @@
 import 'dart:ffi' as ffi;
 import '../../reactphysics3d_dart.dart';
-
 import '../bindings/src/rp3d_ffi.g.dart' as ffi_gen;
 
 /// Interface for rigid bodies
 abstract class RigidBody extends BaseRP3DType<ffi.Pointer<ffi_gen.RP3D_RigidBody>> {
+  /// Get the body type
+  BodyType get type;
+
+  /// Set the body type
+  set type(BodyType value);
+
   /// Get the transform
   Transform get transform;
 
