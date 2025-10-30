@@ -220,6 +220,95 @@ void main() {
       });
     });
 
+    group('heightfield creation methods', () {
+      test('createHeightField should create a HeightField with given data', () {
+        const rows = 3;
+        const columns = 3;
+        final heights = [1.0, 2.0, 1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 1.0];
+        const minHeight = 0.0;
+        const maxHeight = 4.0;
+
+        final heightField = physics3D.createHeightField(
+          rows: rows,
+          columns: columns,
+          heights: heights,
+          minHeight: minHeight,
+          maxHeight: maxHeight,
+        );
+
+        expect(heightField, isNotNull);
+        expect(heightField, isA<HeightField>());
+      });
+
+      test('createHeightFieldShape should create a HeightFieldShape from HeightField', () {
+        const rows = 2;
+        const columns = 2;
+        final heights = [1.0, 1.5, 1.5, 2.0];
+        const minHeight = 0.0;
+        const maxHeight = 3.0;
+
+        final heightField = physics3D.createHeightField(
+          rows: rows,
+          columns: columns,
+          heights: heights,
+          minHeight: minHeight,
+          maxHeight: maxHeight,
+        );
+
+        final heightFieldShape = physics3D.createHeightFieldShape(heightField);
+
+        expect(heightFieldShape, isNotNull);
+        expect(heightFieldShape, isA<HeightFieldShape>());
+      });
+
+      test('createHeightField should handle invalid input', () {
+        expect(
+          () => physics3D.createHeightField(
+            rows: 0,
+            columns: 2,
+            heights: [1.0, 2.0],
+            minHeight: 0.0,
+            maxHeight: 3.0,
+          ),
+          throwsA(isA<ArgumentError>()),
+        );
+
+        expect(
+          () => physics3D.createHeightField(
+            rows: 2,
+            columns: 2,
+            heights: [1.0], // Incorrect length
+            minHeight: 0.0,
+            maxHeight: 3.0,
+          ),
+          throwsA(isA<ArgumentError>()),
+        );
+      });
+
+      test('heightfield shape should provide vertex access', () {
+        const rows = 3;
+        const columns = 3;
+        final heights = [1.0, 2.0, 1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 1.0];
+        const minHeight = 0.0;
+        const maxHeight = 4.0;
+
+        final heightField = physics3D.createHeightField(
+          rows: rows,
+          columns: columns,
+          heights: heights,
+          minHeight: minHeight,
+          maxHeight: maxHeight,
+        );
+
+        final heightFieldShape = physics3D.createHeightFieldShape(heightField);
+
+        // Test getting vertex at a valid position
+        final vertex = heightFieldShape.getVertexAt(1, 1);
+        expect(vertex, isNotNull);
+        expect(vertex, isA<Vector3>());
+      });
+    });
+
     group('integration tests', () {
       test('should create complete physics simulation setup', () {
         final world = physics3D.createWorld();

@@ -59,6 +59,50 @@ external ffi.Pointer<RP3D_CapsuleShape>
   double height,
 );
 
+/// HeightField creation/destruction
+@ffi.Native<
+    ffi.Pointer<RP3D_HeightField> Function(
+        ffi.Pointer<RP3D_PhysicsCommon>,
+        ffi.Uint32,
+        ffi.Uint32,
+        ffi.Pointer<ffi.Float>,
+        ffi.Float,
+        ffi.Float)>(isLeaf: true)
+external ffi.Pointer<RP3D_HeightField> rp3d_physics_common_create_height_field(
+  ffi.Pointer<RP3D_PhysicsCommon> common,
+  int nbRows,
+  int nbColumns,
+  ffi.Pointer<ffi.Float> heights,
+  double minHeight,
+  double maxHeight,
+);
+
+@ffi.Native<
+    ffi.Void Function(ffi.Pointer<RP3D_PhysicsCommon>,
+        ffi.Pointer<RP3D_HeightField>)>(isLeaf: true)
+external void rp3d_physics_common_destroy_height_field(
+  ffi.Pointer<RP3D_PhysicsCommon> common,
+  ffi.Pointer<RP3D_HeightField> heightField,
+);
+
+/// HeightFieldShape creation/destruction
+@ffi.Native<
+    ffi.Pointer<RP3D_HeightFieldShape> Function(ffi.Pointer<RP3D_PhysicsCommon>,
+        ffi.Pointer<RP3D_HeightField>)>(isLeaf: true)
+external ffi.Pointer<RP3D_HeightFieldShape>
+    rp3d_physics_common_create_height_field_shape(
+  ffi.Pointer<RP3D_PhysicsCommon> common,
+  ffi.Pointer<RP3D_HeightField> heightField,
+);
+
+@ffi.Native<
+    ffi.Void Function(ffi.Pointer<RP3D_PhysicsCommon>,
+        ffi.Pointer<RP3D_HeightFieldShape>)>(isLeaf: true)
+external void rp3d_physics_common_destroy_height_field_shape(
+  ffi.Pointer<RP3D_PhysicsCommon> common,
+  ffi.Pointer<RP3D_HeightFieldShape> heightFieldShape,
+);
+
 /// Mesh/shape destruction
 @ffi.Native<
     ffi.Void Function(ffi.Pointer<RP3D_PhysicsCommon>,
@@ -408,15 +452,6 @@ external int rp3d_collider_get_is_trigger(
 );
 
 /// ==================== Material ====================
-@ffi.Native<
-    ffi.Pointer<RP3D_Material> Function(
-        ffi.Float, ffi.Float, ffi.Float)>(isLeaf: true)
-external ffi.Pointer<RP3D_Material> rp3d_material_create(
-  double frictionCoefficient,
-  double bounciness,
-  double massDensity,
-);
-
 @ffi.Native<ffi.Void Function(ffi.Pointer<RP3D_Material>)>(isLeaf: true)
 external void rp3d_material_destroy(
   ffi.Pointer<RP3D_Material> material,
@@ -465,6 +500,17 @@ external double rp3d_material_get_mass_density(
 external void rp3d_shape_get_local_bounds(
   ffi.Pointer<RP3D_CollisionShape> shape,
   ffi.Pointer<RP3D_AABB> outAABB,
+);
+
+/// ==================== HeightFieldShape ====================
+@ffi.Native<
+    ffi.Void Function(ffi.Pointer<RP3D_HeightFieldShape>, ffi.Uint32,
+        ffi.Uint32, ffi.Pointer<RP3D_Vector3>)>(isLeaf: true)
+external void rp3d_height_field_shape_get_vertex_at(
+  ffi.Pointer<RP3D_HeightFieldShape> heightFieldShape,
+  int row,
+  int column,
+  ffi.Pointer<RP3D_Vector3> outVertex,
 );
 
 /// Vector3

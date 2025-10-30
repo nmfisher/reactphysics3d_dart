@@ -67,6 +67,28 @@ class FFIReactPhysics3D implements ReactPhysics3D {
   }
 
   @override
+  HeightField createHeightField({
+    required int rows,
+    required int columns,
+    required List<double> heights,
+    required double minHeight,
+    required double maxHeight,
+  }) {
+    return _physicsCommon.createHeightField(
+      rows: rows,
+      columns: columns,
+      heights: heights,
+      minHeight: minHeight,
+      maxHeight: maxHeight,
+    );
+  }
+
+  @override
+  HeightFieldShape createHeightFieldShape(HeightField heightField) {
+    return _physicsCommon.createHeightFieldShape(heightField);
+  }
+
+  @override
   RigidBody createRigidBody(
     PhysicsWorld world, {
     Transform? transform,

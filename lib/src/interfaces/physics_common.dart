@@ -19,4 +19,16 @@ abstract class PhysicsCommon extends BaseRP3DType<ffi.Pointer<ffi_gen.RP3D_Physi
 
   /// Create a capsule shape
   CapsuleShape createCapsuleShape(double radius, double height);
+
+  /// Create a height field from height data
+  HeightField createHeightField({
+    required int rows,
+    required int columns,
+    required List<double> heights,
+    required double minHeight,
+    required double maxHeight,
+  });
+
+  /// Create a height field shape from height field data
+  HeightFieldShape createHeightFieldShape(HeightField heightField);
 }

@@ -31,7 +31,19 @@ abstract class ReactPhysics3D {
   BoxShape createBoxShape(Vector3 extent);
   SphereShape createSphereShape(double radius);
   CapsuleShape createCapsuleShape(double radius, double height);
-  
+
+  /// Create a height field from height data
+  HeightField createHeightField({
+    required int rows,
+    required int columns,
+    required List<double> heights,
+    required double minHeight,
+    required double maxHeight,
+  });
+
+  /// Create a height field shape from height field data
+  HeightFieldShape createHeightFieldShape(HeightField heightField);
+
   RigidBody createRigidBody(
     PhysicsWorld world, {
     Transform? transform,

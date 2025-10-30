@@ -75,6 +75,62 @@ class FFIPhysicsCommon implements PhysicsCommon {
     return FFICapsuleShape.internal(shapeHandle, this);
   }
 
+  @override
+  HeightField createHeightField({
+    required int rows,
+    required int columns,
+    required List<double> heights,
+    required double minHeight,
+    required double maxHeight,
+  }) {
+    _checkDisposed();
+
+    // Validate inputs
+    if (rows <= 0 || columns <= 0) {
+      throw ArgumentError('Rows and columns must be positive');
+    }
+    if (heights.length != rows * columns) {
+      throw ArgumentError('Heights array length must match rows * columns');
+    }
+
+    // Convert height list to float array
+    final heightsPtr = ffi_mem.calloc<ffi.Float>(heights.length);
+    for (int i = 0; i < heights.length; i++) {
+      heightsPtr[i] = heights[i];
+    }
+
+    try {
+      final heightFieldHandle = ffi_gen.rp3d_physics_common_create_height_field(
+        _handle!,
+        rows,
+        columns,
+        heightsPtr,
+        minHeight,
+        maxHeight,
+      );
+      if (heightFieldHandle.address == 0) {
+        throw Exception('Failed to create HeightField');
+      }
+      return FFIHeightField.internal(heightFieldHandle, this);
+    } finally {
+      ffi_mem.calloc.free(heightsPtr);
+    }
+  }
+
+  @override
+  HeightFieldShape createHeightFieldShape(HeightField heightField) {
+    _checkDisposed();
+    final ffiHeightField = heightField as FFIHeightField;
+    final shapeHandle = ffi_gen.rp3d_physics_common_create_height_field_shape(
+      _handle!,
+      ffiHeightField.handle,
+    );
+    if (shapeHandle.address == 0) {
+      throw Exception('Failed to create HeightFieldShape');
+    }
+    return FFIHeightFieldShape.internal(shapeHandle, this);
+  }
+
   void _checkDisposed() {
     if (_handle == null) {
       throw Exception('PhysicsCommon has been disposed');

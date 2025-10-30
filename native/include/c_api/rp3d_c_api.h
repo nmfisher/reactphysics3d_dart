@@ -150,6 +150,21 @@ EMSCRIPTEN_KEEPALIVE RP3D_BoxShape* rp3d_physics_common_create_box_shape(RP3D_Ph
 EMSCRIPTEN_KEEPALIVE RP3D_SphereShape* rp3d_physics_common_create_sphere_shape(RP3D_PhysicsCommon* common, float radius);
 EMSCRIPTEN_KEEPALIVE RP3D_CapsuleShape* rp3d_physics_common_create_capsule_shape(RP3D_PhysicsCommon* common, float radius, float height);
 
+// HeightField creation/destruction
+EMSCRIPTEN_KEEPALIVE RP3D_HeightField* rp3d_physics_common_create_height_field(
+    RP3D_PhysicsCommon* common,
+    uint32_t nbRows,
+    uint32_t nbColumns,
+    const float* heights,
+    float minHeight,
+    float maxHeight
+);
+EMSCRIPTEN_KEEPALIVE void rp3d_physics_common_destroy_height_field(RP3D_PhysicsCommon* common, RP3D_HeightField* heightField);
+
+// HeightFieldShape creation/destruction
+EMSCRIPTEN_KEEPALIVE RP3D_HeightFieldShape* rp3d_physics_common_create_height_field_shape(RP3D_PhysicsCommon* common, RP3D_HeightField* heightField);
+EMSCRIPTEN_KEEPALIVE void rp3d_physics_common_destroy_height_field_shape(RP3D_PhysicsCommon* common, RP3D_HeightFieldShape* heightFieldShape);
+
 // Mesh/shape destruction
 EMSCRIPTEN_KEEPALIVE void rp3d_physics_common_destroy_box_shape(RP3D_PhysicsCommon* common, RP3D_BoxShape* shape);
 EMSCRIPTEN_KEEPALIVE void rp3d_physics_common_destroy_sphere_shape(RP3D_PhysicsCommon* common, RP3D_SphereShape* shape);
@@ -244,6 +259,15 @@ EMSCRIPTEN_KEEPALIVE float rp3d_material_get_mass_density(const RP3D_Material* m
 // ==================== CollisionShape (base) ====================
 
 EMSCRIPTEN_KEEPALIVE void rp3d_shape_get_local_bounds(const RP3D_CollisionShape* shape, RP3D_AABB* outAABB);
+
+// ==================== HeightFieldShape ====================
+
+EMSCRIPTEN_KEEPALIVE void rp3d_height_field_shape_get_vertex_at(
+    const RP3D_HeightFieldShape* heightFieldShape,
+    uint32_t row,
+    uint32_t column,
+    RP3D_Vector3* outVertex
+);
 
 // ==================== Math Utilities ====================
 

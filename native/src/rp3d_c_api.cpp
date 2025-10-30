@@ -8,6 +8,7 @@
 #include "c_api/rp3d_c_api.h"
 #include <reactphysics3d/reactphysics3d.h>
 #include <cstring>
+#include <vector>
 
 using namespace reactphysics3d;
 
@@ -102,6 +103,56 @@ void rp3d_physics_common_destroy_capsule_shape(RP3D_PhysicsCommon* common, RP3D_
     PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
     CapsuleShape* cs = reinterpret_cast<CapsuleShape*>(shape);
     pc->destroyCapsuleShape(cs);
+}
+
+// HeightField creation
+RP3D_HeightField* rp3d_physics_common_create_height_field(
+    RP3D_PhysicsCommon* common,
+    uint32_t nbRows,
+    uint32_t nbColumns,
+    const float* heights,
+    float minHeight,
+    float maxHeight
+) {
+    PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
+
+    // Create height data array and copy from input
+    std::vector<float> heightData(nbRows * nbColumns);
+    for (uint32_t i = 0; i < nbRows * nbColumns; ++i) {
+        heightData[i] = heights[i];
+    }
+
+    // Create height field with float data type
+    std::vector<Message> messages;
+    HeightField* heightField = pc->createHeightField(
+        nbColumns,  // Note: columns first in ReactPhysics3D API
+        nbRows,     // Note: rows second in ReactPhysics3D API
+        heightData.data(),
+        HeightField::HeightDataType::HEIGHT_FLOAT_TYPE,
+        messages,
+        1.0f        // integerHeightScale parameter
+    );
+    return reinterpret_cast<RP3D_HeightField*>(heightField);
+}
+
+void rp3d_physics_common_destroy_height_field(RP3D_PhysicsCommon* common, RP3D_HeightField* heightField) {
+    PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
+    HeightField* hf = reinterpret_cast<HeightField*>(heightField);
+    pc->destroyHeightField(hf);
+}
+
+// HeightFieldShape creation
+RP3D_HeightFieldShape* rp3d_physics_common_create_height_field_shape(RP3D_PhysicsCommon* common, RP3D_HeightField* heightField) {
+    PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
+    HeightField* hf = reinterpret_cast<HeightField*>(heightField);
+    HeightFieldShape* shape = pc->createHeightFieldShape(hf);
+    return reinterpret_cast<RP3D_HeightFieldShape*>(shape);
+}
+
+void rp3d_physics_common_destroy_height_field_shape(RP3D_PhysicsCommon* common, RP3D_HeightFieldShape* heightFieldShape) {
+    PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
+    HeightFieldShape* hfs = reinterpret_cast<HeightFieldShape*>(heightFieldShape);
+    pc->destroyHeightFieldShape(hfs);
 }
 
 // ==================== PhysicsWorld ====================
@@ -612,4 +663,17 @@ void rp3d_world_destroy_joint(RP3D_PhysicsWorld* world, void* joint) {
     PhysicsWorld* pw = reinterpret_cast<PhysicsWorld*>(world);
     Joint* j = reinterpret_cast<Joint*>(joint);
     pw->destroyJoint(j);
+}
+
+// ==================== HeightFieldShape ====================
+
+void rp3d_height_field_shape_get_vertex_at(
+    const RP3D_HeightFieldShape* heightFieldShape,
+    uint32_t row,
+    uint32_t column,
+    RP3D_Vector3* outVertex
+) {
+    const HeightFieldShape* hfs = reinterpret_cast<const HeightFieldShape*>(heightFieldShape);
+    Vector3 vertex = hfs->getVertexAt(row, column);
+    from_rp3d_vector3(vertex, outVertex);
 }
