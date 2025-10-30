@@ -158,6 +158,21 @@ class FFIRigidBody implements RigidBody {
     throw UnimplementedError('Collider implementation not yet complete');
   }
 
+  @override
+  bool get isGravityEnabled {
+    return ffi_gen.rp3d_body_is_gravity_enabled(_ptr) != 0;
+  }
+
+  @override
+  set isGravityEnabled(bool value) {
+    enableGravity(value);
+  }
+
+  @override
+  void enableGravity(bool enable) {
+    ffi_gen.rp3d_body_enable_gravity(_ptr, enable ? 1 : 0);
+  }
+
   /// Helper function to convert Vector3 to FFI Vector3
   ffi.Pointer<ffi_gen.RP3D_Vector3> _toFFIVector3(Vector3 v) {
     final ptr = ffi_mem.calloc<ffi_gen.RP3D_Vector3>();

@@ -1,3 +1,4 @@
+import 'package:reactphysics3d_dart/src/implementation/ffi_collision_shape.dart';
 import 'package:test/test.dart';
 
 import 'package:reactphysics3d_dart/reactphysics3d_dart.dart';
@@ -10,10 +11,7 @@ void main() {
       physics3D = createReactPhysics3D();
     });
 
-    tearDown(() {
-      // Note: Dispose is not yet available in abstract interface
-      // Would need to add dispose() method to ReactPhysics3D interface
-    });
+    tearDown(() {});
 
     group('createWorld', () {
       test('should create a PhysicsWorld instance', () {
@@ -57,13 +55,16 @@ void main() {
         expect(boxShape, isA<BoxShape>());
       });
 
-      test('createSphereShape should create a SphereShape with given radius', () {
-        const radius = 2.5;
-        final sphereShape = physics3D.createSphereShape(radius);
+      test(
+        'createSphereShape should create a SphereShape with given radius',
+        () {
+          const radius = 2.5;
+          final sphereShape = physics3D.createSphereShape(radius);
 
-        expect(sphereShape, isNotNull);
-        expect(sphereShape, isA<SphereShape>());
-      });
+          expect(sphereShape, isNotNull);
+          expect(sphereShape, isA<SphereShape>());
+        },
+      );
 
       test('createSphereShape should handle zero radius', () {
         const radius = 0.0;
@@ -81,14 +82,17 @@ void main() {
         expect(sphereShape, isA<SphereShape>());
       });
 
-      test('createCapsuleShape should create a CapsuleShape with given radius and height', () {
-        const radius = 1.0;
-        const height = 3.0;
-        final capsuleShape = physics3D.createCapsuleShape(radius, height);
+      test(
+        'createCapsuleShape should create a CapsuleShape with given radius and height',
+        () {
+          const radius = 1.0;
+          const height = 3.0;
+          final capsuleShape = physics3D.createCapsuleShape(radius, height);
 
-        expect(capsuleShape, isNotNull);
-        expect(capsuleShape, isA<CapsuleShape>());
-      });
+          expect(capsuleShape, isNotNull);
+          expect(capsuleShape, isA<CapsuleShape>());
+        },
+      );
 
       test('createCapsuleShape should handle zero radius and height', () {
         const radius = 0.0;
@@ -108,7 +112,6 @@ void main() {
         expect(capsuleShape, isA<CapsuleShape>());
       });
     });
-
 
     group('createRigidBody', () {
       late PhysicsWorld world;
@@ -131,7 +134,10 @@ void main() {
 
       test('should create a RigidBody with identity transform', () {
         final transform = TransformIdentity.identity();
-        final rigidBody = physics3D.createRigidBody(world, transform: transform);
+        final rigidBody = physics3D.createRigidBody(
+          world,
+          transform: transform,
+        );
         expect(rigidBody, isNotNull);
         expect(rigidBody, isA<RigidBody>());
       });
@@ -152,6 +158,9 @@ void main() {
         expect(rigidBody, isNotNull);
         expect(rigidBody, isA<RigidBody>());
         expect(rigidBody.type, equals(BodyType.STATIC));
+        expect(rigidBody.transform.position.x, 0.0);
+        expect(rigidBody.transform.position.y, 0.0);
+        expect(rigidBody.transform.position.z, 0.0);
       });
 
       test('should create a RigidBody with kinematic body type', () {
@@ -162,6 +171,9 @@ void main() {
         expect(rigidBody, isNotNull);
         expect(rigidBody, isA<RigidBody>());
         expect(rigidBody.type, equals(BodyType.KINEMATIC));
+        expect(rigidBody.transform.position.x, 0.0);
+        expect(rigidBody.transform.position.y, 0.0);
+        expect(rigidBody.transform.position.z, 0.0);
       });
 
       test('should create a RigidBody with dynamic body type (default)', () {
@@ -172,6 +184,10 @@ void main() {
         expect(rigidBody, isNotNull);
         expect(rigidBody, isA<RigidBody>());
         expect(rigidBody.type, equals(BodyType.DYNAMIC));
+
+        expect(rigidBody.transform.position.x, 0.0);
+        expect(rigidBody.transform.position.y, 0.0);
+        expect(rigidBody.transform.position.z, 0.0);
       });
 
       test('should create a RigidBody with all custom parameters', () {
@@ -198,8 +214,16 @@ void main() {
         expect(rigidBody2, isA<RigidBody>());
         expect(rigidBody1, isNot(equals(rigidBody2)));
       });
-    });
 
+      test('should add collider', () {
+        final rigidBody = physics3D.createRigidBody(world, type: BodyType.DYNAMIC);
+        final shape = physics3D.createBoxShape(Vector3.all(1));
+        final collider = rigidBody.addCollider(shape);
+        expect(rigidBody.transform.position.x, 0.0);
+        expect(rigidBody.transform.position.y, 0.0);
+        expect(rigidBody.transform.position.z, 0.0);
+      });
+    });
 
     group('dispose', () {
       test('should create objects without throwing exceptions', () {
@@ -240,26 +264,31 @@ void main() {
         expect(heightField, isA<HeightField>());
       });
 
-      test('createHeightFieldShape should create a HeightFieldShape from HeightField', () {
-        const rows = 2;
-        const columns = 2;
-        final heights = [1.0, 1.5, 1.5, 2.0];
-        const minHeight = 0.0;
-        const maxHeight = 3.0;
+      test(
+        'createHeightFieldShape should create a HeightFieldShape from HeightField',
+        () {
+          const rows = 2;
+          const columns = 2;
+          final heights = [1.0, 1.5, 1.5, 2.0];
+          const minHeight = 0.0;
+          const maxHeight = 3.0;
 
-        final heightField = physics3D.createHeightField(
-          rows: rows,
-          columns: columns,
-          heights: heights,
-          minHeight: minHeight,
-          maxHeight: maxHeight,
-        );
+          final heightField = physics3D.createHeightField(
+            rows: rows,
+            columns: columns,
+            heights: heights,
+            minHeight: minHeight,
+            maxHeight: maxHeight,
+          );
 
-        final heightFieldShape = physics3D.createHeightFieldShape(heightField);
+          final heightFieldShape = physics3D.createHeightFieldShape(
+            heightField,
+          );
 
-        expect(heightFieldShape, isNotNull);
-        expect(heightFieldShape, isA<HeightFieldShape>());
-      });
+          expect(heightFieldShape, isNotNull);
+          expect(heightFieldShape, isA<HeightFieldShape>());
+        },
+      );
 
       test('createHeightField should handle invalid input', () {
         expect(
@@ -363,42 +392,144 @@ void main() {
         world = physics3D.createWorld();
       });
 
-      test('setIsGravityEnabled should enable/disable gravity without throwing', () {
-        // Should not throw any exceptions
-        expect(() => world.setIsGravityEnabled(true), returnsNormally);
-        expect(() => world.setIsGravityEnabled(false), returnsNormally);
-      });
+      test(
+        'setIsGravityEnabled should enable/disable gravity without throwing',
+        () {
+          // Should not throw any exceptions
+          expect(() => world.setIsGravityEnabled(true), returnsNormally);
+          expect(() => world.setIsGravityEnabled(false), returnsNormally);
+        },
+      );
 
-      test('enableSleeping should enable/disable sleeping technique without throwing', () {
-        // Should not throw any exceptions
-        expect(() => world.enableSleeping(true), returnsNormally);
-        expect(() => world.enableSleeping(false), returnsNormally);
-      });
+      test(
+        'enableSleeping should enable/disable sleeping technique without throwing',
+        () {
+          // Should not throw any exceptions
+          expect(() => world.enableSleeping(true), returnsNormally);
+          expect(() => world.enableSleeping(false), returnsNormally);
+        },
+      );
 
-      test('setSleepLinearVelocity should set sleep linear velocity without throwing', () {
-        const sleepVelocity = 0.02;
-        // Should not throw any exceptions
-        expect(() => world.setSleepLinearVelocity(sleepVelocity), returnsNormally);
-      });
+      test(
+        'setSleepLinearVelocity should set sleep linear velocity without throwing',
+        () {
+          const sleepVelocity = 0.02;
+          // Should not throw any exceptions
+          expect(
+            () => world.setSleepLinearVelocity(sleepVelocity),
+            returnsNormally,
+          );
+        },
+      );
 
-      test('setSleepAngularVelocity should set sleep angular velocity without throwing', () {
-        const sleepVelocity = 3.0 * (3.14159 / 180.0); // 3 degrees in radians
-        // Should not throw any exceptions
-        expect(() => world.setSleepAngularVelocity(sleepVelocity), returnsNormally);
-      });
+      test(
+        'setSleepAngularVelocity should set sleep angular velocity without throwing',
+        () {
+          const sleepVelocity = 3.0 * (3.14159 / 180.0); // 3 degrees in radians
+          // Should not throw any exceptions
+          expect(
+            () => world.setSleepAngularVelocity(sleepVelocity),
+            returnsNormally,
+          );
+        },
+      );
 
-      test('setTimeBeforeSleep should set time before sleep without throwing', () {
-        const timeBeforeSleep = 1.0;
-        // Should not throw any exceptions
-        expect(() => world.setTimeBeforeSleep(timeBeforeSleep), returnsNormally);
-      });
+      test(
+        'setTimeBeforeSleep should set time before sleep without throwing',
+        () {
+          const timeBeforeSleep = 1.0;
+          // Should not throw any exceptions
+          expect(
+            () => world.setTimeBeforeSleep(timeBeforeSleep),
+            returnsNormally,
+          );
+        },
+      );
 
       test('getNbRigidBodies should return zero for new world', () {
         final nbRigidBodies = world.getNbRigidBodies();
         expect(nbRigidBodies, isA<int>());
-        expect(nbRigidBodies, equals(0)); // New world should have no rigid bodies
+        expect(
+          nbRigidBodies,
+          equals(0),
+        ); // New world should have no rigid bodies
+      });
+    });
+
+    group('RigidBody gravity control', () {
+      late PhysicsWorld world;
+
+      setUp(() {
+        world = physics3D.createWorld();
       });
 
+      tearDown(() {
+        // Note: World cleanup would be handled by dispose() in main tearDown
+      });
+
+      test('should create rigid body with gravity enabled by default', () {
+        final rigidBody = physics3D.createRigidBody(world);
+        expect(rigidBody.isGravityEnabled, isTrue);
+      });
+
+      test('should disable gravity for rigid body', () {
+        final rigidBody = physics3D.createRigidBody(world);
+
+        // Disable gravity
+        rigidBody.enableGravity(false);
+        expect(rigidBody.isGravityEnabled, isFalse);
+      });
+
+      test('should re-enable gravity for rigid body', () {
+        final rigidBody = physics3D.createRigidBody(world);
+
+        // Disable gravity first
+        rigidBody.enableGravity(false);
+        expect(rigidBody.isGravityEnabled, isFalse);
+
+        // Re-enable gravity
+        rigidBody.enableGravity(true);
+        expect(rigidBody.isGravityEnabled, isTrue);
+      });
+
+      test('should support gravity control via property setter', () {
+        final rigidBody = physics3D.createRigidBody(world);
+
+        // Test property getter
+        expect(rigidBody.isGravityEnabled, isTrue);
+
+        // Test property setter
+        rigidBody.isGravityEnabled = false;
+        expect(rigidBody.isGravityEnabled, isFalse);
+
+        rigidBody.isGravityEnabled = true;
+        expect(rigidBody.isGravityEnabled, isTrue);
+      });
+
+      test('should handle multiple rigid bodies with independent gravity settings', () {
+        final rigidBody1 = physics3D.createRigidBody(world);
+        final rigidBody2 = physics3D.createRigidBody(world);
+        final rigidBody3 = physics3D.createRigidBody(world);
+
+        // All should start with gravity enabled
+        expect(rigidBody1.isGravityEnabled, isTrue);
+        expect(rigidBody2.isGravityEnabled, isTrue);
+        expect(rigidBody3.isGravityEnabled, isTrue);
+
+        // Disable gravity for body 2 only
+        rigidBody2.enableGravity(false);
+
+        expect(rigidBody1.isGravityEnabled, isTrue);
+        expect(rigidBody2.isGravityEnabled, isFalse);
+        expect(rigidBody3.isGravityEnabled, isTrue);
+
+        // Enable gravity for body 3 only (should remain enabled)
+        rigidBody3.enableGravity(true);
+
+        expect(rigidBody1.isGravityEnabled, isTrue);
+        expect(rigidBody2.isGravityEnabled, isFalse);
+        expect(rigidBody3.isGravityEnabled, isTrue);
+      });
     });
   });
 }

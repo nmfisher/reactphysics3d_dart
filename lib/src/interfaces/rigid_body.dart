@@ -53,4 +53,13 @@ abstract class RigidBody extends BaseRP3DType<ffi.Pointer<ffi_gen.RP3D_RigidBody
 
   /// Remove a collider from this rigid body
   void removeCollider(Collider collider);
+
+  /// Get whether gravity is enabled for this rigid body
+  bool get isGravityEnabled;
+
+  /// Set whether gravity is enabled for this rigid body
+  set isGravityEnabled(bool value);
+
+  /// Enable or disable gravity for this rigid body
+  void enableGravity(bool enable);
 }

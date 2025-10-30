@@ -132,6 +132,10 @@ RP3D_HeightField* rp3d_physics_common_create_height_field(
         messages,
         1.0f        // integerHeightScale parameter
     );
+    for(const auto & message : messages) {
+        std::cout << message.text << std::endl;
+    }
+    std::cout << messages.size() << " messages"  << std::endl;
     return reinterpret_cast<RP3D_HeightField*>(heightField);
 }
 
