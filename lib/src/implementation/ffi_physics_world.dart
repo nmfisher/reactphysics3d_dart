@@ -43,7 +43,7 @@ class FFIPhysicsWorld implements PhysicsWorld {
   }
 
   @override
-  RigidBody createRigidBody(Transform? transform) {
+  RigidBody createRigidBody({Transform? transform}) {
     transform ??= (
       orientation: Quaternion.identity(),
       position: Vector3.zero(),

@@ -95,8 +95,7 @@ class FFIReactPhysics3D implements ReactPhysics3D {
     BodyType type = BodyType.DYNAMIC,
     double mass = 1.0,
   }) {
-    final finalTransform = transform ?? TransformIdentity.identity();
-    final rigidBody = world.createRigidBody(finalTransform);
+    final rigidBody = world.createRigidBody(transform:transform);
     rigidBody.type = type;
     rigidBody.mass = mass;
 

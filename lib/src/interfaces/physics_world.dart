@@ -5,7 +5,8 @@ import '../../reactphysics3d_dart.dart';
 import '../bindings/src/rp3d_ffi.g.dart' as ffi_gen;
 
 /// Interface for physics simulation world
-abstract class PhysicsWorld extends BaseRP3DType<ffi.Pointer<ffi_gen.RP3D_PhysicsWorld>> {
+abstract class PhysicsWorld
+    extends BaseRP3DType<ffi.Pointer<ffi_gen.RP3D_PhysicsWorld>> {
   /// Update the physics simulation
   void update(double timeStep);
 
@@ -16,7 +17,7 @@ abstract class PhysicsWorld extends BaseRP3DType<ffi.Pointer<ffi_gen.RP3D_Physic
   Vector3 getGravity();
 
   /// Create a rigid body
-  RigidBody createRigidBody(Transform? transform);
+  RigidBody createRigidBody({Transform? transform});
 
   /// Destroy a rigid body
   void destroyRigidBody(RigidBody body);
