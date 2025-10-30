@@ -43,7 +43,11 @@ class FFIPhysicsWorld implements PhysicsWorld {
   }
 
   @override
-  RigidBody createRigidBody(Transform transform) {
+  RigidBody createRigidBody(Transform? transform) {
+    transform ??= (
+      orientation: Quaternion.identity(),
+      position: Vector3.zero(),
+    );
     final struct = transform.toStruct();
 
     final bodyPtr = ffi_gen.rp3d_world_create_rigid_body(_ptr, struct.address);
@@ -55,7 +59,6 @@ class FFIPhysicsWorld implements PhysicsWorld {
 
   @override
   void destroyRigidBody(RigidBody body) {
-
     throw UnimplementedError('RigidBody destruction not yet implemented');
   }
 

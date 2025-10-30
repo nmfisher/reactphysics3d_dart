@@ -1,9 +1,6 @@
 import 'dart:ffi' as ffi;
 
 import '../../reactphysics3d_dart.dart';
-import 'rigid_body.dart';
-import 'transform.dart';
-import 'base_rp3d_type.dart';
 
 import '../bindings/src/rp3d_ffi.g.dart' as ffi_gen;
 
@@ -19,7 +16,7 @@ abstract class PhysicsWorld extends BaseRP3DType<ffi.Pointer<ffi_gen.RP3D_Physic
   Vector3 getGravity();
 
   /// Create a rigid body
-  RigidBody createRigidBody(Transform transform);
+  RigidBody createRigidBody(Transform? transform);
 
   /// Destroy a rigid body
   void destroyRigidBody(RigidBody body);
