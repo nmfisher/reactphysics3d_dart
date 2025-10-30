@@ -8,6 +8,7 @@ import '../bindings/src/rp3d_ffi.g.dart' as ffi_gen;
 abstract class CollisionShape extends BaseRP3DType<ffi.Pointer<ffi_gen.RP3D_CollisionShape>> {
   /// Dispose of the collision shape
   void dispose();
+
 }
 
 /// Interface for box collision shapes
@@ -23,10 +24,14 @@ abstract class CapsuleShape extends CollisionShape {}
 abstract class HeightField extends BaseRP3DType<ffi.Pointer<ffi_gen.RP3D_HeightField>> {
   /// Dispose of the height field
   void dispose();
+  
 }
 
 /// Interface for height field collision shapes
 abstract class HeightFieldShape extends CollisionShape {
   /// Get the vertex at a specific grid position
   Vector3 getVertexAt(int row, int column);
+
+  /// Set the scale of the collision shape
+  void setScale(Vector3 scale);
 }

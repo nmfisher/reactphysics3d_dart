@@ -502,6 +502,14 @@ external void rp3d_shape_get_local_bounds(
   ffi.Pointer<RP3D_AABB> outAABB,
 );
 
+@ffi.Native<
+    ffi.Void Function(ffi.Pointer<RP3D_HeightFieldShape>,
+        ffi.Pointer<RP3D_Vector3>)>(isLeaf: true)
+external void rp3d_concave_shape_set_scale(
+  ffi.Pointer<RP3D_HeightFieldShape> shape,
+  ffi.Pointer<RP3D_Vector3> scale,
+);
+
 /// ==================== HeightFieldShape ====================
 @ffi.Native<
     ffi.Void Function(ffi.Pointer<RP3D_HeightFieldShape>, ffi.Uint32,

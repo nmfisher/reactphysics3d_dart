@@ -223,6 +223,29 @@ void main() {
         expect(rigidBody.transform.position.y, 0.0);
         expect(rigidBody.transform.position.z, 0.0);
       });
+
+
+      test('should set scale on height field shape', () {
+        const rows = 2;
+        const columns = 2;
+        final heights = [1.0, 1.5, 1.5, 2.0];
+        const minHeight = 0.0;
+        const maxHeight = 3.0;
+
+        final heightField = physics3D.createHeightField(
+          rows: rows,
+          columns: columns,
+          heights: heights,
+          minHeight: minHeight,
+          maxHeight: maxHeight,
+        );
+
+        final heightFieldShape = physics3D.createHeightFieldShape(heightField);
+        final scale = Vector3(2.0, 1.0, 2.0);
+
+        // Should not throw any exceptions
+        expect(() => heightFieldShape.setScale(scale), returnsNormally);
+      });
     });
 
     group('dispose', () {

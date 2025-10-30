@@ -259,6 +259,7 @@ EMSCRIPTEN_KEEPALIVE float rp3d_material_get_mass_density(const RP3D_Material* m
 // ==================== CollisionShape (base) ====================
 
 EMSCRIPTEN_KEEPALIVE void rp3d_shape_get_local_bounds(const RP3D_CollisionShape* shape, RP3D_AABB* outAABB);
+EMSCRIPTEN_KEEPALIVE void rp3d_concave_shape_set_scale(RP3D_HeightFieldShape *shape, const RP3D_Vector3* scale);
 
 // ==================== HeightFieldShape ====================
 

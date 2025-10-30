@@ -120,7 +120,6 @@ class FFIRigidBody implements RigidBody {
   @override
   Collider addCollider(
     CollisionShape shape, {
-    Material? material,
     Transform? transform,
   }) {
     // Default transform if not provided
@@ -135,11 +134,6 @@ class FFIRigidBody implements RigidBody {
     );
 
     final collider = FFICollider(colliderPtr);
-
-    // Set material if provided
-    if (material != null) {
-      collider.material = material;
-    }
 
     return collider;
   }

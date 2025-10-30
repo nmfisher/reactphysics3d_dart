@@ -7,6 +7,8 @@
 
 #include "c_api/rp3d_c_api.h"
 #include <reactphysics3d/reactphysics3d.h>
+#include <reactphysics3d/collision/shapes/ConcaveShape.h>
+#include <reactphysics3d/collision/shapes/ConvexMeshShape.h>
 #include <cstring>
 #include <vector>
 
@@ -514,6 +516,14 @@ void rp3d_shape_get_local_bounds(const RP3D_CollisionShape* shape, RP3D_AABB* ou
     AABB aabb = cs->getLocalBounds();
     from_rp3d_vector3(aabb.getMin(), &outAABB->min);
     from_rp3d_vector3(aabb.getMax(), &outAABB->max);
+}
+
+void rp3d_concave_shape_set_scale(RP3D_HeightFieldShape* shape, const RP3D_Vector3* scale) {
+    ConcaveShape* concaveShape = reinterpret_cast<ConcaveShape*>(shape);
+    Vector3 scaleVec = to_rp3d_vector3(scale);
+
+    concaveShape->setScale(scaleVec);
+    return;
 }
 
 // ==================== Math Utilities ====================

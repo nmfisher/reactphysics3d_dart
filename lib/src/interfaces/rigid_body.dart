@@ -46,7 +46,6 @@ abstract class RigidBody extends BaseRP3DType<ffi.Pointer<ffi_gen.RP3D_RigidBody
   /// Add a collider to this rigid body
   Collider addCollider(
     CollisionShape shape, {
-    Material? material,
     Transform? transform,
   });
 

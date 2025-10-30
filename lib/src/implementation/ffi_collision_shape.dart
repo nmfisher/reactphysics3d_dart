@@ -86,6 +86,19 @@ class FFIHeightFieldShape extends FFICollisionShape implements HeightFieldShape 
     ffi_gen.rp3d_physics_common_destroy_height_field_shape(_common.handleForShapes!, heightFieldShapeHandle);
   }
 
+    @override
+  void setScale(Vector3 scale) {
+    final scalePtr = ffi_mem.calloc<ffi_gen.RP3D_Vector3>();
+    try {
+      scalePtr.ref.x = scale.x;
+      scalePtr.ref.y = scale.y;
+      scalePtr.ref.z = scale.z;
+      ffi_gen.rp3d_concave_shape_set_scale(_handle.cast(), scalePtr);
+    } finally {
+      ffi_mem.calloc.free(scalePtr);
+    }
+  }
+
   @override
   Vector3 getVertexAt(int row, int column) {
     final outVertexPtr = ffi_mem.calloc<ffi_gen.RP3D_Vector3>();
