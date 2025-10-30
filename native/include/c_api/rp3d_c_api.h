@@ -230,8 +230,6 @@ EMSCRIPTEN_KEEPALIVE void rp3d_collider_set_is_trigger(RP3D_Collider* collider, 
 EMSCRIPTEN_KEEPALIVE uint8_t rp3d_collider_get_is_trigger(const RP3D_Collider* collider);
 
 // ==================== Material ====================
-
-EMSCRIPTEN_KEEPALIVE RP3D_Material* rp3d_material_create(float frictionCoefficient, float bounciness, float massDensity);
 EMSCRIPTEN_KEEPALIVE void rp3d_material_destroy(RP3D_Material* material);
 
 EMSCRIPTEN_KEEPALIVE void rp3d_material_set_bounciness(RP3D_Material* material, float bounciness);
