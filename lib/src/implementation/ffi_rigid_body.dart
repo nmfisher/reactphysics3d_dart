@@ -121,21 +121,13 @@ class FFIRigidBody implements RigidBody {
   Collider addCollider(
     CollisionShape shape, {
     Material? material,
-    Vector3? position,
-    Transform? orientation,
+    Transform? transform,
   }) {
-    // Default position and orientation if not provided
-    final pos = position ?? Vector3(0, 0, 0);
-    final orient = orientation ?? TransformIdentity.identity();
-
-    // Create transform for collider
-    final transform = (
-      position: pos,
-      orientation: orient.orientation,
-    );
+    // Default transform if not provided
+    final colliderTransform = transform ?? TransformIdentity.identity();
 
     // Add collider to the rigid body
-    final transformStruct = transform.toStruct();
+    final transformStruct = colliderTransform.toStruct();
     final colliderPtr = ffi_gen.rp3d_body_add_collider(
       _ptr,
       shape.handle,
