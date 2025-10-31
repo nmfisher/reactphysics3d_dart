@@ -46,6 +46,7 @@ typedef struct RP3D_BallAndSocketJoint RP3D_BallAndSocketJoint;
 typedef struct RP3D_HingeJoint RP3D_HingeJoint;
 typedef struct RP3D_SliderJoint RP3D_SliderJoint;
 typedef struct RP3D_FixedJoint RP3D_FixedJoint;
+typedef struct RP3D_DebugRenderer RP3D_DebugRenderer;
 
 // ==================== Enums ====================
 
@@ -54,6 +55,14 @@ typedef enum {
     RP3D_BODY_TYPE_KINEMATIC = 2,
     RP3D_BODY_TYPE_DYNAMIC = 3
 } RP3D_BodyType;
+
+typedef enum {
+    RP3D_DEBUG_ITEM_COLLIDER_AABB = 1,
+    RP3D_DEBUG_ITEM_COLLIDER_BROADPHASE_AABB = 2,
+    RP3D_DEBUG_ITEM_COLLISION_SHAPE = 4,
+    RP3D_DEBUG_ITEM_CONTACT_POINT = 8,
+    RP3D_DEBUG_ITEM_CONTACT_NORMAL = 16
+} RP3D_DebugItem;
 
 // ==================== Value Types (POD Structs) ====================
 
@@ -183,6 +192,12 @@ EMSCRIPTEN_KEEPALIVE void rp3d_world_set_is_gravity_enabled(RP3D_PhysicsWorld* w
 EMSCRIPTEN_KEEPALIVE void rp3d_world_set_sleep_linear_velocity(RP3D_PhysicsWorld* world, float sleepLinearVelocity);
 EMSCRIPTEN_KEEPALIVE void rp3d_world_set_sleep_angular_velocity(RP3D_PhysicsWorld* world, float sleepAngularVelocity);
 EMSCRIPTEN_KEEPALIVE void rp3d_world_set_time_before_sleep(RP3D_PhysicsWorld* world, float timeBeforeSleep);
+
+// Debug rendering
+EMSCRIPTEN_KEEPALIVE void rp3d_world_set_is_debug_rendering_enabled(RP3D_PhysicsWorld* world, uint8_t isEnabled);
+EMSCRIPTEN_KEEPALIVE uint8_t rp3d_world_get_is_debug_rendering_enabled(const RP3D_PhysicsWorld* world);
+EMSCRIPTEN_KEEPALIVE RP3D_DebugRenderer* rp3d_world_get_debug_renderer(RP3D_PhysicsWorld* world);
+
 EMSCRIPTEN_KEEPALIVE uint32_t rp3d_world_get_nb_rigid_bodies(const RP3D_PhysicsWorld* world);
 EMSCRIPTEN_KEEPALIVE RP3D_RigidBody* rp3d_world_get_rigid_body(RP3D_PhysicsWorld* world, uint32_t index);
 
@@ -226,6 +241,10 @@ EMSCRIPTEN_KEEPALIVE uint8_t rp3d_body_get_is_sleeping_allowed(const RP3D_RigidB
 // Gravity control
 EMSCRIPTEN_KEEPALIVE void rp3d_body_enable_gravity(RP3D_RigidBody* body, uint8_t enableGravity);
 EMSCRIPTEN_KEEPALIVE uint8_t rp3d_body_is_gravity_enabled(const RP3D_RigidBody* body);
+
+// Debug rendering
+EMSCRIPTEN_KEEPALIVE void rp3d_body_set_is_debug_enabled(RP3D_RigidBody* body, uint8_t isEnabled);
+EMSCRIPTEN_KEEPALIVE uint8_t rp3d_body_get_is_debug_enabled(const RP3D_RigidBody* body);
 
 // Mass properties
 EMSCRIPTEN_KEEPALIVE void rp3d_body_update_mass_properties_from_colliders(RP3D_RigidBody* body);
@@ -287,6 +306,15 @@ EMSCRIPTEN_KEEPALIVE void rp3d_quaternion_normalize(RP3D_Quaternion* q);
 // Transform
 EMSCRIPTEN_KEEPALIVE void rp3d_transform_identity(RP3D_Transform* t);
 EMSCRIPTEN_KEEPALIVE void rp3d_transform_inverse(const RP3D_Transform* t, RP3D_Transform* outInverse);
+
+// ==================== DebugRenderer ====================
+
+EMSCRIPTEN_KEEPALIVE void rp3d_debug_renderer_set_is_debug_item_displayed(RP3D_DebugRenderer* renderer, RP3D_DebugItem item, uint8_t isDisplayed);
+EMSCRIPTEN_KEEPALIVE uint8_t rp3d_debug_renderer_get_is_debug_item_displayed(const RP3D_DebugRenderer* renderer, RP3D_DebugItem item);
+EMSCRIPTEN_KEEPALIVE uint32_t rp3d_debug_renderer_get_nb_lines(const RP3D_DebugRenderer* renderer);
+EMSCRIPTEN_KEEPALIVE uint32_t rp3d_debug_renderer_get_nb_triangles(const RP3D_DebugRenderer* renderer);
+EMSCRIPTEN_KEEPALIVE void rp3d_debug_renderer_get_lines_array(const RP3D_DebugRenderer* renderer, float* outVertices, uint32_t* outColors);
+EMSCRIPTEN_KEEPALIVE void rp3d_debug_renderer_get_triangles_array(const RP3D_DebugRenderer* renderer, float* outVertices, uint32_t* outColors);
 
 // ==================== Joints ====================
 

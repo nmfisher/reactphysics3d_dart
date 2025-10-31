@@ -1,6 +1,7 @@
 import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart' as ffi_mem;
 import 'package:reactphysics3d_dart/src/implementation/ffi_rigid_body.dart';
+import 'package:reactphysics3d_dart/src/implementation/ffi_debug_renderer.dart';
 
 import '../bindings/src/rp3d_ffi.g.dart' as ffi_gen;
 
@@ -100,6 +101,26 @@ class FFIPhysicsWorld implements PhysicsWorld {
     }
     // TODO: Return FFIRigidBody implementation when created
     throw UnimplementedError('RigidBody implementation not yet created');
+  }
+
+  @override
+  void setIsDebugRenderingEnabled(bool isEnabled) {
+    ffi_gen.rp3d_world_set_is_debug_rendering_enabled(_ptr, isEnabled ? 1 : 0);
+  }
+
+  @override
+  bool getIsDebugRenderingEnabled() {
+    final result = ffi_gen.rp3d_world_get_is_debug_rendering_enabled(_ptr);
+    return result != 0;
+  }
+
+  @override
+  DebugRenderer getDebugRenderer() {
+    final rendererPtr = ffi_gen.rp3d_world_get_debug_renderer(_ptr);
+    if (rendererPtr.address == 0) {
+      throw Exception('Failed to get DebugRenderer');
+    }
+    return FFIDebugRenderer(rendererPtr);
   }
 
   /// Helper function to convert Vector3 to FFI Vector3

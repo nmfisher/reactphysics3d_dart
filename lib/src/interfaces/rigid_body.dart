@@ -13,8 +13,8 @@ abstract class RigidBody extends BaseRP3DType<ffi.Pointer<ffi_gen.RP3D_RigidBody
   /// Get the transform
   Transform get transform;
 
-  /// Set the transform
-  set transform(Transform value);
+  /// Set the transform (alternative method)
+  void setTransform(Transform value);
 
   /// Get the mass
   double get mass;
@@ -60,4 +60,10 @@ abstract class RigidBody extends BaseRP3DType<ffi.Pointer<ffi_gen.RP3D_RigidBody
 
   /// Enable or disable gravity for this rigid body
   void enableGravity(bool enable);
+
+  /// Enable/disable debug rendering for this rigid body
+  void setIsDebugEnabled(bool isEnabled);
+
+  /// Get whether debug rendering is enabled for this rigid body
+  bool getIsDebugEnabled();
 }

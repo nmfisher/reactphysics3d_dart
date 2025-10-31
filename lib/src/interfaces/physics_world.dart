@@ -42,4 +42,13 @@ abstract class PhysicsWorld
 
   /// Get a rigid body by index from the physics world
   RigidBody getRigidBody(int index);
+
+  /// Enable/disable debug rendering
+  void setIsDebugRenderingEnabled(bool isEnabled);
+
+  /// Get whether debug rendering is enabled
+  bool getIsDebugRenderingEnabled();
+
+  /// Get the debug renderer
+  DebugRenderer getDebugRenderer();
 }

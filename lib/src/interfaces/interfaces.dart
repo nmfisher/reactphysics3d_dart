@@ -19,5 +19,10 @@ export 'collider.dart';
 export 'collision_shape.dart';
 export 'material.dart';
 
+// Debug rendering interfaces
+export 'debug_renderer.dart';
+export 'debug_item.dart';
+export 'debug_structures.dart';
+
 // Math and transform interfaces
 export 'transform.dart';

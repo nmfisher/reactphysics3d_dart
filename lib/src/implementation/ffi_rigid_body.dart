@@ -59,7 +59,21 @@ class FFIRigidBody implements RigidBody {
 
   @override
   set transform(Transform value) {
-    ffi_gen.rp3d_body_set_transform(_ptr, value.position.x, value.position.y, value.position.z, value.orientation.x, value.orientation.y, value.orientation.z, value.orientation.z);
+    setTransform(value);
+  }
+
+  @override
+  void setTransform(Transform value) {
+    ffi_gen.rp3d_body_set_transform(
+      _ptr,
+      value.position.x,
+      value.position.y,
+      value.position.z,
+      value.orientation.x,
+      value.orientation.y,
+      value.orientation.z,
+      value.orientation.w,
+    );
   }
 
   @override
@@ -157,6 +171,16 @@ class FFIRigidBody implements RigidBody {
   @override
   void enableGravity(bool enable) {
     ffi_gen.rp3d_body_enable_gravity(_ptr, enable ? 1 : 0);
+  }
+
+  @override
+  void setIsDebugEnabled(bool isEnabled) {
+    ffi_gen.rp3d_body_set_is_debug_enabled(_ptr, isEnabled ? 1 : 0);
+  }
+
+  @override
+  bool getIsDebugEnabled() {
+    return ffi_gen.rp3d_body_get_is_debug_enabled(_ptr) != 0;
   }
 
   /// Helper function to convert Vector3 to FFI Vector3

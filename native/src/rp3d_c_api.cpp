@@ -209,6 +209,22 @@ void rp3d_world_set_time_before_sleep(RP3D_PhysicsWorld* world, float timeBefore
     pw->setTimeBeforeSleep(timeBeforeSleep);
 }
 
+void rp3d_world_set_is_debug_rendering_enabled(RP3D_PhysicsWorld* world, uint8_t isEnabled) {
+    PhysicsWorld* pw = reinterpret_cast<PhysicsWorld*>(world);
+    pw->setIsDebugRenderingEnabled(isEnabled != 0);
+}
+
+uint8_t rp3d_world_get_is_debug_rendering_enabled(const RP3D_PhysicsWorld* world) {
+    const PhysicsWorld* pw = reinterpret_cast<const PhysicsWorld*>(world);
+    return pw->getIsDebugRenderingEnabled() ? 1 : 0;
+}
+
+RP3D_DebugRenderer* rp3d_world_get_debug_renderer(RP3D_PhysicsWorld* world) {
+    PhysicsWorld* pw = reinterpret_cast<PhysicsWorld*>(world);
+    DebugRenderer& debugRenderer = pw->getDebugRenderer();
+    return reinterpret_cast<RP3D_DebugRenderer*>(&debugRenderer);
+}
+
 uint32_t rp3d_world_get_nb_rigid_bodies(const RP3D_PhysicsWorld* world) {
     const PhysicsWorld* pw = reinterpret_cast<const PhysicsWorld*>(world);
     return pw->getNbRigidBodies();
@@ -418,6 +434,17 @@ uint8_t rp3d_body_is_gravity_enabled(const RP3D_RigidBody* body) {
     return rb->isGravityEnabled() ? 1 : 0;
 }
 
+// Debug rendering
+void rp3d_body_set_is_debug_enabled(RP3D_RigidBody* body, uint8_t isEnabled) {
+    RigidBody* rb = reinterpret_cast<RigidBody*>(body);
+    rb->setIsDebugEnabled(isEnabled != 0);
+}
+
+uint8_t rp3d_body_get_is_debug_enabled(const RP3D_RigidBody* body) {
+    const RigidBody* rb = reinterpret_cast<const RigidBody*>(body);
+    return rb->isDebugEnabled() ? 1 : 0;
+}
+
 // Mass properties
 void rp3d_body_update_mass_properties_from_colliders(RP3D_RigidBody* body) {
     RigidBody* rb = reinterpret_cast<RigidBody*>(body);
@@ -587,6 +614,121 @@ void rp3d_transform_inverse(const RP3D_Transform* t, RP3D_Transform* outInverse)
     Transform transform = to_rp3d_transform(t);
     Transform inverse = transform.getInverse();
     from_rp3d_transform(inverse, outInverse);
+}
+
+// ==================== DebugRenderer ====================
+
+void rp3d_debug_renderer_set_is_debug_item_displayed(RP3D_DebugRenderer* renderer, RP3D_DebugItem item, uint8_t isDisplayed) {
+    DebugRenderer* dr = reinterpret_cast<DebugRenderer*>(renderer);
+    DebugRenderer::DebugItem debugItem;
+
+    switch (item) {
+        case RP3D_DEBUG_ITEM_COLLIDER_AABB:
+            debugItem = DebugRenderer::DebugItem::COLLIDER_AABB;
+            break;
+        case RP3D_DEBUG_ITEM_COLLIDER_BROADPHASE_AABB:
+            debugItem = DebugRenderer::DebugItem::COLLIDER_BROADPHASE_AABB;
+            break;
+        case RP3D_DEBUG_ITEM_COLLISION_SHAPE:
+            debugItem = DebugRenderer::DebugItem::COLLISION_SHAPE;
+            break;
+        case RP3D_DEBUG_ITEM_CONTACT_POINT:
+            debugItem = DebugRenderer::DebugItem::CONTACT_POINT;
+            break;
+        case RP3D_DEBUG_ITEM_CONTACT_NORMAL:
+            debugItem = DebugRenderer::DebugItem::CONTACT_NORMAL;
+            break;
+        default:
+            return;
+    }
+
+    dr->setIsDebugItemDisplayed(debugItem, isDisplayed != 0);
+}
+
+uint8_t rp3d_debug_renderer_get_is_debug_item_displayed(const RP3D_DebugRenderer* renderer, RP3D_DebugItem item) {
+    const DebugRenderer* dr = reinterpret_cast<const DebugRenderer*>(renderer);
+    DebugRenderer::DebugItem debugItem;
+
+    switch (item) {
+        case RP3D_DEBUG_ITEM_COLLIDER_AABB:
+            debugItem = DebugRenderer::DebugItem::COLLIDER_AABB;
+            break;
+        case RP3D_DEBUG_ITEM_COLLIDER_BROADPHASE_AABB:
+            debugItem = DebugRenderer::DebugItem::COLLIDER_BROADPHASE_AABB;
+            break;
+        case RP3D_DEBUG_ITEM_COLLISION_SHAPE:
+            debugItem = DebugRenderer::DebugItem::COLLISION_SHAPE;
+            break;
+        case RP3D_DEBUG_ITEM_CONTACT_POINT:
+            debugItem = DebugRenderer::DebugItem::CONTACT_POINT;
+            break;
+        case RP3D_DEBUG_ITEM_CONTACT_NORMAL:
+            debugItem = DebugRenderer::DebugItem::CONTACT_NORMAL;
+            break;
+        default:
+            return 0;
+    }
+
+    return dr->getIsDebugItemDisplayed(debugItem) ? 1 : 0;
+}
+
+uint32_t rp3d_debug_renderer_get_nb_lines(const RP3D_DebugRenderer* renderer) {
+    const DebugRenderer* dr = reinterpret_cast<const DebugRenderer*>(renderer);
+    return dr->getNbLines();
+}
+
+uint32_t rp3d_debug_renderer_get_nb_triangles(const RP3D_DebugRenderer* renderer) {
+    const DebugRenderer* dr = reinterpret_cast<const DebugRenderer*>(renderer);
+    return dr->getNbTriangles();
+}
+
+void rp3d_debug_renderer_get_lines_array(const RP3D_DebugRenderer* renderer, float* outVertices, uint32_t* outColors) {
+    const DebugRenderer* dr = reinterpret_cast<const DebugRenderer*>(renderer);
+    const Array<DebugRenderer::DebugLine>& lines = dr->getLines();
+
+    for (uint32_t i = 0; i < lines.size(); i++) {
+        const DebugRenderer::DebugLine& line = lines[i];
+
+        // Point 1
+        outVertices[i * 6 + 0] = line.point1.x;
+        outVertices[i * 6 + 1] = line.point1.y;
+        outVertices[i * 6 + 2] = line.point1.z;
+
+        // Point 2
+        outVertices[i * 6 + 3] = line.point2.x;
+        outVertices[i * 6 + 4] = line.point2.y;
+        outVertices[i * 6 + 5] = line.point2.z;
+
+        // Color (RGBA packed into uint32)
+        outColors[i] = line.color1;
+    }
+}
+
+void rp3d_debug_renderer_get_triangles_array(const RP3D_DebugRenderer* renderer, float* outVertices, uint32_t* outColors) {
+    const DebugRenderer* dr = reinterpret_cast<const DebugRenderer*>(renderer);
+    const Array<DebugRenderer::DebugTriangle>& triangles = dr->getTriangles();
+
+    for (uint32_t i = 0; i < triangles.size(); i++) {
+        const DebugRenderer::DebugTriangle& triangle = triangles[i];
+
+        // Point 1
+        outVertices[i * 9 + 0] = triangle.point1.x;
+        outVertices[i * 9 + 1] = triangle.point1.y;
+        outVertices[i * 9 + 2] = triangle.point1.z;
+
+        // Point 2
+        outVertices[i * 9 + 3] = triangle.point2.x;
+        outVertices[i * 9 + 4] = triangle.point2.y;
+        outVertices[i * 9 + 5] = triangle.point2.z;
+
+        // Point 3
+        outVertices[i * 9 + 6] = triangle.point3.x;
+        outVertices[i * 9 + 7] = triangle.point3.y;
+        outVertices[i * 9 + 8] = triangle.point3.z;
+
+        // Color (RGBA packed into uint32)
+        outColors[i] = triangle.color1;
+    }
 }
 
 // ==================== Joints ====================

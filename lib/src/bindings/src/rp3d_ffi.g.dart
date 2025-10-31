@@ -193,6 +193,26 @@ external void rp3d_world_set_time_before_sleep(
   double timeBeforeSleep,
 );
 
+/// Debug rendering
+@ffi.Native<ffi.Void Function(ffi.Pointer<RP3D_PhysicsWorld>, ffi.Uint8)>(
+    isLeaf: true)
+external void rp3d_world_set_is_debug_rendering_enabled(
+  ffi.Pointer<RP3D_PhysicsWorld> world,
+  int isEnabled,
+);
+
+@ffi.Native<ffi.Uint8 Function(ffi.Pointer<RP3D_PhysicsWorld>)>(isLeaf: true)
+external int rp3d_world_get_is_debug_rendering_enabled(
+  ffi.Pointer<RP3D_PhysicsWorld> world,
+);
+
+@ffi.Native<
+    ffi.Pointer<RP3D_DebugRenderer> Function(
+        ffi.Pointer<RP3D_PhysicsWorld>)>(isLeaf: true)
+external ffi.Pointer<RP3D_DebugRenderer> rp3d_world_get_debug_renderer(
+  ffi.Pointer<RP3D_PhysicsWorld> world,
+);
+
 @ffi.Native<ffi.Uint32 Function(ffi.Pointer<RP3D_PhysicsWorld>)>(isLeaf: true)
 external int rp3d_world_get_nb_rigid_bodies(
   ffi.Pointer<RP3D_PhysicsWorld> world,
@@ -387,6 +407,19 @@ external void rp3d_body_enable_gravity(
 
 @ffi.Native<ffi.Uint8 Function(ffi.Pointer<RP3D_RigidBody>)>(isLeaf: true)
 external int rp3d_body_is_gravity_enabled(
+  ffi.Pointer<RP3D_RigidBody> body,
+);
+
+/// Debug rendering
+@ffi.Native<ffi.Void Function(ffi.Pointer<RP3D_RigidBody>, ffi.Uint8)>(
+    isLeaf: true)
+external void rp3d_body_set_is_debug_enabled(
+  ffi.Pointer<RP3D_RigidBody> body,
+  int isEnabled,
+);
+
+@ffi.Native<ffi.Uint8 Function(ffi.Pointer<RP3D_RigidBody>)>(isLeaf: true)
+external int rp3d_body_get_is_debug_enabled(
   ffi.Pointer<RP3D_RigidBody> body,
 );
 
@@ -588,6 +621,52 @@ external void rp3d_transform_inverse(
   ffi.Pointer<RP3D_Transform> outInverse,
 );
 
+/// ==================== DebugRenderer ====================
+@ffi.Native<
+    ffi.Void Function(ffi.Pointer<RP3D_DebugRenderer>, ffi.UnsignedInt,
+        ffi.Uint8)>(isLeaf: true)
+external void rp3d_debug_renderer_set_is_debug_item_displayed(
+  ffi.Pointer<RP3D_DebugRenderer> renderer,
+  int item,
+  int isDisplayed,
+);
+
+@ffi.Native<
+    ffi.Uint8 Function(
+        ffi.Pointer<RP3D_DebugRenderer>, ffi.UnsignedInt)>(isLeaf: true)
+external int rp3d_debug_renderer_get_is_debug_item_displayed(
+  ffi.Pointer<RP3D_DebugRenderer> renderer,
+  int item,
+);
+
+@ffi.Native<ffi.Uint32 Function(ffi.Pointer<RP3D_DebugRenderer>)>(isLeaf: true)
+external int rp3d_debug_renderer_get_nb_lines(
+  ffi.Pointer<RP3D_DebugRenderer> renderer,
+);
+
+@ffi.Native<ffi.Uint32 Function(ffi.Pointer<RP3D_DebugRenderer>)>(isLeaf: true)
+external int rp3d_debug_renderer_get_nb_triangles(
+  ffi.Pointer<RP3D_DebugRenderer> renderer,
+);
+
+@ffi.Native<
+    ffi.Void Function(ffi.Pointer<RP3D_DebugRenderer>, ffi.Pointer<ffi.Float>,
+        ffi.Pointer<ffi.Uint32>)>(isLeaf: true)
+external void rp3d_debug_renderer_get_lines_array(
+  ffi.Pointer<RP3D_DebugRenderer> renderer,
+  ffi.Pointer<ffi.Float> outVertices,
+  ffi.Pointer<ffi.Uint32> outColors,
+);
+
+@ffi.Native<
+    ffi.Void Function(ffi.Pointer<RP3D_DebugRenderer>, ffi.Pointer<ffi.Float>,
+        ffi.Pointer<ffi.Uint32>)>(isLeaf: true)
+external void rp3d_debug_renderer_get_triangles_array(
+  ffi.Pointer<RP3D_DebugRenderer> renderer,
+  ffi.Pointer<ffi.Float> outVertices,
+  ffi.Pointer<ffi.Uint32> outColors,
+);
+
 /// ==================== Joints ====================
 @ffi.Native<
     ffi.Pointer<RP3D_BallAndSocketJoint> Function(
@@ -673,11 +752,21 @@ final class RP3D_SliderJoint extends ffi.Opaque {}
 
 final class RP3D_FixedJoint extends ffi.Opaque {}
 
+final class RP3D_DebugRenderer extends ffi.Opaque {}
+
 /// ==================== Enums ====================
 sealed class RP3D_BodyType {
   static const RP3D_BODY_TYPE_STATIC = 1;
   static const RP3D_BODY_TYPE_KINEMATIC = 2;
   static const RP3D_BODY_TYPE_DYNAMIC = 3;
+}
+
+sealed class RP3D_DebugItem {
+  static const RP3D_DEBUG_ITEM_COLLIDER_AABB = 1;
+  static const RP3D_DEBUG_ITEM_COLLIDER_BROADPHASE_AABB = 2;
+  static const RP3D_DEBUG_ITEM_COLLISION_SHAPE = 4;
+  static const RP3D_DEBUG_ITEM_CONTACT_POINT = 8;
+  static const RP3D_DEBUG_ITEM_CONTACT_NORMAL = 16;
 }
 
 /// ==================== Value Types (POD Structs) ====================
