@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:reactphysics3d_dart/src/implementation/ffi_collision_shape.dart';
 import 'package:test/test.dart';
 
@@ -358,6 +359,630 @@ void main() {
         final vertex = heightFieldShape.getVertexAt(1, 1);
         expect(vertex, isNotNull);
         expect(vertex, isA<Vector3>());
+      });
+    });
+
+    group('mesh shapes', () {
+      group('TriangleVertexArray', () {
+        test('should create triangle vertex array with valid data', () {
+          // Define simple triangle vertices
+          final vertices = Float32List.fromList([
+            0.0, 0.0, 0.0,  // Vertex 0
+            1.0, 0.0, 0.0,  // Vertex 1
+            0.5, 1.0, 0.0,  // Vertex 2
+          ]);
+
+          // Define triangle indices
+          final indices = Uint32List.fromList([0, 1, 2]);
+
+          final triangleArray = physics3D.createTriangleVertexArray(
+            verticesCount: 3,
+            vertices: vertices,
+            verticesStride: 12, // 3 floats * 4 bytes
+            indicesCount: 3,
+            indices: indices,
+            indicesStride: 4, // 1 uint32 * 4 bytes
+          );
+
+          expect(triangleArray, isNotNull);
+          expect(triangleArray, isA<TriangleVertexArray>());
+
+          // Clean up
+          triangleArray.dispose();
+        });
+
+        test('should throw error for invalid vertex count', () {
+          final vertices = Float32List.fromList([0.0, 0.0, 0.0]);
+          final indices = Uint32List.fromList([0]);
+
+          expect(
+            () => physics3D.createTriangleVertexArray(
+              verticesCount: 0, // Invalid
+              vertices: vertices,
+              verticesStride: 12,
+              indicesCount: 1,
+              indices: indices,
+              indicesStride: 4,
+            ),
+            throwsA(isA<ArgumentError>()),
+          );
+        });
+
+        test('should throw error for insufficient vertices array', () {
+          final vertices = Float32List.fromList([0.0, 0.0]); // Too short
+          final indices = Uint32List.fromList([0, 1, 2]);
+
+          expect(
+            () => physics3D.createTriangleVertexArray(
+              verticesCount: 3,
+              vertices: vertices,
+              verticesStride: 12,
+              indicesCount: 3,
+              indices: indices,
+              indicesStride: 4,
+            ),
+            throwsA(isA<ArgumentError>()),
+          );
+        });
+
+        test('should throw error for invalid index count', () {
+          final vertices = Float32List.fromList([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.5, 1.0, 0.0]);
+          final indices = Uint32List.fromList([0]);
+
+          expect(
+            () => physics3D.createTriangleVertexArray(
+              verticesCount: 3,
+              vertices: vertices,
+              verticesStride: 12,
+              indicesCount: 0, // Invalid
+              indices: indices,
+              indicesStride: 4,
+            ),
+            throwsA(isA<ArgumentError>()),
+          );
+        });
+      });
+
+      group('ConvexMesh', () {
+        test('should create convex mesh from cube triangle data', () {
+          // Test successful convex mesh creation from well-spaced cube vertices
+
+          // Define well-spaced cube vertices (8 points)
+          final vertices = Float32List.fromList([
+            -10.0, -10.0, -10.0,  // 0
+             10.0, -10.0, -10.0,  // 1
+             10.0,  10.0, -10.0,  // 2
+            -10.0,  10.0, -10.0,  // 3
+            -10.0, -10.0,  10.0,  // 4
+             10.0, -10.0,  10.0,  // 5
+             10.0,  10.0,  10.0,  // 6
+            -10.0,  10.0,  10.0,  // 7
+          ]);
+
+          // Define cube triangle indices (12 triangles)
+          final indices = Uint32List.fromList([
+            // Bottom face
+            0, 1, 2,  0, 2, 3,
+            // Top face
+            4, 7, 6,  4, 6, 5,
+            // Front face
+            0, 4, 5,  0, 5, 1,
+            // Back face
+            2, 6, 7,  2, 7, 3,
+            // Left face
+            0, 3, 7,  0, 7, 4,
+            // Right face
+            1, 5, 6,  1, 6, 2,
+          ]);
+
+          final triangleArray = physics3D.createTriangleVertexArray(
+            verticesCount: 8,
+            vertices: vertices,
+            verticesStride: 12,
+            indicesCount: 36,
+            indices: indices,
+            indicesStride: 4,
+          );
+
+          try {
+            // This should now work successfully with fixed memory management
+            final convexMesh = physics3D.createConvexMeshFromTriangles(triangleArray);
+            expect(convexMesh, isNotNull);
+            expect(convexMesh, isA<ConvexMesh>());
+
+            // Clean up
+            convexMesh.dispose();
+          } finally {
+            triangleArray.dispose();
+          }
+        });
+
+        test('should handle invalid vertex data gracefully', () {
+          // Test with too few vertices (should fail gracefully)
+          final vertices = Float32List.fromList([
+            0.0, 0.0, 0.0,  // Only one vertex
+          ]);
+
+          final indices = Uint32List.fromList([0, 0, 0]);
+
+          final triangleArray = physics3D.createTriangleVertexArray(
+            verticesCount: 1,
+            vertices: vertices,
+            verticesStride: 12,
+            indicesCount: 3,
+            indices: indices,
+            indicesStride: 4,
+          );
+
+          try {
+            expect(
+              () => physics3D.createConvexMeshFromTriangles(triangleArray),
+              throwsA(isA<Exception>()),
+            );
+          } finally {
+            triangleArray.dispose();
+          }
+        });
+      });
+
+      group('ConcaveMesh (TriangleMesh)', () {
+        test('should create triangle mesh from triangle data', () {
+          // Define simple box vertices
+          final vertices = Float32List.fromList([
+            -1.0, -1.0, -1.0,  // 0
+             1.0, -1.0, -1.0,  // 1
+             1.0, -1.0,  1.0,  // 2
+            -1.0, -1.0,  1.0,  // 3
+            -1.0,  1.0, -1.0,  // 4
+             1.0,  1.0, -1.0,  // 5
+             1.0,  1.0,  1.0,  // 6
+            -1.0,  1.0,  1.0,  // 7
+          ]);
+
+          // Define box triangle indices
+          final indices = Uint32List.fromList([
+            // Bottom face
+            0, 1, 2,  0, 2, 3,
+            // Top face
+            4, 7, 6,  4, 6, 5,
+            // Front face
+            0, 4, 5,  0, 5, 1,
+            // Back face
+            2, 6, 7,  2, 7, 3,
+            // Left face
+            0, 3, 7,  0, 7, 4,
+            // Right face
+            1, 5, 6,  1, 6, 2,
+          ]);
+
+          final triangleArray = physics3D.createTriangleVertexArray(
+            verticesCount: 8,
+            vertices: vertices,
+            verticesStride: 12,
+            indicesCount: 36,
+            indices: indices,
+            indicesStride: 4,
+          );
+
+          try {
+            final triangleMesh = physics3D.createTriangleMesh(triangleArray);
+
+            expect(triangleMesh, isNotNull);
+            expect(triangleMesh, isA<TriangleMesh>());
+
+            // Clean up
+            triangleMesh.dispose();
+          } finally {
+            triangleArray.dispose();
+          }
+        });
+
+        test('should verify triangle mesh data integrity after processing', () {
+          // Define simple box vertices with known coordinates
+          final vertices = Float32List.fromList([
+            -1.0, -1.0, -1.0,  // 0
+             1.0, -1.0, -1.0,  // 1
+             1.0, -1.0,  1.0,  // 2
+            -1.0, -1.0,  1.0,  // 3
+            -1.0,  1.0, -1.0,  // 4
+             1.0,  1.0, -1.0,  // 5
+             1.0,  1.0,  1.0,  // 6
+            -1.0,  1.0,  1.0,  // 7
+          ]);
+
+          // Define box triangle indices with known relationships
+          final indices = Uint32List.fromList([
+            // Bottom face (y = -1)
+            0, 1, 2,  0, 2, 3,
+            // Top face (y = 1)
+            4, 7, 6,  4, 6, 5,
+            // Front face (z = 1)
+            2, 6, 7,  2, 7, 3,
+            // Back face (z = -1)
+            0, 4, 5,  0, 5, 1,
+            // Left face (x = -1)
+            0, 3, 7,  0, 7, 4,
+            // Right face (x = 1)
+            1, 5, 6,  1, 6, 2,
+          ]);
+
+          final triangleArray = physics3D.createTriangleVertexArray(
+            verticesCount: 8,
+            vertices: vertices,
+            verticesStride: 12,
+            indicesCount: 36,
+            indices: indices,
+            indicesStride: 4,
+          );
+
+          try {
+            // Test TriangleVertexArray accessors
+            expect(triangleArray.getVertexCount(), equals(8));
+            expect(triangleArray.getTriangleCount(), equals(12));
+
+            // Verify original vertex data is accessible
+            const vertexTolerance = 1e-6;
+            for (int i = 0; i < 8; i++) {
+              final vertex = triangleArray.getVertex(i);
+              final expectedX = vertices[i * 3];
+              final expectedY = vertices[i * 3 + 1];
+              final expectedZ = vertices[i * 3 + 2];
+
+              expect(vertex.x, closeTo(expectedX, vertexTolerance));
+              expect(vertex.y, closeTo(expectedY, vertexTolerance));
+              expect(vertex.z, closeTo(expectedZ, vertexTolerance));
+            }
+
+            // Create TriangleMesh and verify data integrity
+            final triangleMesh = physics3D.createTriangleMesh(triangleArray);
+
+            try {
+              // TriangleMesh may discard degenerate triangles, so expect <= original count
+              expect(triangleMesh.getVertexCount(), equals(8));
+              expect(triangleMesh.getTriangleCount(), lessThanOrEqualTo(12));
+              expect(triangleMesh.getTriangleCount(), greaterThan(8)); // Should have most triangles
+
+              // Verify vertex coordinates are preserved within tolerance
+              const meshTolerance = 1e-5;
+              for (int i = 0; i < 8; i++) {
+                final meshVertex = triangleMesh.getVertex(i);
+                final originalVertex = triangleArray.getVertex(i);
+
+                expect(meshVertex.x, closeTo(originalVertex.x, meshTolerance));
+                expect(meshVertex.y, closeTo(originalVertex.y, meshTolerance));
+                expect(meshVertex.z, closeTo(originalVertex.z, meshTolerance));
+              }
+
+              // Test specific known triangles that should be preserved
+              // Bottom face first triangle: vertices 0, 1, 2 (should exist)
+              bool foundBottomTriangle = false;
+              bool foundTopTriangle = false;
+
+              for (int i = 0; i < triangleMesh.getTriangleCount(); i++) {
+                final triangleIndices = triangleMesh.getTriangleIndices(i);
+
+                // Check for bottom face triangle (some permutation of [0, 1, 2])
+                final bottomSet = {0, 1, 2};
+                final triangleSet = Set<int>.from(triangleIndices);
+                if (triangleSet.length == 3 && triangleSet.containsAll(bottomSet)) {
+                  foundBottomTriangle = true;
+
+                  // Verify these are indeed the bottom face vertices (y = -1)
+                  for (int vertexIndex in triangleIndices) {
+                    final vertex = triangleMesh.getVertex(vertexIndex);
+                    expect(vertex.y, closeTo(-1.0, meshTolerance));
+                  }
+                }
+
+                // Check for top face triangle (some permutation of [4, 6, 7] or [4, 5, 6])
+                final topSet1 = {4, 6, 7};
+                final topSet2 = {4, 5, 6};
+                if ((triangleSet.length == 3 && triangleSet.containsAll(topSet1)) ||
+                    (triangleSet.length == 3 && triangleSet.containsAll(topSet2))) {
+                  foundTopTriangle = true;
+
+                  // Verify these are indeed the top face vertices (y = 1)
+                  for (int vertexIndex in triangleIndices) {
+                    final vertex = triangleMesh.getVertex(vertexIndex);
+                    expect(vertex.y, closeTo(1.0, meshTolerance));
+                  }
+                }
+              }
+
+              expect(foundBottomTriangle, isTrue, reason: 'Should find bottom face triangle');
+              expect(foundTopTriangle, isTrue, reason: 'Should find top face triangle');
+
+            } finally {
+              triangleMesh.dispose();
+            }
+          } finally {
+            triangleArray.dispose();
+          }
+        });
+      });
+
+      group('ConvexMeshShape', () {
+        test('should create convex mesh shape from triangle data', () {
+          // Test successful convex mesh creation from triangle data
+          // This test verifies the complete workflow works correctly
+
+          // Define simple cube vertices
+          final vertices = Float32List.fromList([
+            -1.0, -1.0, -1.0,  // 0
+             1.0, -1.0, -1.0,  // 1
+             1.0,  1.0, -1.0,  // 2
+            -1.0,  1.0, -1.0,  // 3
+            -1.0, -1.0,  1.0,  // 4
+             1.0, -1.0,  1.0,  // 5
+             1.0,  1.0,  1.0,  // 6
+            -1.0,  1.0,  1.0,  // 7
+          ]);
+
+          final indices = Uint32List.fromList([
+            // Bottom face
+            0, 1, 2,  0, 2, 3,
+            // Top face
+            4, 7, 6,  4, 6, 5,
+            // Front face
+            0, 4, 5,  0, 5, 1,
+            // Back face
+            2, 6, 7,  2, 7, 3,
+            // Left face
+            0, 3, 7, 0, 7, 4,
+            // Right face
+            1, 5, 6,  1, 6, 2,
+          ]);
+
+          final triangleArray = physics3D.createTriangleVertexArray(
+            verticesCount: 8,
+            vertices: vertices,
+            verticesStride: 12,
+            indicesCount: 36,
+            indices: indices,
+            indicesStride: 4,
+          );
+
+          try {
+            // This should now work successfully
+            final convexMesh = physics3D.createConvexMeshFromTriangles(triangleArray);
+
+            expect(convexMesh, isNotNull);
+            expect(convexMesh, isA<ConvexMesh>());
+
+            // Create convex mesh shape
+            final convexShape = physics3D.createConvexMeshShape(convexMesh);
+            expect(convexShape, isNotNull);
+            expect(convexShape, isA<ConvexMeshShape>());
+
+            // Test that shape is valid and can be used for collision
+            expect(convexShape.handle.address, isNonZero);
+
+            // Clean up
+            convexShape.dispose();
+            convexMesh.dispose();
+          } finally {
+            triangleArray.dispose();
+          }
+        });
+      });
+
+      group('ConcaveMeshShape', () {
+        test('should create concave mesh shape from triangle mesh', () {
+          // Create simple L-shaped terrain
+          final vertices = Float32List.fromList([
+            // L-shape vertices
+            0.0, 0.0, 0.0,   // 0
+            2.0, 0.0, 0.0,   // 1
+            2.0, 0.0, 1.0,   // 2
+            1.0, 0.0, 1.0,   // 3
+            1.0, 0.0, 2.0,   // 4
+            0.0, 0.0, 2.0,   // 5
+          ]);
+
+          final indices = Uint32List.fromList([
+            // L-shape triangles (6 triangles)
+            0, 1, 2,  0, 2, 3,  // First part of L
+            0, 3, 5,  3, 4, 5,  // Second part of L
+          ]);
+
+          final triangleArray = physics3D.createTriangleVertexArray(
+            verticesCount: 6,
+            vertices: vertices,
+            verticesStride: 12,
+            indicesCount: 12,
+            indices: indices,
+            indicesStride: 4,
+          );
+
+          try {
+            final triangleMesh = physics3D.createTriangleMesh(triangleArray);
+
+            try {
+              final concaveShape = physics3D.createConcaveMeshShape(
+                triangleMesh,
+                scaling: Vector3.all(1.0),
+              );
+
+              expect(concaveShape, isNotNull);
+              expect(concaveShape, isA<ConcaveMeshShape>());
+
+              // Clean up
+              concaveShape.dispose();
+            } finally {
+              triangleMesh.dispose();
+            }
+          } finally {
+            triangleArray.dispose();
+          }
+        });
+
+        test('should create concave mesh shape with custom scaling', () {
+          final vertices = Float32List.fromList([
+            0.0, 0.0, 0.0,  // 0
+            1.0, 0.0, 0.0,  // 1
+            0.5, 1.0, 0.0,  // 2
+          ]);
+
+          final indices = Uint32List.fromList([0, 1, 2]);
+
+          final triangleArray = physics3D.createTriangleVertexArray(
+            verticesCount: 3,
+            vertices: vertices,
+            verticesStride: 12,
+            indicesCount: 3,
+            indices: indices,
+            indicesStride: 4,
+          );
+
+          try {
+            final triangleMesh = physics3D.createTriangleMesh(triangleArray);
+
+            try {
+              final customScale = Vector3(2.0, 0.5, 3.0);
+              final concaveShape = physics3D.createConcaveMeshShape(
+                triangleMesh,
+                scaling: customScale,
+              );
+
+              expect(concaveShape, isNotNull);
+              expect(concaveShape, isA<ConcaveMeshShape>());
+
+              // Clean up
+              concaveShape.dispose();
+            } finally {
+              triangleMesh.dispose();
+            }
+          } finally {
+            triangleArray.dispose();
+          }
+        });
+      });
+
+
+      group('Mesh shape integration with rigid bodies', () {
+        test('should create convex mesh shape and integrate with rigid body', () {
+          final world = physics3D.createWorld();
+
+          // Test successful convex mesh creation and rigid body integration
+
+          // Define simple cube vertices
+          final vertices = Float32List.fromList([
+            -2.0, -2.0, -2.0,  // 0
+             2.0, -2.0, -2.0,  // 1
+             2.0,  2.0, -2.0,  // 2
+            -2.0,  2.0, -2.0,  // 3
+            -2.0, -2.0,  2.0,  // 4
+             2.0, -2.0,  2.0,  // 5
+             2.0,  2.0,  2.0,  // 6
+            -2.0,  2.0,  2.0,  // 7
+          ]);
+
+          final indices = Uint32List.fromList([
+            // Bottom face
+            0, 1, 2,  0, 2, 3,
+            // Top face
+            4, 7, 6,  4, 6, 5,
+            // Front face
+            0, 4, 5,  0, 5, 1,
+            // Back face
+            2, 6, 7, 2, 7, 3,
+            // Left face
+            0, 3, 7, 0, 7, 4,
+            // Right face
+            1, 5, 6,  1, 6, 2,
+          ]);
+
+          final triangleArray = physics3D.createTriangleVertexArray(
+            verticesCount: 8,
+            vertices: vertices,
+            verticesStride: 12,
+            indicesCount: 36,
+            indices: indices,
+            indicesStride: 4,
+          );
+
+          try {
+            // This should now work successfully with fixed memory management
+            final convexMesh = physics3D.createConvexMeshFromTriangles(triangleArray);
+            expect(convexMesh, isNotNull);
+            expect(convexMesh, isA<ConvexMesh>());
+
+            // Create convex mesh shape
+            final convexShape = physics3D.createConvexMeshShape(convexMesh);
+            expect(convexShape, isNotNull);
+            expect(convexShape, isA<ConvexMeshShape>());
+
+            // Test integration with rigid body
+            final rigidBody = physics3D.createRigidBody(world, type: BodyType.DYNAMIC);
+            final collider = rigidBody.addCollider(convexShape);
+            expect(collider, isNotNull);
+
+            // Clean up
+            convexShape.dispose();
+            convexMesh.dispose();
+          } finally {
+            triangleArray.dispose();
+          }
+        });
+
+        test('should add concave mesh shape to static rigid body', () {
+          final world = physics3D.createWorld();
+
+          // Create simple concave mesh (L-shape)
+          final vertices = Float32List.fromList([
+            0.0, 0.0, 0.0,   // 0
+            2.0, 0.0, 0.0,   // 1
+            2.0, 0.0, 1.0,   // 2
+            1.0, 0.0, 1.0,   // 3
+            1.0, 0.0, 2.0,   // 4
+            0.0, 0.0, 2.0,   // 5
+          ]);
+
+          final indices = Uint32List.fromList([
+            0, 1, 2,  0, 2, 3,  // First part of L
+            0, 3, 5,  3, 4, 5,  // Second part of L
+          ]);
+
+          final triangleArray = physics3D.createTriangleVertexArray(
+            verticesCount: 6,
+            vertices: vertices,
+            verticesStride: 12,
+            indicesCount: 12,
+            indices: indices,
+            indicesStride: 4,
+          );
+
+          try {
+            final triangleMesh = physics3D.createTriangleMesh(triangleArray);
+
+            try {
+              final concaveShape = physics3D.createConcaveMeshShape(triangleMesh);
+
+              try {
+                final rigidBody = physics3D.createRigidBody(
+                  world,
+                  type: BodyType.STATIC,
+                );
+
+                final collider = rigidBody.addCollider(concaveShape);
+
+                expect(collider, isNotNull);
+                expect(rigidBody.type, equals(BodyType.STATIC));
+
+                // Clean up
+                concaveShape.dispose();
+              } finally {
+                triangleMesh.dispose();
+              }
+            } finally {
+              triangleArray.dispose();
+            }
+          } catch (e) {
+            // Clean up on error
+            triangleArray.dispose();
+            rethrow;
+          }
+        });
       });
     });
 

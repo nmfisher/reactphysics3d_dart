@@ -9,6 +9,12 @@
 #include <reactphysics3d/reactphysics3d.h>
 #include <reactphysics3d/collision/shapes/ConcaveShape.h>
 #include <reactphysics3d/collision/shapes/ConvexMeshShape.h>
+#include <reactphysics3d/collision/shapes/ConcaveMeshShape.h>
+#include <reactphysics3d/collision/TriangleMesh.h>
+#include <reactphysics3d/collision/ConvexMesh.h>
+#include <reactphysics3d/collision/TriangleVertexArray.h>
+#include <reactphysics3d/collision/PolygonVertexArray.h>
+#include <reactphysics3d/collision/VertexArray.h>
 #include <cstring>
 #include <vector>
 
@@ -832,4 +838,282 @@ void rp3d_height_field_shape_get_vertex_at(
     const HeightFieldShape* hfs = reinterpret_cast<const HeightFieldShape*>(heightFieldShape);
     Vector3 vertex = hfs->getVertexAt(row, column);
     from_rp3d_vector3(vertex, outVertex);
+}
+
+// ==================== TriangleVertexArray ====================
+
+RP3D_TriangleVertexArray* rp3d_triangle_vertex_array_create(
+    uint32_t nbVertices,
+    const float* verticesStart,
+    uint32_t verticesStride,
+    uint32_t nbIndices,
+    const uint32_t* indicesStart,
+    uint32_t indicesStride
+) {
+    TriangleVertexArray::VertexDataType vertexDataType = TriangleVertexArray::VertexDataType::VERTEX_FLOAT_TYPE;
+    TriangleVertexArray::IndexDataType indexDataType = TriangleVertexArray::IndexDataType::INDEX_INTEGER_TYPE;
+
+    TriangleVertexArray* triangleArray = new TriangleVertexArray(
+        nbVertices,
+        verticesStart,
+        verticesStride,
+        nbIndices / 3,  // Number of triangles
+        indicesStart,
+        3 * indicesStride,  // Index stride should be 12 bytes (3 indices per triangle)
+        vertexDataType,
+        indexDataType
+    );
+
+    return reinterpret_cast<RP3D_TriangleVertexArray*>(triangleArray);
+}
+
+void rp3d_triangle_vertex_array_destroy(RP3D_TriangleVertexArray* triangleVertexArray) {
+    TriangleVertexArray* tva = reinterpret_cast<TriangleVertexArray*>(triangleVertexArray);
+    delete tva;
+}
+
+uint32_t rp3d_triangle_vertex_array_get_nb_vertices(const RP3D_TriangleVertexArray* triangleVertexArray) {
+    const TriangleVertexArray* tva = reinterpret_cast<const TriangleVertexArray*>(triangleVertexArray);
+    if (!tva) return 0;
+    return tva->getNbVertices();
+}
+
+uint32_t rp3d_triangle_vertex_array_get_nb_triangles(const RP3D_TriangleVertexArray* triangleVertexArray) {
+    const TriangleVertexArray* tva = reinterpret_cast<const TriangleVertexArray*>(triangleVertexArray);
+    if (!tva) return 0;
+    return tva->getNbTriangles();
+}
+
+const float* rp3d_triangle_vertex_array_get_vertices_start(const RP3D_TriangleVertexArray* triangleVertexArray) {
+    const TriangleVertexArray* tva = reinterpret_cast<const TriangleVertexArray*>(triangleVertexArray);
+    if (!tva) return nullptr;
+    return static_cast<const float*>(tva->getVerticesStart());
+}
+
+const uint32_t* rp3d_triangle_vertex_array_get_indices_start(const RP3D_TriangleVertexArray* triangleVertexArray) {
+    const TriangleVertexArray* tva = reinterpret_cast<const TriangleVertexArray*>(triangleVertexArray);
+    if (!tva) return nullptr;
+    return static_cast<const uint32_t*>(tva->getIndicesStart());
+}
+
+void rp3d_triangle_vertex_array_get_triangle_vertices_indices(
+    const RP3D_TriangleVertexArray* triangleVertexArray,
+    uint32_t triangleIndex,
+    uint32_t* outV1Index,
+    uint32_t* outV2Index,
+    uint32_t* outV3Index) {
+    const TriangleVertexArray* tva = reinterpret_cast<const TriangleVertexArray*>(triangleVertexArray);
+    if (tva && outV1Index && outV2Index && outV3Index) {
+        tva->getTriangleVerticesIndices(triangleIndex, *outV1Index, *outV2Index, *outV3Index);
+    }
+}
+
+// ==================== PolygonVertexArray ====================
+
+RP3D_PolygonVertexArray* rp3d_polygon_vertex_array_create(
+    uint32_t nbVertices,
+    const float* verticesStart,
+    uint32_t verticesStride,
+    uint32_t nbIndices,
+    const uint32_t* indicesStart,
+    uint32_t indicesStride,
+    const uint32_t* polygonIndicesStart,
+    uint32_t polygonIndicesStride
+) {
+    // For now, return nullptr to indicate this functionality needs more work
+    // Polygon vertex arrays are complex and require proper PolygonFace structure creation
+    std::cout << "PolygonVertexArray creation not yet implemented" << std::endl;
+    return nullptr;
+}
+
+void rp3d_polygon_vertex_array_destroy(RP3D_PolygonVertexArray* polygonVertexArray) {
+    PolygonVertexArray* pva = reinterpret_cast<PolygonVertexArray*>(polygonVertexArray);
+    delete pva;
+}
+
+// ==================== TriangleMesh ====================
+
+RP3D_TriangleMesh* rp3d_physics_common_create_triangle_mesh(
+    RP3D_PhysicsCommon* common,
+    RP3D_TriangleVertexArray* triangleVertexArray
+) {
+    PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
+    TriangleVertexArray* tva = reinterpret_cast<TriangleVertexArray*>(triangleVertexArray);
+
+    std::vector<Message> messages;
+    TriangleMesh* triangleMesh = pc->createTriangleMesh(*tva, messages);
+
+    // Output any error messages
+    for(const auto & message : messages) {
+        std::cout << "TriangleMesh creation: " << message.text << std::endl;
+    }
+
+    return reinterpret_cast<RP3D_TriangleMesh*>(triangleMesh);
+}
+
+void rp3d_physics_common_destroy_triangle_mesh(RP3D_PhysicsCommon* common, RP3D_TriangleMesh* triangleMesh) {
+    PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
+    TriangleMesh* tm = reinterpret_cast<TriangleMesh*>(triangleMesh);
+    pc->destroyTriangleMesh(tm);
+}
+
+uint32_t rp3d_triangle_mesh_get_nb_vertices(const RP3D_TriangleMesh* triangleMesh) {
+    const TriangleMesh* tm = reinterpret_cast<const TriangleMesh*>(triangleMesh);
+    if (!tm) return 0;
+    return tm->getNbVertices();
+}
+
+uint32_t rp3d_triangle_mesh_get_nb_triangles(const RP3D_TriangleMesh* triangleMesh) {
+    const TriangleMesh* tm = reinterpret_cast<const TriangleMesh*>(triangleMesh);
+    if (!tm) return 0;
+    return tm->getNbTriangles();
+}
+
+void rp3d_triangle_mesh_get_vertex(
+    const RP3D_TriangleMesh* triangleMesh,
+    uint32_t vertexIndex,
+    RP3D_Vector3* outVertex) {
+    const TriangleMesh* tm = reinterpret_cast<const TriangleMesh*>(triangleMesh);
+    if (tm && outVertex) {
+        const reactphysics3d::Vector3& vertex = tm->getVertex(vertexIndex);
+        outVertex->x = vertex.x;
+        outVertex->y = vertex.y;
+        outVertex->z = vertex.z;
+    }
+}
+
+void rp3d_triangle_mesh_get_triangle_vertices_indices(
+    const RP3D_TriangleMesh* triangleMesh,
+    uint32_t triangleIndex,
+    uint32_t* outV1Index,
+    uint32_t* outV2Index,
+    uint32_t* outV3Index) {
+    const TriangleMesh* tm = reinterpret_cast<const TriangleMesh*>(triangleMesh);
+    if (tm && outV1Index && outV2Index && outV3Index) {
+        tm->getTriangleVerticesIndices(triangleIndex, *outV1Index, *outV2Index, *outV3Index);
+    }
+}
+
+// ==================== ConvexMesh ====================
+
+RP3D_ConvexMesh* rp3d_physics_common_create_convex_mesh_from_triangles(
+    RP3D_PhysicsCommon* common,
+    RP3D_TriangleVertexArray* triangleVertexArray
+) {
+    PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
+    TriangleVertexArray* tva = reinterpret_cast<TriangleVertexArray*>(triangleVertexArray);
+
+    // Input validation
+    if (!tva || !tva->getVerticesStart() || tva->getNbVertices() < 3) {
+        std::cout << "ConvexMesh creation failed: Invalid triangle vertex array data" << std::endl;
+        return nullptr;
+    }
+
+    // Check vertex stride is valid for 3D positions
+    if (tva->getVerticesStride() < 12) { // At least 3 floats * 4 bytes
+        std::cout << "ConvexMesh creation failed: Invalid vertex stride" << std::endl;
+        return nullptr;
+    }
+
+    // Extract unique vertices from triangle data to avoid duplicates
+    const float* verticesData = static_cast<const float*>(tva->getVerticesStart());
+    const uint32_t* indicesData = static_cast<const uint32_t*>(tva->getIndicesStart());
+    uint32_t nbVertices = tva->getNbVertices();
+    uint32_t nbTriangles = tva->getNbTriangles();
+    uint32_t vertexStride = tva->getVerticesStride() / 4; // Convert bytes to float count
+
+    // For simplicity and safety, create a VertexArray with the original vertex data
+    // but limit the number of vertices to prevent crashes with degenerate data
+    uint32_t maxVertices = std::min(nbVertices, 1000u); // Safety limit
+    if (maxVertices < 4) {
+        std::cout << "ConvexMesh creation failed: Not enough vertices (minimum 4 required)" << std::endl;
+        return nullptr;
+    }
+
+    try {
+        VertexArray vertexArray(
+            verticesData,
+            tva->getVerticesStride(),
+            maxVertices,
+            VertexArray::DataType::VERTEX_FLOAT_TYPE
+        );
+
+        std::vector<Message> messages;
+        ConvexMesh* convexMesh = pc->createConvexMesh(vertexArray, messages);
+
+        // Output any error messages
+        if (!messages.empty()) {
+            for(const auto & message : messages) {
+                std::cout << "ConvexMesh creation warning: " << message.text << std::endl;
+            }
+        }
+
+        if (!convexMesh) {
+            std::cout << "ConvexMesh creation failed: QuickHull algorithm failed" << std::endl;
+            return nullptr;
+        }
+
+        return reinterpret_cast<RP3D_ConvexMesh*>(convexMesh);
+    } catch (const std::exception& e) {
+        std::cout << "ConvexMesh creation failed with exception: " << e.what() << std::endl;
+        return nullptr;
+    } catch (...) {
+        std::cout << "ConvexMesh creation failed with unknown exception" << std::endl;
+        return nullptr;
+    }
+}
+
+RP3D_ConvexMesh* rp3d_physics_common_create_convex_mesh_from_polygons(
+    RP3D_PhysicsCommon* common,
+    RP3D_PolygonVertexArray* polygonVertexArray
+) {
+    // Return nullptr since PolygonVertexArray creation is not implemented
+    std::cout << "ConvexMesh creation from polygons not yet implemented" << std::endl;
+    return nullptr;
+}
+
+void rp3d_physics_common_destroy_convex_mesh(RP3D_PhysicsCommon* common, RP3D_ConvexMesh* convexMesh) {
+    PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
+    ConvexMesh* cm = reinterpret_cast<ConvexMesh*>(convexMesh);
+    pc->destroyConvexMesh(cm);
+}
+
+// ==================== ConvexMeshShape ====================
+
+RP3D_ConvexMeshShape* rp3d_physics_common_create_convex_mesh_shape(
+    RP3D_PhysicsCommon* common,
+    RP3D_ConvexMesh* convexMesh
+) {
+    PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
+    ConvexMesh* cm = reinterpret_cast<ConvexMesh*>(convexMesh);
+
+    ConvexMeshShape* convexMeshShape = pc->createConvexMeshShape(cm);
+    return reinterpret_cast<RP3D_ConvexMeshShape*>(convexMeshShape);
+}
+
+void rp3d_physics_common_destroy_convex_mesh_shape(RP3D_PhysicsCommon* common, RP3D_ConvexMeshShape* convexMeshShape) {
+    PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
+    ConvexMeshShape* cms = reinterpret_cast<ConvexMeshShape*>(convexMeshShape);
+    pc->destroyConvexMeshShape(cms);
+}
+
+// ==================== ConcaveMeshShape ====================
+
+RP3D_ConcaveMeshShape* rp3d_physics_common_create_concave_mesh_shape(
+    RP3D_PhysicsCommon* common,
+    RP3D_TriangleMesh* triangleMesh,
+    const RP3D_Vector3* scaling
+) {
+    PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
+    TriangleMesh* tm = reinterpret_cast<TriangleMesh*>(triangleMesh);
+    Vector3 scaleVec = to_rp3d_vector3(scaling);
+
+    ConcaveMeshShape* concaveMeshShape = pc->createConcaveMeshShape(tm, scaleVec);
+    return reinterpret_cast<RP3D_ConcaveMeshShape*>(concaveMeshShape);
+}
+
+void rp3d_physics_common_destroy_concave_mesh_shape(RP3D_PhysicsCommon* common, RP3D_ConcaveMeshShape* concaveMeshShape) {
+    PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
+    ConcaveMeshShape* cms = reinterpret_cast<ConcaveMeshShape*>(concaveMeshShape);
+    pc->destroyConcaveMeshShape(cms);
 }

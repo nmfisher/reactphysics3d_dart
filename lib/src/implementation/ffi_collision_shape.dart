@@ -116,3 +116,199 @@ class FFIHeightFieldShape extends FFICollisionShape implements HeightFieldShape 
     }
   }
 }
+
+/// Triangle vertex array implementation
+class FFITriangleVertexArray implements TriangleVertexArray {
+  final ffi.Pointer<ffi_gen.RP3D_TriangleVertexArray> _handle;
+  final ffi.Pointer<ffi.Float> _verticesPtr;
+  final ffi.Pointer<ffi.Uint32> _indicesPtr;
+
+  FFITriangleVertexArray.internal(this._handle, this._verticesPtr, this._indicesPtr);
+
+  @override
+  ffi.Pointer<ffi_gen.RP3D_TriangleVertexArray> get handle => _handle;
+
+  @override
+  void dispose() {
+    // Free the vertex and index data first, then destroy the array
+    ffi_mem.calloc.free(_verticesPtr);
+    ffi_mem.calloc.free(_indicesPtr);
+    ffi_gen.rp3d_triangle_vertex_array_destroy(_handle);
+  }
+
+  @override
+  int getVertexCount() {
+    return ffi_gen.rp3d_triangle_vertex_array_get_nb_vertices(_handle);
+  }
+
+  @override
+  int getTriangleCount() {
+    return ffi_gen.rp3d_triangle_vertex_array_get_nb_triangles(_handle);
+  }
+
+  @override
+  Vector3 getVertex(int index) {
+    final verticesStart = ffi_gen.rp3d_triangle_vertex_array_get_vertices_start(_handle);
+    if (verticesStart == null) {
+      throw Exception('Cannot get vertex data: vertices start pointer is null');
+    }
+
+    // Each vertex has 3 float components (x, y, z)
+    final vertexPtr = verticesStart + (index * 3);
+    return Vector3(
+      vertexPtr.value,
+      (vertexPtr + 1).value,
+      (vertexPtr + 2).value,
+    );
+  }
+
+  @override
+  List<int> getTriangleIndices(int triangleIndex) {
+    final outV1Index = ffi_mem.calloc<ffi.Uint32>();
+    final outV2Index = ffi_mem.calloc<ffi.Uint32>();
+    final outV3Index = ffi_mem.calloc<ffi.Uint32>();
+
+    try {
+      ffi_gen.rp3d_triangle_vertex_array_get_triangle_vertices_indices(
+        _handle,
+        triangleIndex,
+        outV1Index,
+        outV2Index,
+        outV3Index,
+      );
+
+      return [
+        outV1Index.value,
+        outV2Index.value,
+        outV3Index.value,
+      ];
+    } finally {
+      ffi_mem.calloc.free(outV1Index);
+      ffi_mem.calloc.free(outV2Index);
+      ffi_mem.calloc.free(outV3Index);
+    }
+  }
+}
+
+/// Polygon vertex array implementation
+class FFIPolygonVertexArray implements PolygonVertexArray {
+  final ffi.Pointer<ffi_gen.RP3D_PolygonVertexArray> _handle;
+
+  FFIPolygonVertexArray.internal(this._handle);
+
+  @override
+  ffi.Pointer<ffi_gen.RP3D_PolygonVertexArray> get handle => _handle;
+
+  @override
+  void dispose() {
+    ffi_gen.rp3d_polygon_vertex_array_destroy(_handle);
+  }
+}
+
+/// Triangle mesh implementation
+class FFITriangleMesh implements TriangleMesh {
+  final ffi.Pointer<ffi_gen.RP3D_TriangleMesh> _handle;
+  final FFIPhysicsCommon _common;
+
+  FFITriangleMesh.internal(this._handle, this._common);
+
+  @override
+  ffi.Pointer<ffi_gen.RP3D_TriangleMesh> get handle => _handle;
+
+  @override
+  void dispose() {
+    ffi_gen.rp3d_physics_common_destroy_triangle_mesh(_common.handleForShapes!, _handle);
+  }
+
+  @override
+  int getVertexCount() {
+    return ffi_gen.rp3d_triangle_mesh_get_nb_vertices(_handle);
+  }
+
+  @override
+  int getTriangleCount() {
+    return ffi_gen.rp3d_triangle_mesh_get_nb_triangles(_handle);
+  }
+
+  @override
+  Vector3 getVertex(int index) {
+    final outVertex = ffi_mem.calloc<ffi_gen.RP3D_Vector3>();
+    try {
+      ffi_gen.rp3d_triangle_mesh_get_vertex(_handle, index, outVertex);
+      return Vector3(
+        outVertex.ref.x,
+        outVertex.ref.y,
+        outVertex.ref.z,
+      );
+    } finally {
+      ffi_mem.calloc.free(outVertex);
+    }
+  }
+
+  @override
+  List<int> getTriangleIndices(int triangleIndex) {
+    final outV1Index = ffi_mem.calloc<ffi.Uint32>();
+    final outV2Index = ffi_mem.calloc<ffi.Uint32>();
+    final outV3Index = ffi_mem.calloc<ffi.Uint32>();
+
+    try {
+      ffi_gen.rp3d_triangle_mesh_get_triangle_vertices_indices(
+        _handle,
+        triangleIndex,
+        outV1Index,
+        outV2Index,
+        outV3Index,
+      );
+
+      return [
+        outV1Index.value,
+        outV2Index.value,
+        outV3Index.value,
+      ];
+    } finally {
+      ffi_mem.calloc.free(outV1Index);
+      ffi_mem.calloc.free(outV2Index);
+      ffi_mem.calloc.free(outV3Index);
+    }
+  }
+}
+
+/// Convex mesh implementation
+class FFIConvexMesh implements ConvexMesh {
+  final ffi.Pointer<ffi_gen.RP3D_ConvexMesh> _handle;
+  final FFIPhysicsCommon _common;
+
+  FFIConvexMesh.internal(this._handle, this._common);
+
+  @override
+  ffi.Pointer<ffi_gen.RP3D_ConvexMesh> get handle => _handle;
+
+  @override
+  void dispose() {
+    ffi_gen.rp3d_physics_common_destroy_convex_mesh(_common.handleForShapes!, _handle);
+  }
+}
+
+/// Convex mesh shape implementation
+class FFIConvexMeshShape extends FFICollisionShape implements ConvexMeshShape {
+  FFIConvexMeshShape.internal(ffi.Pointer<ffi_gen.RP3D_ConvexMeshShape> handle, FFIPhysicsCommon common)
+      : super._(handle.cast<ffi_gen.RP3D_CollisionShape>(), common);
+
+  @override
+  void _destroyShape() {
+    final convexMeshShapeHandle = _handle.cast<ffi_gen.RP3D_ConvexMeshShape>();
+    ffi_gen.rp3d_physics_common_destroy_convex_mesh_shape(_common.handleForShapes!, convexMeshShapeHandle);
+  }
+}
+
+/// Concave mesh shape implementation
+class FFIConcaveMeshShape extends FFICollisionShape implements ConcaveMeshShape {
+  FFIConcaveMeshShape.internal(ffi.Pointer<ffi_gen.RP3D_ConcaveMeshShape> handle, FFIPhysicsCommon common)
+      : super._(handle.cast<ffi_gen.RP3D_CollisionShape>(), common);
+
+  @override
+  void _destroyShape() {
+    final concaveMeshShapeHandle = _handle.cast<ffi_gen.RP3D_ConcaveMeshShape>();
+    ffi_gen.rp3d_physics_common_destroy_concave_mesh_shape(_common.handleForShapes!, concaveMeshShapeHandle);
+  }
+}

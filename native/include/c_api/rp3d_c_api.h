@@ -174,6 +174,92 @@ EMSCRIPTEN_KEEPALIVE void rp3d_physics_common_destroy_height_field(RP3D_PhysicsC
 EMSCRIPTEN_KEEPALIVE RP3D_HeightFieldShape* rp3d_physics_common_create_height_field_shape(RP3D_PhysicsCommon* common, RP3D_HeightField* heightField);
 EMSCRIPTEN_KEEPALIVE void rp3d_physics_common_destroy_height_field_shape(RP3D_PhysicsCommon* common, RP3D_HeightFieldShape* heightFieldShape);
 
+// TriangleVertexArray creation/destruction
+EMSCRIPTEN_KEEPALIVE RP3D_TriangleVertexArray* rp3d_triangle_vertex_array_create(
+    uint32_t nbVertices,
+    const float* verticesStart,
+    uint32_t verticesStride,
+    uint32_t nbIndices,
+    const uint32_t* indicesStart,
+    uint32_t indicesStride
+);
+EMSCRIPTEN_KEEPALIVE void rp3d_triangle_vertex_array_destroy(RP3D_TriangleVertexArray* triangleVertexArray);
+
+// TriangleVertexArray accessors
+EMSCRIPTEN_KEEPALIVE uint32_t rp3d_triangle_vertex_array_get_nb_vertices(const RP3D_TriangleVertexArray* triangleVertexArray);
+EMSCRIPTEN_KEEPALIVE uint32_t rp3d_triangle_vertex_array_get_nb_triangles(const RP3D_TriangleVertexArray* triangleVertexArray);
+EMSCRIPTEN_KEEPALIVE const float* rp3d_triangle_vertex_array_get_vertices_start(const RP3D_TriangleVertexArray* triangleVertexArray);
+EMSCRIPTEN_KEEPALIVE const uint32_t* rp3d_triangle_vertex_array_get_indices_start(const RP3D_TriangleVertexArray* triangleVertexArray);
+EMSCRIPTEN_KEEPALIVE void rp3d_triangle_vertex_array_get_triangle_vertices_indices(
+    const RP3D_TriangleVertexArray* triangleVertexArray,
+    uint32_t triangleIndex,
+    uint32_t* outV1Index,
+    uint32_t* outV2Index,
+    uint32_t* outV3Index
+);
+
+// PolygonVertexArray creation/destruction
+EMSCRIPTEN_KEEPALIVE RP3D_PolygonVertexArray* rp3d_polygon_vertex_array_create(
+    uint32_t nbVertices,
+    const float* verticesStart,
+    uint32_t verticesStride,
+    uint32_t nbIndices,
+    const uint32_t* indicesStart,
+    uint32_t indicesStride,
+    const uint32_t* polygonIndicesStart,
+    uint32_t polygonIndicesStride
+);
+EMSCRIPTEN_KEEPALIVE void rp3d_polygon_vertex_array_destroy(RP3D_PolygonVertexArray* polygonVertexArray);
+
+// TriangleMesh creation/destruction
+EMSCRIPTEN_KEEPALIVE RP3D_TriangleMesh* rp3d_physics_common_create_triangle_mesh(
+    RP3D_PhysicsCommon* common,
+    RP3D_TriangleVertexArray* triangleVertexArray
+);
+EMSCRIPTEN_KEEPALIVE void rp3d_physics_common_destroy_triangle_mesh(RP3D_PhysicsCommon* common, RP3D_TriangleMesh* triangleMesh);
+
+// TriangleMesh accessors
+EMSCRIPTEN_KEEPALIVE uint32_t rp3d_triangle_mesh_get_nb_vertices(const RP3D_TriangleMesh* triangleMesh);
+EMSCRIPTEN_KEEPALIVE uint32_t rp3d_triangle_mesh_get_nb_triangles(const RP3D_TriangleMesh* triangleMesh);
+EMSCRIPTEN_KEEPALIVE void rp3d_triangle_mesh_get_vertex(
+    const RP3D_TriangleMesh* triangleMesh,
+    uint32_t vertexIndex,
+    RP3D_Vector3* outVertex
+);
+EMSCRIPTEN_KEEPALIVE void rp3d_triangle_mesh_get_triangle_vertices_indices(
+    const RP3D_TriangleMesh* triangleMesh,
+    uint32_t triangleIndex,
+    uint32_t* outV1Index,
+    uint32_t* outV2Index,
+    uint32_t* outV3Index
+);
+
+// ConvexMesh creation/destruction
+EMSCRIPTEN_KEEPALIVE RP3D_ConvexMesh* rp3d_physics_common_create_convex_mesh_from_triangles(
+    RP3D_PhysicsCommon* common,
+    RP3D_TriangleVertexArray* triangleVertexArray
+);
+EMSCRIPTEN_KEEPALIVE RP3D_ConvexMesh* rp3d_physics_common_create_convex_mesh_from_polygons(
+    RP3D_PhysicsCommon* common,
+    RP3D_PolygonVertexArray* polygonVertexArray
+);
+EMSCRIPTEN_KEEPALIVE void rp3d_physics_common_destroy_convex_mesh(RP3D_PhysicsCommon* common, RP3D_ConvexMesh* convexMesh);
+
+// ConvexMeshShape creation/destruction
+EMSCRIPTEN_KEEPALIVE RP3D_ConvexMeshShape* rp3d_physics_common_create_convex_mesh_shape(
+    RP3D_PhysicsCommon* common,
+    RP3D_ConvexMesh* convexMesh
+);
+EMSCRIPTEN_KEEPALIVE void rp3d_physics_common_destroy_convex_mesh_shape(RP3D_PhysicsCommon* common, RP3D_ConvexMeshShape* convexMeshShape);
+
+// ConcaveMeshShape creation/destruction
+EMSCRIPTEN_KEEPALIVE RP3D_ConcaveMeshShape* rp3d_physics_common_create_concave_mesh_shape(
+    RP3D_PhysicsCommon* common,
+    RP3D_TriangleMesh* triangleMesh,
+    const RP3D_Vector3* scaling
+);
+EMSCRIPTEN_KEEPALIVE void rp3d_physics_common_destroy_concave_mesh_shape(RP3D_PhysicsCommon* common, RP3D_ConcaveMeshShape* concaveMeshShape);
+
 // Mesh/shape destruction
 EMSCRIPTEN_KEEPALIVE void rp3d_physics_common_destroy_box_shape(RP3D_PhysicsCommon* common, RP3D_BoxShape* shape);
 EMSCRIPTEN_KEEPALIVE void rp3d_physics_common_destroy_sphere_shape(RP3D_PhysicsCommon* common, RP3D_SphereShape* shape);

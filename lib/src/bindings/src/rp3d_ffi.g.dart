@@ -103,6 +103,220 @@ external void rp3d_physics_common_destroy_height_field_shape(
   ffi.Pointer<RP3D_HeightFieldShape> heightFieldShape,
 );
 
+/// TriangleVertexArray creation/destruction
+@ffi.Native<
+    ffi.Pointer<RP3D_TriangleVertexArray> Function(
+        ffi.Uint32,
+        ffi.Pointer<ffi.Float>,
+        ffi.Uint32,
+        ffi.Uint32,
+        ffi.Pointer<ffi.Uint32>,
+        ffi.Uint32)>(isLeaf: true)
+external ffi.Pointer<RP3D_TriangleVertexArray>
+    rp3d_triangle_vertex_array_create(
+  int nbVertices,
+  ffi.Pointer<ffi.Float> verticesStart,
+  int verticesStride,
+  int nbIndices,
+  ffi.Pointer<ffi.Uint32> indicesStart,
+  int indicesStride,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<RP3D_TriangleVertexArray>)>(
+    isLeaf: true)
+external void rp3d_triangle_vertex_array_destroy(
+  ffi.Pointer<RP3D_TriangleVertexArray> triangleVertexArray,
+);
+
+/// TriangleVertexArray accessors
+@ffi.Native<ffi.Uint32 Function(ffi.Pointer<RP3D_TriangleVertexArray>)>(
+    isLeaf: true)
+external int rp3d_triangle_vertex_array_get_nb_vertices(
+  ffi.Pointer<RP3D_TriangleVertexArray> triangleVertexArray,
+);
+
+@ffi.Native<ffi.Uint32 Function(ffi.Pointer<RP3D_TriangleVertexArray>)>(
+    isLeaf: true)
+external int rp3d_triangle_vertex_array_get_nb_triangles(
+  ffi.Pointer<RP3D_TriangleVertexArray> triangleVertexArray,
+);
+
+@ffi.Native<
+    ffi.Pointer<ffi.Float> Function(
+        ffi.Pointer<RP3D_TriangleVertexArray>)>(isLeaf: true)
+external ffi.Pointer<ffi.Float> rp3d_triangle_vertex_array_get_vertices_start(
+  ffi.Pointer<RP3D_TriangleVertexArray> triangleVertexArray,
+);
+
+@ffi.Native<
+    ffi.Pointer<ffi.Uint32> Function(
+        ffi.Pointer<RP3D_TriangleVertexArray>)>(isLeaf: true)
+external ffi.Pointer<ffi.Uint32> rp3d_triangle_vertex_array_get_indices_start(
+  ffi.Pointer<RP3D_TriangleVertexArray> triangleVertexArray,
+);
+
+@ffi.Native<
+    ffi.Void Function(
+        ffi.Pointer<RP3D_TriangleVertexArray>,
+        ffi.Uint32,
+        ffi.Pointer<ffi.Uint32>,
+        ffi.Pointer<ffi.Uint32>,
+        ffi.Pointer<ffi.Uint32>)>(isLeaf: true)
+external void rp3d_triangle_vertex_array_get_triangle_vertices_indices(
+  ffi.Pointer<RP3D_TriangleVertexArray> triangleVertexArray,
+  int triangleIndex,
+  ffi.Pointer<ffi.Uint32> outV1Index,
+  ffi.Pointer<ffi.Uint32> outV2Index,
+  ffi.Pointer<ffi.Uint32> outV3Index,
+);
+
+/// PolygonVertexArray creation/destruction
+@ffi.Native<
+    ffi.Pointer<RP3D_PolygonVertexArray> Function(
+        ffi.Uint32,
+        ffi.Pointer<ffi.Float>,
+        ffi.Uint32,
+        ffi.Uint32,
+        ffi.Pointer<ffi.Uint32>,
+        ffi.Uint32,
+        ffi.Pointer<ffi.Uint32>,
+        ffi.Uint32)>(isLeaf: true)
+external ffi.Pointer<RP3D_PolygonVertexArray> rp3d_polygon_vertex_array_create(
+  int nbVertices,
+  ffi.Pointer<ffi.Float> verticesStart,
+  int verticesStride,
+  int nbIndices,
+  ffi.Pointer<ffi.Uint32> indicesStart,
+  int indicesStride,
+  ffi.Pointer<ffi.Uint32> polygonIndicesStart,
+  int polygonIndicesStride,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<RP3D_PolygonVertexArray>)>(
+    isLeaf: true)
+external void rp3d_polygon_vertex_array_destroy(
+  ffi.Pointer<RP3D_PolygonVertexArray> polygonVertexArray,
+);
+
+/// TriangleMesh creation/destruction
+@ffi.Native<
+    ffi.Pointer<RP3D_TriangleMesh> Function(ffi.Pointer<RP3D_PhysicsCommon>,
+        ffi.Pointer<RP3D_TriangleVertexArray>)>(isLeaf: true)
+external ffi.Pointer<RP3D_TriangleMesh>
+    rp3d_physics_common_create_triangle_mesh(
+  ffi.Pointer<RP3D_PhysicsCommon> common,
+  ffi.Pointer<RP3D_TriangleVertexArray> triangleVertexArray,
+);
+
+@ffi.Native<
+    ffi.Void Function(ffi.Pointer<RP3D_PhysicsCommon>,
+        ffi.Pointer<RP3D_TriangleMesh>)>(isLeaf: true)
+external void rp3d_physics_common_destroy_triangle_mesh(
+  ffi.Pointer<RP3D_PhysicsCommon> common,
+  ffi.Pointer<RP3D_TriangleMesh> triangleMesh,
+);
+
+/// TriangleMesh accessors
+@ffi.Native<ffi.Uint32 Function(ffi.Pointer<RP3D_TriangleMesh>)>(isLeaf: true)
+external int rp3d_triangle_mesh_get_nb_vertices(
+  ffi.Pointer<RP3D_TriangleMesh> triangleMesh,
+);
+
+@ffi.Native<ffi.Uint32 Function(ffi.Pointer<RP3D_TriangleMesh>)>(isLeaf: true)
+external int rp3d_triangle_mesh_get_nb_triangles(
+  ffi.Pointer<RP3D_TriangleMesh> triangleMesh,
+);
+
+@ffi.Native<
+    ffi.Void Function(ffi.Pointer<RP3D_TriangleMesh>, ffi.Uint32,
+        ffi.Pointer<RP3D_Vector3>)>(isLeaf: true)
+external void rp3d_triangle_mesh_get_vertex(
+  ffi.Pointer<RP3D_TriangleMesh> triangleMesh,
+  int vertexIndex,
+  ffi.Pointer<RP3D_Vector3> outVertex,
+);
+
+@ffi.Native<
+    ffi.Void Function(
+        ffi.Pointer<RP3D_TriangleMesh>,
+        ffi.Uint32,
+        ffi.Pointer<ffi.Uint32>,
+        ffi.Pointer<ffi.Uint32>,
+        ffi.Pointer<ffi.Uint32>)>(isLeaf: true)
+external void rp3d_triangle_mesh_get_triangle_vertices_indices(
+  ffi.Pointer<RP3D_TriangleMesh> triangleMesh,
+  int triangleIndex,
+  ffi.Pointer<ffi.Uint32> outV1Index,
+  ffi.Pointer<ffi.Uint32> outV2Index,
+  ffi.Pointer<ffi.Uint32> outV3Index,
+);
+
+/// ConvexMesh creation/destruction
+@ffi.Native<
+    ffi.Pointer<RP3D_ConvexMesh> Function(ffi.Pointer<RP3D_PhysicsCommon>,
+        ffi.Pointer<RP3D_TriangleVertexArray>)>(isLeaf: true)
+external ffi.Pointer<RP3D_ConvexMesh>
+    rp3d_physics_common_create_convex_mesh_from_triangles(
+  ffi.Pointer<RP3D_PhysicsCommon> common,
+  ffi.Pointer<RP3D_TriangleVertexArray> triangleVertexArray,
+);
+
+@ffi.Native<
+    ffi.Pointer<RP3D_ConvexMesh> Function(ffi.Pointer<RP3D_PhysicsCommon>,
+        ffi.Pointer<RP3D_PolygonVertexArray>)>(isLeaf: true)
+external ffi.Pointer<RP3D_ConvexMesh>
+    rp3d_physics_common_create_convex_mesh_from_polygons(
+  ffi.Pointer<RP3D_PhysicsCommon> common,
+  ffi.Pointer<RP3D_PolygonVertexArray> polygonVertexArray,
+);
+
+@ffi.Native<
+    ffi.Void Function(ffi.Pointer<RP3D_PhysicsCommon>,
+        ffi.Pointer<RP3D_ConvexMesh>)>(isLeaf: true)
+external void rp3d_physics_common_destroy_convex_mesh(
+  ffi.Pointer<RP3D_PhysicsCommon> common,
+  ffi.Pointer<RP3D_ConvexMesh> convexMesh,
+);
+
+/// ConvexMeshShape creation/destruction
+@ffi.Native<
+    ffi.Pointer<RP3D_ConvexMeshShape> Function(ffi.Pointer<RP3D_PhysicsCommon>,
+        ffi.Pointer<RP3D_ConvexMesh>)>(isLeaf: true)
+external ffi.Pointer<RP3D_ConvexMeshShape>
+    rp3d_physics_common_create_convex_mesh_shape(
+  ffi.Pointer<RP3D_PhysicsCommon> common,
+  ffi.Pointer<RP3D_ConvexMesh> convexMesh,
+);
+
+@ffi.Native<
+    ffi.Void Function(ffi.Pointer<RP3D_PhysicsCommon>,
+        ffi.Pointer<RP3D_ConvexMeshShape>)>(isLeaf: true)
+external void rp3d_physics_common_destroy_convex_mesh_shape(
+  ffi.Pointer<RP3D_PhysicsCommon> common,
+  ffi.Pointer<RP3D_ConvexMeshShape> convexMeshShape,
+);
+
+/// ConcaveMeshShape creation/destruction
+@ffi.Native<
+    ffi.Pointer<RP3D_ConcaveMeshShape> Function(
+        ffi.Pointer<RP3D_PhysicsCommon>,
+        ffi.Pointer<RP3D_TriangleMesh>,
+        ffi.Pointer<RP3D_Vector3>)>(isLeaf: true)
+external ffi.Pointer<RP3D_ConcaveMeshShape>
+    rp3d_physics_common_create_concave_mesh_shape(
+  ffi.Pointer<RP3D_PhysicsCommon> common,
+  ffi.Pointer<RP3D_TriangleMesh> triangleMesh,
+  ffi.Pointer<RP3D_Vector3> scaling,
+);
+
+@ffi.Native<
+    ffi.Void Function(ffi.Pointer<RP3D_PhysicsCommon>,
+        ffi.Pointer<RP3D_ConcaveMeshShape>)>(isLeaf: true)
+external void rp3d_physics_common_destroy_concave_mesh_shape(
+  ffi.Pointer<RP3D_PhysicsCommon> common,
+  ffi.Pointer<RP3D_ConcaveMeshShape> concaveMeshShape,
+);
+
 /// Mesh/shape destruction
 @ffi.Native<
     ffi.Void Function(ffi.Pointer<RP3D_PhysicsCommon>,

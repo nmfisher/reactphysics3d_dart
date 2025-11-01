@@ -35,3 +35,57 @@ abstract class HeightFieldShape extends CollisionShape {
   /// Set the scale of the collision shape
   void setScale(Vector3 scale);
 }
+
+/// Interface for triangle vertex array data
+abstract class TriangleVertexArray extends BaseRP3DType<ffi.Pointer<ffi_gen.RP3D_TriangleVertexArray>> {
+  /// Dispose of the triangle vertex array
+  void dispose();
+
+  /// Get the number of vertices in the array
+  int getVertexCount();
+
+  /// Get the number of triangles in the array
+  int getTriangleCount();
+
+  /// Get the vertex coordinates at the specified index
+  Vector3 getVertex(int index);
+
+  /// Get the three vertex indices for the specified triangle
+  List<int> getTriangleIndices(int triangleIndex);
+}
+
+/// Interface for polygon vertex array data
+abstract class PolygonVertexArray extends BaseRP3DType<ffi.Pointer<ffi_gen.RP3D_PolygonVertexArray>> {
+  /// Dispose of the polygon vertex array
+  void dispose();
+}
+
+/// Interface for triangle mesh data
+abstract class TriangleMesh extends BaseRP3DType<ffi.Pointer<ffi_gen.RP3D_TriangleMesh>> {
+  /// Dispose of the triangle mesh
+  void dispose();
+
+  /// Get the number of vertices in the mesh
+  int getVertexCount();
+
+  /// Get the number of triangles in the mesh
+  int getTriangleCount();
+
+  /// Get the vertex coordinates at the specified index
+  Vector3 getVertex(int index);
+
+  /// Get the three vertex indices for the specified triangle
+  List<int> getTriangleIndices(int triangleIndex);
+}
+
+/// Interface for convex mesh data
+abstract class ConvexMesh extends BaseRP3DType<ffi.Pointer<ffi_gen.RP3D_ConvexMesh>> {
+  /// Dispose of the convex mesh
+  void dispose();
+}
+
+/// Interface for convex mesh collision shapes
+abstract class ConvexMeshShape extends CollisionShape {}
+
+/// Interface for concave mesh collision shapes
+abstract class ConcaveMeshShape extends CollisionShape {}

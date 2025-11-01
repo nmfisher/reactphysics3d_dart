@@ -1,4 +1,5 @@
 import 'dart:ffi';
+import 'dart:typed_data';
 
 import 'package:reactphysics3d_dart/src/bindings/src/rp3d_ffi.g.dart';
 import 'package:reactphysics3d_dart/src/interfaces/physics_common.dart';
@@ -86,6 +87,73 @@ class FFIReactPhysics3D implements ReactPhysics3D {
   @override
   HeightFieldShape createHeightFieldShape(HeightField heightField) {
     return _physicsCommon.createHeightFieldShape(heightField);
+  }
+
+  @override
+  TriangleVertexArray createTriangleVertexArray({
+    required int verticesCount,
+    required Float32List vertices,
+    required int verticesStride,
+    required int indicesCount,
+    required Uint32List indices,
+    required int indicesStride,
+  }) {
+    return _physicsCommon.createTriangleVertexArray(
+      verticesCount: verticesCount,
+      vertices: vertices,
+      verticesStride: verticesStride,
+      indicesCount: indicesCount,
+      indices: indices,
+      indicesStride: indicesStride,
+    );
+  }
+
+  @override
+  PolygonVertexArray createPolygonVertexArray({
+    required int verticesCount,
+    required Float32List vertices,
+    required int verticesStride,
+    required int indicesCount,
+    required Uint32List indices,
+    required int indicesStride,
+    required Uint32List polygonIndices,
+    required int polygonIndicesStride,
+  }) {
+    return _physicsCommon.createPolygonVertexArray(
+      verticesCount: verticesCount,
+      vertices: vertices,
+      verticesStride: verticesStride,
+      indicesCount: indicesCount,
+      indices: indices,
+      indicesStride: indicesStride,
+      polygonIndices: polygonIndices,
+      polygonIndicesStride: polygonIndicesStride,
+    );
+  }
+
+  @override
+  TriangleMesh createTriangleMesh(TriangleVertexArray triangleVertexArray) {
+    return _physicsCommon.createTriangleMesh(triangleVertexArray);
+  }
+
+  @override
+  ConvexMesh createConvexMeshFromTriangles(TriangleVertexArray triangleVertexArray) {
+    return _physicsCommon.createConvexMeshFromTriangles(triangleVertexArray);
+  }
+
+  @override
+  ConvexMesh createConvexMeshFromPolygons(PolygonVertexArray polygonVertexArray) {
+    return _physicsCommon.createConvexMeshFromPolygons(polygonVertexArray);
+  }
+
+  @override
+  ConvexMeshShape createConvexMeshShape(ConvexMesh convexMesh) {
+    return _physicsCommon.createConvexMeshShape(convexMesh);
+  }
+
+  @override
+  ConcaveMeshShape createConcaveMeshShape(TriangleMesh triangleMesh, {Vector3? scaling}) {
+    return _physicsCommon.createConcaveMeshShape(triangleMesh, scaling: scaling);
   }
 
   @override
