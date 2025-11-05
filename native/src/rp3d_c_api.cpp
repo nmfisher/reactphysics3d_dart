@@ -622,6 +622,12 @@ void rp3d_transform_inverse(const RP3D_Transform* t, RP3D_Transform* outInverse)
     from_rp3d_transform(inverse, outInverse);
 }
 
+void rp3d_transform_get_opengl_matrix(const RP3D_Transform* t, float* outMatrix) {
+    Transform transform = to_rp3d_transform(t);
+    
+    transform.getOpenGLMatrix(outMatrix);
+}
+
 // ==================== DebugRenderer ====================
 
 void rp3d_debug_renderer_set_is_debug_item_displayed(RP3D_DebugRenderer* renderer, RP3D_DebugItem item, uint8_t isDisplayed) {

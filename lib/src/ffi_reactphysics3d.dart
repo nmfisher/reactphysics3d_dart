@@ -2,15 +2,8 @@ import 'dart:ffi';
 import 'dart:typed_data';
 
 import 'package:reactphysics3d_dart/src/bindings/src/rp3d_ffi.g.dart';
-import 'package:reactphysics3d_dart/src/interfaces/physics_common.dart';
 import '../reactphysics3d_dart.dart';
-import 'interfaces/physics_world.dart';
-import 'interfaces/collision_shape.dart';
-import 'interfaces/rigid_body.dart';
-import 'interfaces/material.dart';
-import 'interfaces/transform.dart';
 import 'implementation/ffi_physics_common.dart';
-import 'implementation/ffi_material.dart';
 
 extension TransformStruct on Transform {
   /// Helper function to convert Transform to FFI Transform

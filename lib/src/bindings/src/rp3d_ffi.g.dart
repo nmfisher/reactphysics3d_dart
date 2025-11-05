@@ -835,6 +835,14 @@ external void rp3d_transform_inverse(
   ffi.Pointer<RP3D_Transform> outInverse,
 );
 
+@ffi.Native<
+    ffi.Void Function(
+        ffi.Pointer<RP3D_Transform>, ffi.Pointer<ffi.Float>)>(isLeaf: true)
+external void rp3d_transform_get_opengl_matrix(
+  ffi.Pointer<RP3D_Transform> t,
+  ffi.Pointer<ffi.Float> outMatrix,
+);
+
 /// ==================== DebugRenderer ====================
 @ffi.Native<
     ffi.Void Function(ffi.Pointer<RP3D_DebugRenderer>, ffi.UnsignedInt,

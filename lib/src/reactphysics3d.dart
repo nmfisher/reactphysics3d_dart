@@ -1,8 +1,12 @@
+import 'dart:ffi';
 import 'dart:typed_data';
+import 'package:ffi/ffi.dart';
+
 import 'package:vector_math/vector_math_64.dart';
 
 import 'ffi_reactphysics3d.dart' show FFIReactPhysics3D;
 import 'interfaces/interfaces.dart';
+import 'bindings/src/rp3d_ffi.g.dart' as bindings;
 
 export 'package:vector_math/vector_math_64.dart'
     show Vector3, Quaternion, Aabb3;
@@ -18,12 +22,34 @@ extension TransformIdentity on Transform {
   }
 }
 
-/// Body type enumeration
-enum BodyType {
-  STATIC,
-  KINEMATIC,
-  DYNAMIC,
+extension TransformExtension on Transform {
+  /// Get the OpenGL matrix representation of this transform
+  /// Returns a 4x4 column-major matrix as Float32List
+  Float32List getOpenGLMatrix() {
+    // Create FFI transform struct
+    final ffiTransform = Struct.create<bindings.RP3D_Transform>();
+    ffiTransform.position.x = position.x;
+    ffiTransform.position.y = position.y;
+    ffiTransform.position.z = position.z;
+    ffiTransform.orientation.x = orientation.x;
+    ffiTransform.orientation.y = orientation.y;
+    ffiTransform.orientation.z = orientation.z;
+    ffiTransform.orientation.w = orientation.w;
+
+    final matrixPointer = Float32List(16);
+
+    // Call the native function - cast to Pointer<Float> for the API
+    bindings.rp3d_transform_get_opengl_matrix(
+      ffiTransform.address,
+      matrixPointer.address.cast(),
+    );
+
+    return matrixPointer;
+  }
 }
+
+/// Body type enumeration
+enum BodyType { STATIC, KINEMATIC, DYNAMIC }
 
 /// Abstract interface for ReactPhysics3D physics engine
 abstract class ReactPhysics3D {
@@ -71,16 +97,23 @@ abstract class ReactPhysics3D {
   TriangleMesh createTriangleMesh(TriangleVertexArray triangleVertexArray);
 
   /// Create a convex mesh from triangle vertex array
-  ConvexMesh createConvexMeshFromTriangles(TriangleVertexArray triangleVertexArray);
+  ConvexMesh createConvexMeshFromTriangles(
+    TriangleVertexArray triangleVertexArray,
+  );
 
   /// Create a convex mesh from polygon vertex array
-  ConvexMesh createConvexMeshFromPolygons(PolygonVertexArray polygonVertexArray);
+  ConvexMesh createConvexMeshFromPolygons(
+    PolygonVertexArray polygonVertexArray,
+  );
 
   /// Create a convex mesh shape from convex mesh
   ConvexMeshShape createConvexMeshShape(ConvexMesh convexMesh);
 
   /// Create a concave mesh shape from triangle mesh
-  ConcaveMeshShape createConcaveMeshShape(TriangleMesh triangleMesh, {Vector3? scaling});
+  ConcaveMeshShape createConcaveMeshShape(
+    TriangleMesh triangleMesh, {
+    Vector3? scaling,
+  });
 
   RigidBody createRigidBody(
     PhysicsWorld world, {
@@ -88,7 +121,6 @@ abstract class ReactPhysics3D {
     BodyType type = BodyType.DYNAMIC,
     double mass = 1.0,
   });
-
 }
 
 /// Factory function to create the FFI implementation of ReactPhysics3D

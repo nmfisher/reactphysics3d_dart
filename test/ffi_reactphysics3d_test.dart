@@ -1031,6 +1031,78 @@ void main() {
         expect(rigidBody3, isNotNull);
         expect(rigidBody3, isA<RigidBody>());
       });
+
+      group('Transform utilities', () {
+        test('should get OpenGL matrix from identity transform', () {
+          final world = physics3D.createWorld();
+          final rigidBody = physics3D.createRigidBody(world);
+          rigidBody.setTransform((orientation: Quaternion.identity(), position:Vector3(1,2,3)));
+          // Get the transform from the rigid body (should be identity by default)
+          final transform = rigidBody.transform;
+
+          // Get the OpenGL matrix
+          final matrix = transform.getOpenGLMatrix();
+
+          expect(matrix, isNotNull);
+          expect(matrix, isA<Float32List>());
+          expect(matrix.length, equals(16));
+
+          expect(matrix[0], closeTo(1.0, 1e-6));  // m00
+          expect(matrix[1], closeTo(0.0, 1e-6));  // m01
+          expect(matrix[2], closeTo(0.0, 1e-6));  // m02
+          expect(matrix[3], closeTo(0.0, 1e-6));  // m03
+          expect(matrix[4], closeTo(0.0, 1e-6));  // m10
+          expect(matrix[5], closeTo(1.0, 1e-6));  // m11
+          expect(matrix[6], closeTo(0.0, 1e-6));  // m12
+          expect(matrix[7], closeTo(0.0, 1e-6));  // m13
+          expect(matrix[8], closeTo(0.0, 1e-6));  // m20
+          expect(matrix[9], closeTo(0.0, 1e-6));  // m21
+          expect(matrix[10], closeTo(1.0, 1e-6)); // m22
+          expect(matrix[11], closeTo(0.0, 1e-6)); // m23
+          expect(matrix[12], closeTo(1.0, 1e-6)); // m30
+          expect(matrix[13], closeTo(2.0, 1e-6)); // m31
+          expect(matrix[14], closeTo(3.0, 1e-6)); // m32
+          expect(matrix[15], closeTo(1.0, 1e-6)); // m33
+        });
+
+        test('should get OpenGL matrix from translated transform', () {
+          final world = physics3D.createWorld();
+          // Create a new transform with translation
+          final translatedTransform = (
+            position: Vector3(5.0, -3.0, 2.0),
+            orientation: Quaternion.identity()
+          );
+
+          final rigidBody = physics3D.createRigidBody(world, transform: translatedTransform);
+          final matrix = rigidBody.transform.getOpenGLMatrix();
+
+          expect(matrix, isNotNull);
+          expect(matrix.length, equals(16));
+
+          // For a translation-only transform, the rotation part should be identity
+          // and the translation should be in the last column (m30, m31, m32)
+          expect(matrix[0], closeTo(1.0, 1e-6));  // m00
+          expect(matrix[5], closeTo(1.0, 1e-6));  // m11
+          expect(matrix[10], closeTo(1.0, 1e-6)); // m22
+          expect(matrix[15], closeTo(1.0, 1e-6)); // m33
+
+          // Translation should be in m30, m31, m32 (column-major order)
+          expect(matrix[12], closeTo(5.0, 1e-6));  // m30
+          expect(matrix[13], closeTo(-3.0, 1e-6)); // m31
+          expect(matrix[14], closeTo(2.0, 1e-6));  // m32
+
+          // All other elements should be zero
+          expect(matrix[1], closeTo(0.0, 1e-6));  // m01
+          expect(matrix[2], closeTo(0.0, 1e-6));  // m02
+          expect(matrix[3], closeTo(0.0, 1e-6));  // m03
+          expect(matrix[4], closeTo(0.0, 1e-6));  // m10
+          expect(matrix[6], closeTo(0.0, 1e-6));  // m12
+          expect(matrix[7], closeTo(0.0, 1e-6));  // m13
+          expect(matrix[8], closeTo(0.0, 1e-6));  // m20
+          expect(matrix[9], closeTo(0.0, 1e-6));  // m21
+          expect(matrix[11], closeTo(0.0, 1e-6)); // m23
+        });
+      });
     });
 
     group('PhysicsWorld methods', () {

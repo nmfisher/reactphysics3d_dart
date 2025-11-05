@@ -392,6 +392,7 @@ EMSCRIPTEN_KEEPALIVE void rp3d_quaternion_normalize(RP3D_Quaternion* q);
 // Transform
 EMSCRIPTEN_KEEPALIVE void rp3d_transform_identity(RP3D_Transform* t);
 EMSCRIPTEN_KEEPALIVE void rp3d_transform_inverse(const RP3D_Transform* t, RP3D_Transform* outInverse);
+EMSCRIPTEN_KEEPALIVE void rp3d_transform_get_opengl_matrix(const RP3D_Transform* t, float* outMatrix);
 
 // ==================== DebugRenderer ====================
 
