@@ -1,26 +1,25 @@
-import 'dart:ffi' as ffi;
-import '../bindings/src/rp3d_ffi.g.dart' as ffi_gen;
+import '../bindings/src/bindings.dart' as ffi;
 import 'ffi_material.dart';
 import '../../reactphysics3d_dart.dart';
 
 /// FFI implementation of Collider
 class FFICollider implements Collider {
-  final ffi.Pointer<ffi_gen.RP3D_Collider> _ptr;
+  final ffi.Pointer<ffi.RP3D_Collider> _ptr;
 
   FFICollider(this._ptr);
 
   @override
-  ffi.Pointer<ffi_gen.RP3D_Collider> get handle => _ptr;
+  ffi.Pointer<ffi.RP3D_Collider> get handle => _ptr;
 
   @override
   Material get material {
-    final materialPtr = ffi_gen.rp3d_collider_get_material(_ptr);
+    final materialPtr = ffi.rp3d_collider_get_material(_ptr);
     return FFIMaterial(materialPtr);
   }
 
   @override
   set material(Material value) {
-    ffi_gen.rp3d_collider_set_material(_ptr, value.handle);
+    ffi.rp3d_collider_set_material(_ptr, value.handle);
   }
 
   @override
@@ -55,11 +54,11 @@ class FFICollider implements Collider {
 
   @override
   void setAsTrigger(bool isTrigger) {
-    ffi_gen.rp3d_collider_set_is_trigger(_ptr, isTrigger ? 1 : 0);
+    ffi.rp3d_collider_set_is_trigger(_ptr, isTrigger ? 1 : 0);
   }
 
   @override
   bool get isTrigger {
-    return ffi_gen.rp3d_collider_get_is_trigger(_ptr) != 0;
+    return ffi.rp3d_collider_get_is_trigger(_ptr) != 0;
   }
 }

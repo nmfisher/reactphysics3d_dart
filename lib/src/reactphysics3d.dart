@@ -1,12 +1,8 @@
-import 'dart:ffi';
 import 'dart:typed_data';
-import 'package:ffi/ffi.dart';
-
 import 'package:vector_math/vector_math_64.dart';
-
 import 'ffi_reactphysics3d.dart' show FFIReactPhysics3D;
 import 'interfaces/interfaces.dart';
-import 'bindings/src/rp3d_ffi.g.dart' as bindings;
+import 'bindings/src/bindings.dart' as bindings;
 
 export 'package:vector_math/vector_math_64.dart'
     show Vector3, Quaternion, Aabb3;
@@ -27,7 +23,7 @@ extension TransformExtension on Transform {
   /// Returns a 4x4 column-major matrix as Float32List
   Float32List getOpenGLMatrix() {
     // Create FFI transform struct
-    final ffiTransform = Struct.create<bindings.RP3D_Transform>();
+    final ffiTransform = bindings.Struct.create<bindings.RP3D_Transform>();
     ffiTransform.position.x = position.x;
     ffiTransform.position.y = position.y;
     ffiTransform.position.z = position.z;

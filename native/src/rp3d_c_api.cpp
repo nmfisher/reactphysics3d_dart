@@ -905,13 +905,9 @@ const uint32_t* rp3d_triangle_vertex_array_get_indices_start(const RP3D_Triangle
 void rp3d_triangle_vertex_array_get_triangle_vertices_indices(
     const RP3D_TriangleVertexArray* triangleVertexArray,
     uint32_t triangleIndex,
-    uint32_t* outV1Index,
-    uint32_t* outV2Index,
-    uint32_t* outV3Index) {
+    uint32_t* out) {
     const TriangleVertexArray* tva = reinterpret_cast<const TriangleVertexArray*>(triangleVertexArray);
-    if (tva && outV1Index && outV2Index && outV3Index) {
-        tva->getTriangleVerticesIndices(triangleIndex, *outV1Index, *outV2Index, *outV3Index);
-    }
+    tva->getTriangleVerticesIndices(triangleIndex, out[0], out[1], out[2]);
 }
 
 // ==================== PolygonVertexArray ====================
@@ -991,13 +987,9 @@ void rp3d_triangle_mesh_get_vertex(
 void rp3d_triangle_mesh_get_triangle_vertices_indices(
     const RP3D_TriangleMesh* triangleMesh,
     uint32_t triangleIndex,
-    uint32_t* outV1Index,
-    uint32_t* outV2Index,
-    uint32_t* outV3Index) {
+    uint32_t *indices) {
     const TriangleMesh* tm = reinterpret_cast<const TriangleMesh*>(triangleMesh);
-    if (tm && outV1Index && outV2Index && outV3Index) {
-        tm->getTriangleVerticesIndices(triangleIndex, *outV1Index, *outV2Index, *outV3Index);
-    }
+    tm->getTriangleVerticesIndices(triangleIndex, indices[0], indices[1], indices[2]);
 }
 
 // ==================== ConvexMesh ====================

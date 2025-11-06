@@ -1,32 +1,26 @@
-import 'dart:ffi' as ffi;
 import 'dart:typed_data';
-import 'package:ffi/ffi.dart' as ffi_mem;
 import 'package:reactphysics3d_dart/src/implementation/ffi_physics_world.dart';
-
 import '../../reactphysics3d_dart.dart';
-import '../bindings/src/rp3d_ffi.g.dart' as ffi_gen;
-import '../interfaces/physics_common.dart';
-import '../interfaces/physics_world.dart';
-import '../interfaces/collision_shape.dart';
+import '../bindings/src/bindings.dart';
 import 'ffi_collision_shape.dart';
 
 /// Concrete implementation of physics common operations
 class FFIPhysicsCommon implements PhysicsCommon {
-  ffi.Pointer<ffi_gen.RP3D_PhysicsCommon>? _handle;
+  Pointer<RP3D_PhysicsCommon>? _handle;
 
   @override
-  ffi.Pointer<ffi_gen.RP3D_PhysicsCommon> get handle => _handle!;
+  Pointer<RP3D_PhysicsCommon> get handle => _handle!;
 
   FFIPhysicsCommon() {
-    _handle = ffi_gen.rp3d_physics_common_create();
-    if (_handle == ffi.nullptr) {
+    _handle = rp3d_physics_common_create();
+    if (_handle == nullptr) {
       throw Exception('Failed to create PhysicsCommon');
     }
   }
 
   void dispose() {
     if (_handle != null) {
-      ffi_gen.rp3d_physics_common_destroy(_handle!);
+      rp3d_physics_common_destroy(_handle!);
       _handle = null;
     }
   }
@@ -34,10 +28,8 @@ class FFIPhysicsCommon implements PhysicsCommon {
   @override
   PhysicsWorld createPhysicsWorld() {
     _checkDisposed();
-    final worldHandle = ffi_gen.rp3d_physics_common_create_physics_world(
-      _handle!,
-    );
-    if (worldHandle == ffi.nullptr) {
+    final worldHandle = rp3d_physics_common_create_physics_world(_handle!);
+    if (worldHandle == nullptr) {
       throw Exception('Failed to create PhysicsWorld');
     }
     return FFIPhysicsWorld(worldHandle);
@@ -47,28 +39,25 @@ class FFIPhysicsCommon implements PhysicsCommon {
   BoxShape createBoxShape(Vector3 extent) {
     _checkDisposed();
     final extentsPtr = _toFFIVector3(extent);
-    try {
-      final shapeHandle = ffi_gen.rp3d_physics_common_create_box_shape(
-        _handle!,
-        extentsPtr,
-      );
-      if (shapeHandle == ffi.nullptr) {
-        throw Exception('Failed to create BoxShape');
-      }
-      return FFIBoxShape.internal(shapeHandle, this);
-    } finally {
-      ffi_mem.calloc.free(extentsPtr);
+
+    final shapeHandle = rp3d_physics_common_create_box_shape(
+      _handle!,
+      extentsPtr.address,
+    );
+    if (shapeHandle == nullptr) {
+      throw Exception('Failed to create BoxShape');
     }
+    return FFIBoxShape.internal(shapeHandle, this);
   }
 
   @override
   SphereShape createSphereShape(double radius) {
     _checkDisposed();
-    final shapeHandle = ffi_gen.rp3d_physics_common_create_sphere_shape(
+    final shapeHandle = rp3d_physics_common_create_sphere_shape(
       _handle!,
       radius,
     );
-    if (shapeHandle == ffi.nullptr) {
+    if (shapeHandle == nullptr) {
       throw Exception('Failed to create SphereShape');
     }
     return FFISphereShape.internal(shapeHandle, this);
@@ -77,12 +66,12 @@ class FFIPhysicsCommon implements PhysicsCommon {
   @override
   CapsuleShape createCapsuleShape(double radius, double height) {
     _checkDisposed();
-    final shapeHandle = ffi_gen.rp3d_physics_common_create_capsule_shape(
+    final shapeHandle = rp3d_physics_common_create_capsule_shape(
       _handle!,
       radius,
       height,
     );
-    if (shapeHandle == ffi.nullptr) {
+    if (shapeHandle == nullptr) {
       throw Exception('Failed to create CapsuleShape');
     }
     return FFICapsuleShape.internal(shapeHandle, this);
@@ -107,38 +96,33 @@ class FFIPhysicsCommon implements PhysicsCommon {
     }
 
     // Convert height list to float array
-    final heightsPtr = ffi_mem.calloc<ffi.Float>(heights.length);
-    for (int i = 0; i < heights.length; i++) {
-      heightsPtr[i] = heights[i];
-    }
+    final heightsPtr = makeFloat32List(heights.length);
+    heightsPtr.setRange(0, heights.length, heights);
+    
 
-    try {
-      final heightFieldHandle = ffi_gen.rp3d_physics_common_create_height_field(
-        _handle!,
-        rows,
-        columns,
-        heightsPtr,
-        minHeight,
-        maxHeight,
-      );
-      if (heightFieldHandle == ffi.nullptr) {
-        throw Exception('Failed to create HeightField');
-      }
-      return FFIHeightField.internal(heightFieldHandle, this);
-    } finally {
-      ffi_mem.calloc.free(heightsPtr);
+    final heightFieldHandle = rp3d_physics_common_create_height_field(
+      _handle!,
+      rows,
+      columns,
+      heightsPtr.address,
+      minHeight,
+      maxHeight,
+    );
+    if (heightFieldHandle == nullptr) {
+      throw Exception('Failed to create HeightField');
     }
+    return FFIHeightField.internal(heightFieldHandle, this);
   }
 
   @override
   HeightFieldShape createHeightFieldShape(HeightField heightField) {
     _checkDisposed();
     final ffiHeightField = heightField as FFIHeightField;
-    final shapeHandle = ffi_gen.rp3d_physics_common_create_height_field_shape(
+    final shapeHandle = rp3d_physics_common_create_height_field_shape(
       _handle!,
       ffiHeightField.handle,
     );
-    if (shapeHandle == ffi.nullptr) {
+    if (shapeHandle == nullptr) {
       throw Exception('Failed to create HeightFieldShape');
     }
     return FFIHeightFieldShape.internal(shapeHandle, this);
@@ -151,7 +135,7 @@ class FFIPhysicsCommon implements PhysicsCommon {
   }
 
   /// Internal getter for shape classes to call destroy methods
-  ffi.Pointer<ffi_gen.RP3D_PhysicsCommon>? get handleForShapes => _handle;
+  Pointer<RP3D_PhysicsCommon>? get handleForShapes => _handle;
 
   @override
   TriangleVertexArray createTriangleVertexArray({
@@ -181,34 +165,33 @@ class FFIPhysicsCommon implements PhysicsCommon {
     }
 
     // Allocate vertex data
-    final verticesPtr = ffi_mem.calloc<ffi.Float>(
-      verticesCount * verticesStride ~/ 4,
-    );
+    final verticesPtr = makeFloat32List(verticesCount * verticesStride ~/ 4);
     for (int i = 0; i < vertices.length; i++) {
       verticesPtr[i] = vertices[i];
     }
 
     // Allocate index data
-    final indicesPtr = ffi_mem.calloc<ffi.Uint32>(indicesCount);
+    final indicesPtr = makeInt32List(indicesCount);
     for (int i = 0; i < indices.length; i++) {
       indicesPtr[i] = indices[i];
     }
 
-    final triangleArrayHandle = ffi_gen.rp3d_triangle_vertex_array_create(
+    final triangleArrayHandle = rp3d_triangle_vertex_array_create(
       verticesCount,
-      verticesPtr,
+      verticesPtr.address,
       verticesStride,
       indicesCount,
-      indicesPtr,
+      indicesPtr.address.cast(),
       indicesStride,
     );
-    if (triangleArrayHandle == ffi.nullptr) {
-      // Clean up allocated memory if array creation failed
-      ffi_mem.calloc.free(verticesPtr);
-      ffi_mem.calloc.free(indicesPtr);
+    if (triangleArrayHandle == nullptr) {
       throw Exception('Failed to create TriangleVertexArray');
     }
-    return FFITriangleVertexArray.internal(triangleArrayHandle, verticesPtr, indicesPtr);
+    return FFITriangleVertexArray.internal(
+      triangleArrayHandle,
+      verticesPtr,
+      indicesPtr,
+    );
   }
 
   @override
@@ -234,11 +217,11 @@ class FFIPhysicsCommon implements PhysicsCommon {
   TriangleMesh createTriangleMesh(TriangleVertexArray triangleVertexArray) {
     _checkDisposed();
     final ffiTriangleArray = triangleVertexArray as FFITriangleVertexArray;
-    final triangleMeshHandle = ffi_gen.rp3d_physics_common_create_triangle_mesh(
+    final triangleMeshHandle = rp3d_physics_common_create_triangle_mesh(
       _handle!,
       ffiTriangleArray.handle,
     );
-    if (triangleMeshHandle == ffi.nullptr) {
+    if (triangleMeshHandle == nullptr) {
       throw Exception('Failed to create TriangleMesh');
     }
     return FFITriangleMesh.internal(triangleMeshHandle, this);
@@ -250,12 +233,12 @@ class FFIPhysicsCommon implements PhysicsCommon {
   ) {
     _checkDisposed();
     final ffiTriangleArray = triangleVertexArray as FFITriangleVertexArray;
-    final convexMeshHandle = ffi_gen
-        .rp3d_physics_common_create_convex_mesh_from_triangles(
+    final convexMeshHandle =
+        rp3d_physics_common_create_convex_mesh_from_triangles(
           _handle!,
           ffiTriangleArray.handle,
         );
-    if (convexMeshHandle == ffi.nullptr) {
+    if (convexMeshHandle == nullptr) {
       throw Exception(
         'Failed to create ConvexMesh from triangles - invalid vertex data or algorithm failed',
       );
@@ -278,12 +261,11 @@ class FFIPhysicsCommon implements PhysicsCommon {
   ConvexMeshShape createConvexMeshShape(ConvexMesh convexMesh) {
     _checkDisposed();
     final ffiConvexMesh = convexMesh as FFIConvexMesh;
-    final convexMeshShapeHandle = ffi_gen
-        .rp3d_physics_common_create_convex_mesh_shape(
-          _handle!,
-          ffiConvexMesh.handle,
-        );
-    if (convexMeshShapeHandle == ffi.nullptr) {
+    final convexMeshShapeHandle = rp3d_physics_common_create_convex_mesh_shape(
+      _handle!,
+      ffiConvexMesh.handle,
+    );
+    if (convexMeshShapeHandle == nullptr) {
       throw Exception('Failed to create ConvexMeshShape');
     }
     return FFIConvexMeshShape.internal(convexMeshShapeHandle, this);
@@ -298,28 +280,25 @@ class FFIPhysicsCommon implements PhysicsCommon {
     final ffiTriangleMesh = triangleMesh as FFITriangleMesh;
 
     final scalePtr = _toFFIVector3(scaling ?? Vector3.all(1.0));
-    try {
-      final concaveMeshShapeHandle = ffi_gen
-          .rp3d_physics_common_create_concave_mesh_shape(
-            _handle!,
-            ffiTriangleMesh.handle,
-            scalePtr,
-          );
-      if (concaveMeshShapeHandle == ffi.nullptr) {
-        throw Exception('Failed to create ConcaveMeshShape');
-      }
-      return FFIConcaveMeshShape.internal(concaveMeshShapeHandle, this);
-    } finally {
-      ffi_mem.calloc.free(scalePtr);
+
+    final concaveMeshShapeHandle =
+        rp3d_physics_common_create_concave_mesh_shape(
+          _handle!,
+          ffiTriangleMesh.handle,
+          scalePtr.address,
+        );
+    if (concaveMeshShapeHandle == nullptr) {
+      throw Exception('Failed to create ConcaveMeshShape');
     }
+    return FFIConcaveMeshShape.internal(concaveMeshShapeHandle, this);
   }
 
   /// Helper function to convert Vector3 to FFI Vector3
-  ffi.Pointer<ffi_gen.RP3D_Vector3> _toFFIVector3(Vector3 v) {
-    final ptr = ffi_mem.calloc<ffi_gen.RP3D_Vector3>();
-    ptr.ref.x = v.x;
-    ptr.ref.y = v.y;
-    ptr.ref.z = v.z;
+  RP3D_Vector3 _toFFIVector3(Vector3 v) {
+    final ptr = Struct.create<RP3D_Vector3>();
+    ptr.x = v.x;
+    ptr.y = v.y;
+    ptr.z = v.z;
     return ptr;
   }
 }

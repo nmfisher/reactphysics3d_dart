@@ -1,10 +1,10 @@
-import 'dart:ffi' as ffi;
+import '../bindings/src/bindings.dart' as ffi;
 import 'base_rp3d_type.dart';
 
-import '../bindings/src/rp3d_ffi.g.dart' as ffi_gen;
+import '../bindings/src/bindings.dart' as ffi;
 
 /// Interface for physics materials
-abstract class Material extends BaseRP3DType<ffi.Pointer<ffi_gen.RP3D_Material>> {
+abstract class Material extends BaseRP3DType<ffi.Pointer<ffi.RP3D_Material>> {
   /// Get the bounciness coefficient (0 = no bounce, 1 = perfect bounce)
   double get bounciness;
 

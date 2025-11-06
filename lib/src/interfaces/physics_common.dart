@@ -1,14 +1,9 @@
-import 'dart:ffi' as ffi;
 import 'dart:typed_data';
 import '../../reactphysics3d_dart.dart';
-import 'collision_shape.dart';
-import 'physics_world.dart';
-import 'base_rp3d_type.dart';
-
-import '../bindings/src/rp3d_ffi.g.dart' as ffi_gen;
+import '../bindings/src/bindings.dart' as ffi;
 
 /// Interface for physics common operations
-abstract class PhysicsCommon extends BaseRP3DType<ffi.Pointer<ffi_gen.RP3D_PhysicsCommon>> {
+abstract class PhysicsCommon extends BaseRP3DType<ffi.Pointer<ffi.RP3D_PhysicsCommon>> {
   /// Create a new physics world
   PhysicsWorld createPhysicsWorld();
 

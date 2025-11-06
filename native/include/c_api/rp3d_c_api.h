@@ -193,9 +193,7 @@ EMSCRIPTEN_KEEPALIVE const uint32_t* rp3d_triangle_vertex_array_get_indices_star
 EMSCRIPTEN_KEEPALIVE void rp3d_triangle_vertex_array_get_triangle_vertices_indices(
     const RP3D_TriangleVertexArray* triangleVertexArray,
     uint32_t triangleIndex,
-    uint32_t* outV1Index,
-    uint32_t* outV2Index,
-    uint32_t* outV3Index
+    uint32_t* out
 );
 
 // PolygonVertexArray creation/destruction
@@ -229,9 +227,7 @@ EMSCRIPTEN_KEEPALIVE void rp3d_triangle_mesh_get_vertex(
 EMSCRIPTEN_KEEPALIVE void rp3d_triangle_mesh_get_triangle_vertices_indices(
     const RP3D_TriangleMesh* triangleMesh,
     uint32_t triangleIndex,
-    uint32_t* outV1Index,
-    uint32_t* outV2Index,
-    uint32_t* outV3Index
+    uint32_t *indices
 );
 
 // ConvexMesh creation/destruction

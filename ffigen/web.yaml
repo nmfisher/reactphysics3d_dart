@@ -7,7 +7,7 @@ headers:
 compiler-opts:
   - "-D__EMSCRIPTEN__"
 structs:
-  dependency-only: opaque
+  dependency-only: full
   exclude:
     - '.*'
 unions:

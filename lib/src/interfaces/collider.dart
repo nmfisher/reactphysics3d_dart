@@ -1,14 +1,9 @@
-import 'dart:ffi' as ffi;
+import '../bindings/src/bindings.dart' as ffi;
 import '../../reactphysics3d_dart.dart';
-import 'material.dart';
-import 'collision_shape.dart';
-import 'transform.dart';
-import 'base_rp3d_type.dart';
-
-import '../bindings/src/rp3d_ffi.g.dart' as ffi_gen;
+import '../bindings/src/bindings.dart' as ffi;
 
 /// Interface for colliders
-abstract class Collider extends BaseRP3DType<ffi.Pointer<ffi_gen.RP3D_Collider>> {
+abstract class Collider extends BaseRP3DType<ffi.Pointer<ffi.RP3D_Collider>> {
   /// Get the material
   Material get material;
 

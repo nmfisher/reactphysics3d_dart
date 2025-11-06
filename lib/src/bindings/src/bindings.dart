@@ -6,7 +6,6 @@
 /// - Unsupported platforms: Uses stub implementation
 
 // Export factory function from appropriate implementation
-export 'rp3d_stub.dart'
-    if (dart.library.ffi) 'rp3d_ffi.g.dart'
-    if (dart.library.js_interop) 'rp3d_js_interop.g.dart'
-    show rp3d_physics_common_create;
+export 'ffi.dart'
+    if (dart.library.ffi) 'ffi.dart'
+    if (dart.library.js_interop) 'rp3d_js_interop.g.dart';

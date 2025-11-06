@@ -156,18 +156,12 @@ external ffi.Pointer<ffi.Uint32> rp3d_triangle_vertex_array_get_indices_start(
 );
 
 @ffi.Native<
-    ffi.Void Function(
-        ffi.Pointer<RP3D_TriangleVertexArray>,
-        ffi.Uint32,
-        ffi.Pointer<ffi.Uint32>,
-        ffi.Pointer<ffi.Uint32>,
+    ffi.Void Function(ffi.Pointer<RP3D_TriangleVertexArray>, ffi.Uint32,
         ffi.Pointer<ffi.Uint32>)>(isLeaf: true)
 external void rp3d_triangle_vertex_array_get_triangle_vertices_indices(
   ffi.Pointer<RP3D_TriangleVertexArray> triangleVertexArray,
   int triangleIndex,
-  ffi.Pointer<ffi.Uint32> outV1Index,
-  ffi.Pointer<ffi.Uint32> outV2Index,
-  ffi.Pointer<ffi.Uint32> outV3Index,
+  ffi.Pointer<ffi.Uint32> out,
 );
 
 /// PolygonVertexArray creation/destruction
@@ -237,18 +231,12 @@ external void rp3d_triangle_mesh_get_vertex(
 );
 
 @ffi.Native<
-    ffi.Void Function(
-        ffi.Pointer<RP3D_TriangleMesh>,
-        ffi.Uint32,
-        ffi.Pointer<ffi.Uint32>,
-        ffi.Pointer<ffi.Uint32>,
+    ffi.Void Function(ffi.Pointer<RP3D_TriangleMesh>, ffi.Uint32,
         ffi.Pointer<ffi.Uint32>)>(isLeaf: true)
 external void rp3d_triangle_mesh_get_triangle_vertices_indices(
   ffi.Pointer<RP3D_TriangleMesh> triangleMesh,
   int triangleIndex,
-  ffi.Pointer<ffi.Uint32> outV1Index,
-  ffi.Pointer<ffi.Uint32> outV2Index,
-  ffi.Pointer<ffi.Uint32> outV3Index,
+  ffi.Pointer<ffi.Uint32> indices,
 );
 
 /// ConvexMesh creation/destruction

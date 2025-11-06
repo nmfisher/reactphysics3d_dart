@@ -1,12 +1,11 @@
-import 'dart:ffi' as ffi;
 
 import '../../reactphysics3d_dart.dart';
-
-import '../bindings/src/rp3d_ffi.g.dart' as ffi_gen;
+import '../bindings/src/bindings.dart' as ffi;
+import '../bindings/src/bindings.dart';
 
 /// Interface for physics simulation world
 abstract class PhysicsWorld
-    extends BaseRP3DType<ffi.Pointer<ffi_gen.RP3D_PhysicsWorld>> {
+    extends BaseRP3DType<ffi.Pointer<ffi.RP3D_PhysicsWorld>> {
   /// Update the physics simulation
   void update(double timeStep);
 

@@ -5,7 +5,6 @@ import 'package:native_toolchain_c/native_toolchain_c.dart';
 import 'package:path/path.dart' as path;
 import 'log.dart';
 
-
 void main(List<String> args) async {
 
   await build(args, (BuildInput input, BuildOutputBuilder output) async {
@@ -33,17 +32,10 @@ targetOS: $targetOS
 """);
 
     // Source files
-    var sources = [
-      path.join(
-        pkgRootFilePath,
-        "native/src/rp3d_c_api.cpp",
-      ),
-    ];
+    var sources = [path.join(pkgRootFilePath, "native/src/rp3d_c_api.cpp")];
 
     // Include directories - need both our C API headers and ReactPhysics3D headers
-    final includeDirs = [
-      path.join(pkgRootFilePath, "native/include"),
-    ];
+    final includeDirs = [path.join(pkgRootFilePath, "native/include")];
 
     // Library directories
     final libDirs = [
@@ -125,8 +117,12 @@ targetOS: $targetOS
 
       logger.info("Running CBuilder...");
 
-      output.metadata.addAll({"includeDirs":includeDirs.map((dir) => path.join(pkgRootFilePath,dir)).toList()});
-      output.metadata.addAll({"outputDir":outputDirectory.path});
+      output.metadata.addAll({
+        "includeDirs": includeDirs
+            .map((dir) => path.join(pkgRootFilePath, dir))
+            .toList(),
+      });
+      output.metadata.addAll({"outputDir": outputDirectory.path});
 
       await cbuilder.run(input: input, output: output, logger: logger);
       logger.info("Build completed successfully");

@@ -1,14 +1,13 @@
-import 'dart:ffi' as ffi;
+import '../bindings/src/bindings.dart';
+import '../bindings/src/bindings.dart' as ffi;
 import 'package:vector_math/vector_math_64.dart';
 import 'base_rp3d_type.dart';
 
-import '../bindings/src/rp3d_ffi.g.dart' as ffi_gen;
-
 /// Interface for collision shapes
-abstract class CollisionShape extends BaseRP3DType<ffi.Pointer<ffi_gen.RP3D_CollisionShape>> {
+abstract class CollisionShape
+    extends BaseRP3DType<Pointer<RP3D_CollisionShape>> {
   /// Dispose of the collision shape
   void dispose();
-
 }
 
 /// Interface for box collision shapes
@@ -21,10 +20,10 @@ abstract class SphereShape extends CollisionShape {}
 abstract class CapsuleShape extends CollisionShape {}
 
 /// Interface for height field data
-abstract class HeightField extends BaseRP3DType<ffi.Pointer<ffi_gen.RP3D_HeightField>> {
+abstract class HeightField
+    extends BaseRP3DType<ffi.Pointer<ffi.RP3D_HeightField>> {
   /// Dispose of the height field
   void dispose();
-  
 }
 
 /// Interface for height field collision shapes
@@ -37,7 +36,8 @@ abstract class HeightFieldShape extends CollisionShape {
 }
 
 /// Interface for triangle vertex array data
-abstract class TriangleVertexArray extends BaseRP3DType<ffi.Pointer<ffi_gen.RP3D_TriangleVertexArray>> {
+abstract class TriangleVertexArray
+    extends BaseRP3DType<ffi.Pointer<ffi.RP3D_TriangleVertexArray>> {
   /// Dispose of the triangle vertex array
   void dispose();
 
@@ -55,13 +55,15 @@ abstract class TriangleVertexArray extends BaseRP3DType<ffi.Pointer<ffi_gen.RP3D
 }
 
 /// Interface for polygon vertex array data
-abstract class PolygonVertexArray extends BaseRP3DType<ffi.Pointer<ffi_gen.RP3D_PolygonVertexArray>> {
+abstract class PolygonVertexArray
+    extends BaseRP3DType<ffi.Pointer<ffi.RP3D_PolygonVertexArray>> {
   /// Dispose of the polygon vertex array
   void dispose();
 }
 
 /// Interface for triangle mesh data
-abstract class TriangleMesh extends BaseRP3DType<ffi.Pointer<ffi_gen.RP3D_TriangleMesh>> {
+abstract class TriangleMesh
+    extends BaseRP3DType<ffi.Pointer<ffi.RP3D_TriangleMesh>> {
   /// Dispose of the triangle mesh
   void dispose();
 
@@ -79,7 +81,8 @@ abstract class TriangleMesh extends BaseRP3DType<ffi.Pointer<ffi_gen.RP3D_Triang
 }
 
 /// Interface for convex mesh data
-abstract class ConvexMesh extends BaseRP3DType<ffi.Pointer<ffi_gen.RP3D_ConvexMesh>> {
+abstract class ConvexMesh
+    extends BaseRP3DType<ffi.Pointer<ffi.RP3D_ConvexMesh>> {
   /// Dispose of the convex mesh
   void dispose();
 }

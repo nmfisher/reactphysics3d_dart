@@ -1,32 +1,28 @@
-import 'dart:ffi' as ffi;
-import 'dart:ffi';
-import 'package:ffi/ffi.dart' as ffi_mem;
+import '../bindings/src/bindings.dart';
 import 'package:vector_math/vector_math.dart' hide Vector3;
-
 import '../../reactphysics3d_dart.dart';
-import '../bindings/src/rp3d_ffi.g.dart' as ffi_gen;
 import '../ffi_reactphysics3d.dart';
 
 import 'ffi_collider.dart';
 
 /// FFI implementation of RigidBody
 class FFIRigidBody implements RigidBody {
-  final ffi.Pointer<ffi_gen.RP3D_RigidBody> _ptr;
+  final Pointer<RP3D_RigidBody> _ptr;
 
   FFIRigidBody(this._ptr);
 
   @override
-  ffi.Pointer<ffi_gen.RP3D_RigidBody> get handle => _ptr;
+  Pointer<RP3D_RigidBody> get handle => _ptr;
 
   @override
   BodyType get type {
-    final typeInt = ffi_gen.rp3d_body_get_type(_ptr);
+    final typeInt = rp3d_body_get_type(_ptr);
     switch (typeInt) {
-      case ffi_gen.RP3D_BodyType.RP3D_BODY_TYPE_STATIC:
+      case RP3D_BodyType.RP3D_BODY_TYPE_STATIC:
         return BodyType.STATIC;
-      case ffi_gen.RP3D_BodyType.RP3D_BODY_TYPE_KINEMATIC:
+      case RP3D_BodyType.RP3D_BODY_TYPE_KINEMATIC:
         return BodyType.KINEMATIC;
-      case ffi_gen.RP3D_BodyType.RP3D_BODY_TYPE_DYNAMIC:
+      case RP3D_BodyType.RP3D_BODY_TYPE_DYNAMIC:
         return BodyType.DYNAMIC;
       default:
         return BodyType.DYNAMIC;
@@ -38,22 +34,22 @@ class FFIRigidBody implements RigidBody {
     int typeInt;
     switch (value) {
       case BodyType.STATIC:
-        typeInt = ffi_gen.RP3D_BodyType.RP3D_BODY_TYPE_STATIC;
+        typeInt = RP3D_BodyType.RP3D_BODY_TYPE_STATIC;
         break;
       case BodyType.KINEMATIC:
-        typeInt = ffi_gen.RP3D_BodyType.RP3D_BODY_TYPE_KINEMATIC;
+        typeInt = RP3D_BodyType.RP3D_BODY_TYPE_KINEMATIC;
         break;
       case BodyType.DYNAMIC:
-        typeInt = ffi_gen.RP3D_BodyType.RP3D_BODY_TYPE_DYNAMIC;
+        typeInt = RP3D_BodyType.RP3D_BODY_TYPE_DYNAMIC;
         break;
     }
-    ffi_gen.rp3d_body_set_type(_ptr, typeInt);
+    rp3d_body_set_type(_ptr, typeInt);
   }
 
   @override
   Transform get transform {
-    final out = Struct.create<ffi_gen.RP3D_Transform>();
-    ffi_gen.rp3d_body_get_transform(_ptr, out.address);
+    final out = Struct.create<RP3D_Transform>();
+    rp3d_body_get_transform(_ptr, out.address);
     return out.toDart();
   }
 
@@ -64,7 +60,7 @@ class FFIRigidBody implements RigidBody {
 
   @override
   void setTransform(Transform value) {
-    ffi_gen.rp3d_body_set_transform(
+    rp3d_body_set_transform(
       _ptr,
       value.position.x,
       value.position.y,
@@ -77,30 +73,23 @@ class FFIRigidBody implements RigidBody {
   }
 
   @override
-  double get mass => ffi_gen.rp3d_body_get_mass(_ptr);
+  double get mass => rp3d_body_get_mass(_ptr);
 
   @override
-  set mass(double value) => ffi_gen.rp3d_body_set_mass(_ptr, value);
+  set mass(double value) => rp3d_body_set_mass(_ptr, value);
 
   @override
   Vector3 get linearVelocity {
-    final outPtr = ffi_mem.calloc<ffi_gen.RP3D_Vector3>();
-    try {
-      ffi_gen.rp3d_body_get_linear_velocity(_ptr, outPtr);
-      return Vector3(outPtr.ref.x, outPtr.ref.y, outPtr.ref.z);
-    } finally {
-      ffi_mem.calloc.free(outPtr);
-    }
+    final outPtr = Struct.create<RP3D_Vector3>();
+    rp3d_body_get_linear_velocity(_ptr, outPtr.address);
+    return Vector3(outPtr.x, outPtr.y, outPtr.z);
   }
 
   @override
   set linearVelocity(Vector3 value) {
     final velocityPtr = _toFFIVector3(value);
-    try {
-      ffi_gen.rp3d_body_set_linear_velocity(_ptr, velocityPtr);
-    } finally {
-      ffi_mem.calloc.free(velocityPtr);
-    }
+
+    rp3d_body_set_linear_velocity(_ptr, velocityPtr.address);
   }
 
   @override
@@ -114,11 +103,7 @@ class FFIRigidBody implements RigidBody {
   @override
   void applyForce(Vector3 force, [Vector3? point]) {
     final forcePtr = _toFFIVector3(force);
-    try {
-      ffi_gen.rp3d_body_apply_force(_ptr, forcePtr);
-    } finally {
-      ffi_mem.calloc.free(forcePtr);
-    }
+    rp3d_body_apply_force(_ptr, forcePtr.address);
   }
 
   @override
@@ -132,16 +117,13 @@ class FFIRigidBody implements RigidBody {
   }
 
   @override
-  Collider addCollider(
-    CollisionShape shape, {
-    Transform? transform,
-  }) {
+  Collider addCollider(CollisionShape shape, {Transform? transform}) {
     // Default transform if not provided
     final colliderTransform = transform ?? TransformIdentity.identity();
 
     // Add collider to the rigid body
     final transformStruct = colliderTransform.toStruct();
-    final colliderPtr = ffi_gen.rp3d_body_add_collider(
+    final colliderPtr = rp3d_body_add_collider(
       _ptr,
       shape.handle,
       transformStruct.address,
@@ -160,7 +142,7 @@ class FFIRigidBody implements RigidBody {
 
   @override
   bool get isGravityEnabled {
-    return ffi_gen.rp3d_body_is_gravity_enabled(_ptr) != 0;
+    return rp3d_body_is_gravity_enabled(_ptr) != 0;
   }
 
   @override
@@ -170,25 +152,25 @@ class FFIRigidBody implements RigidBody {
 
   @override
   void enableGravity(bool enable) {
-    ffi_gen.rp3d_body_enable_gravity(_ptr, enable ? 1 : 0);
+    rp3d_body_enable_gravity(_ptr, enable ? 1 : 0);
   }
 
   @override
   void setIsDebugEnabled(bool isEnabled) {
-    ffi_gen.rp3d_body_set_is_debug_enabled(_ptr, isEnabled ? 1 : 0);
+    rp3d_body_set_is_debug_enabled(_ptr, isEnabled ? 1 : 0);
   }
 
   @override
   bool getIsDebugEnabled() {
-    return ffi_gen.rp3d_body_get_is_debug_enabled(_ptr) != 0;
+    return rp3d_body_get_is_debug_enabled(_ptr) != 0;
   }
 
   /// Helper function to convert Vector3 to FFI Vector3
-  ffi.Pointer<ffi_gen.RP3D_Vector3> _toFFIVector3(Vector3 v) {
-    final ptr = ffi_mem.calloc<ffi_gen.RP3D_Vector3>();
-    ptr.ref.x = v.x;
-    ptr.ref.y = v.y;
-    ptr.ref.z = v.z;
+  RP3D_Vector3 _toFFIVector3(Vector3 v) {
+    final ptr = Struct.create<RP3D_Vector3>();
+    ptr.x = v.x;
+    ptr.y = v.y;
+    ptr.z = v.z;
     return ptr;
   }
 }

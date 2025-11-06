@@ -1,7 +1,5 @@
-import 'dart:ffi';
 import 'dart:typed_data';
-
-import 'package:reactphysics3d_dart/src/bindings/src/rp3d_ffi.g.dart';
+import './bindings/src/bindings.dart';
 import '../reactphysics3d_dart.dart';
 import 'implementation/ffi_physics_common.dart';
 

@@ -1,11 +1,11 @@
-import 'dart:ffi' as ffi;
+import '../bindings/src/bindings.dart' as ffi;
 
 import '../../reactphysics3d_dart.dart';
-import '../bindings/src/rp3d_ffi.g.dart' as ffi_gen;
+import '../bindings/src/bindings.dart' as ffi;
 
 /// Interface for the debug renderer
 abstract class DebugRenderer
-    extends BaseRP3DType<ffi.Pointer<ffi_gen.RP3D_DebugRenderer>> {
+    extends BaseRP3DType<ffi.Pointer<ffi.RP3D_DebugRenderer>> {
   /// Set whether a debug item should be displayed
   void setIsDebugItemDisplayed(DebugItem item, bool isDisplayed);
 
