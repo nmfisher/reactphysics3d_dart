@@ -21,6 +21,8 @@ dependencies:
   reactphysics3d_dart: ^0.1.0
 ```
 
+## TODO - build/link instructions for reactphysics3d
+
 ## Quick Start
 
 ```dart
