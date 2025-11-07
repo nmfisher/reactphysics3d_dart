@@ -54,20 +54,24 @@ static void from_rp3d_transform(const Transform& t, RP3D_Transform* out) {
 
 // ==================== PhysicsCommon (Factory) ====================
 
+EMSCRIPTEN_KEEPALIVE
 RP3D_PhysicsCommon* rp3d_physics_common_create(void) {
     return reinterpret_cast<RP3D_PhysicsCommon*>(new PhysicsCommon());
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_physics_common_destroy(RP3D_PhysicsCommon* common) {
     delete reinterpret_cast<PhysicsCommon*>(common);
 }
 
+EMSCRIPTEN_KEEPALIVE
 RP3D_PhysicsWorld* rp3d_physics_common_create_physics_world(RP3D_PhysicsCommon* common) {
     PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
     PhysicsWorld* world = pc->createPhysicsWorld();
     return reinterpret_cast<RP3D_PhysicsWorld*>(world);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_physics_common_destroy_physics_world(RP3D_PhysicsCommon* common, RP3D_PhysicsWorld* world) {
     PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
     PhysicsWorld* pw = reinterpret_cast<PhysicsWorld*>(world);
@@ -75,6 +79,7 @@ void rp3d_physics_common_destroy_physics_world(RP3D_PhysicsCommon* common, RP3D_
 }
 
 // Shape creation through PhysicsCommon
+EMSCRIPTEN_KEEPALIVE
 RP3D_BoxShape* rp3d_physics_common_create_box_shape(RP3D_PhysicsCommon* common, const RP3D_Vector3* halfExtents) {
     PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
     Vector3 extents = to_rp3d_vector3(halfExtents);
@@ -82,12 +87,14 @@ RP3D_BoxShape* rp3d_physics_common_create_box_shape(RP3D_PhysicsCommon* common, 
     return reinterpret_cast<RP3D_BoxShape*>(shape);
 }
 
+EMSCRIPTEN_KEEPALIVE
 RP3D_SphereShape* rp3d_physics_common_create_sphere_shape(RP3D_PhysicsCommon* common, float radius) {
     PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
     SphereShape* shape = pc->createSphereShape(radius);
     return reinterpret_cast<RP3D_SphereShape*>(shape);
 }
 
+EMSCRIPTEN_KEEPALIVE
 RP3D_CapsuleShape* rp3d_physics_common_create_capsule_shape(RP3D_PhysicsCommon* common, float radius, float height) {
     PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
     CapsuleShape* shape = pc->createCapsuleShape(radius, height);
@@ -95,18 +102,21 @@ RP3D_CapsuleShape* rp3d_physics_common_create_capsule_shape(RP3D_PhysicsCommon* 
 }
 
 // Shape destruction
+EMSCRIPTEN_KEEPALIVE
 void rp3d_physics_common_destroy_box_shape(RP3D_PhysicsCommon* common, RP3D_BoxShape* shape) {
     PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
     BoxShape* bs = reinterpret_cast<BoxShape*>(shape);
     pc->destroyBoxShape(bs);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_physics_common_destroy_sphere_shape(RP3D_PhysicsCommon* common, RP3D_SphereShape* shape) {
     PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
     SphereShape* ss = reinterpret_cast<SphereShape*>(shape);
     pc->destroySphereShape(ss);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_physics_common_destroy_capsule_shape(RP3D_PhysicsCommon* common, RP3D_CapsuleShape* shape) {
     PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
     CapsuleShape* cs = reinterpret_cast<CapsuleShape*>(shape);
@@ -114,6 +124,7 @@ void rp3d_physics_common_destroy_capsule_shape(RP3D_PhysicsCommon* common, RP3D_
 }
 
 // HeightField creation
+EMSCRIPTEN_KEEPALIVE
 RP3D_HeightField* rp3d_physics_common_create_height_field(
     RP3D_PhysicsCommon* common,
     uint32_t nbRows,
@@ -147,6 +158,7 @@ RP3D_HeightField* rp3d_physics_common_create_height_field(
     return reinterpret_cast<RP3D_HeightField*>(heightField);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_physics_common_destroy_height_field(RP3D_PhysicsCommon* common, RP3D_HeightField* heightField) {
     PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
     HeightField* hf = reinterpret_cast<HeightField*>(heightField);
@@ -154,6 +166,7 @@ void rp3d_physics_common_destroy_height_field(RP3D_PhysicsCommon* common, RP3D_H
 }
 
 // HeightFieldShape creation
+EMSCRIPTEN_KEEPALIVE
 RP3D_HeightFieldShape* rp3d_physics_common_create_height_field_shape(RP3D_PhysicsCommon* common, RP3D_HeightField* heightField) {
     PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
     HeightField* hf = reinterpret_cast<HeightField*>(heightField);
@@ -161,6 +174,7 @@ RP3D_HeightFieldShape* rp3d_physics_common_create_height_field_shape(RP3D_Physic
     return reinterpret_cast<RP3D_HeightFieldShape*>(shape);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_physics_common_destroy_height_field_shape(RP3D_PhysicsCommon* common, RP3D_HeightFieldShape* heightFieldShape) {
     PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
     HeightFieldShape* hfs = reinterpret_cast<HeightFieldShape*>(heightFieldShape);
@@ -169,73 +183,87 @@ void rp3d_physics_common_destroy_height_field_shape(RP3D_PhysicsCommon* common, 
 
 // ==================== PhysicsWorld ====================
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_world_update(RP3D_PhysicsWorld* world, float timeStep) {
     PhysicsWorld* pw = reinterpret_cast<PhysicsWorld*>(world);
     pw->update(timeStep);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_world_set_gravity(RP3D_PhysicsWorld* world, const RP3D_Vector3* gravity) {
     PhysicsWorld* pw = reinterpret_cast<PhysicsWorld*>(world);
     pw->setGravity(to_rp3d_vector3(gravity));
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_world_get_gravity(const RP3D_PhysicsWorld* world, RP3D_Vector3* outGravity) {
     const PhysicsWorld* pw = reinterpret_cast<const PhysicsWorld*>(world);
     from_rp3d_vector3(pw->getGravity(), outGravity);
 }
 
+EMSCRIPTEN_KEEPALIVE
 uint8_t rp3d_world_get_is_sleeping_enabled(const RP3D_PhysicsWorld* world) {
     const PhysicsWorld* pw = reinterpret_cast<const PhysicsWorld*>(world);
     return pw->isSleepingEnabled() ? 1 : 0;
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_world_set_is_sleeping_enabled(RP3D_PhysicsWorld* world, uint8_t isSleepingEnabled) {
     PhysicsWorld* pw = reinterpret_cast<PhysicsWorld*>(world);
     pw->enableSleeping(isSleepingEnabled != 0);
 }
 
 // Gravity and sleep control
+EMSCRIPTEN_KEEPALIVE
 void rp3d_world_set_is_gravity_enabled(RP3D_PhysicsWorld* world, uint8_t isGravityEnabled) {
     PhysicsWorld* pw = reinterpret_cast<PhysicsWorld*>(world);
     pw->setIsGravityEnabled(isGravityEnabled != 0);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_world_set_sleep_linear_velocity(RP3D_PhysicsWorld* world, float sleepLinearVelocity) {
     PhysicsWorld* pw = reinterpret_cast<PhysicsWorld*>(world);
     pw->setSleepLinearVelocity(sleepLinearVelocity);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_world_set_sleep_angular_velocity(RP3D_PhysicsWorld* world, float sleepAngularVelocity) {
     PhysicsWorld* pw = reinterpret_cast<PhysicsWorld*>(world);
     pw->setSleepAngularVelocity(sleepAngularVelocity);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_world_set_time_before_sleep(RP3D_PhysicsWorld* world, float timeBeforeSleep) {
     PhysicsWorld* pw = reinterpret_cast<PhysicsWorld*>(world);
     pw->setTimeBeforeSleep(timeBeforeSleep);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_world_set_is_debug_rendering_enabled(RP3D_PhysicsWorld* world, uint8_t isEnabled) {
     PhysicsWorld* pw = reinterpret_cast<PhysicsWorld*>(world);
     pw->setIsDebugRenderingEnabled(isEnabled != 0);
 }
 
+EMSCRIPTEN_KEEPALIVE
 uint8_t rp3d_world_get_is_debug_rendering_enabled(const RP3D_PhysicsWorld* world) {
     const PhysicsWorld* pw = reinterpret_cast<const PhysicsWorld*>(world);
     return pw->getIsDebugRenderingEnabled() ? 1 : 0;
 }
 
+EMSCRIPTEN_KEEPALIVE
 RP3D_DebugRenderer* rp3d_world_get_debug_renderer(RP3D_PhysicsWorld* world) {
     PhysicsWorld* pw = reinterpret_cast<PhysicsWorld*>(world);
     DebugRenderer& debugRenderer = pw->getDebugRenderer();
     return reinterpret_cast<RP3D_DebugRenderer*>(&debugRenderer);
 }
 
+EMSCRIPTEN_KEEPALIVE
 uint32_t rp3d_world_get_nb_rigid_bodies(const RP3D_PhysicsWorld* world) {
     const PhysicsWorld* pw = reinterpret_cast<const PhysicsWorld*>(world);
     return pw->getNbRigidBodies();
 }
 
+EMSCRIPTEN_KEEPALIVE
 RP3D_RigidBody* rp3d_world_get_rigid_body(RP3D_PhysicsWorld* world, uint32_t index) {
     PhysicsWorld* pw = reinterpret_cast<PhysicsWorld*>(world);
     RigidBody* body = pw->getRigidBody(index);
@@ -243,6 +271,7 @@ RP3D_RigidBody* rp3d_world_get_rigid_body(RP3D_PhysicsWorld* world, uint32_t ind
 }
 
 // Body creation/destruction
+EMSCRIPTEN_KEEPALIVE
 RP3D_RigidBody* rp3d_world_create_rigid_body(RP3D_PhysicsWorld* world, const RP3D_Transform* transform) {
     PhysicsWorld* pw = reinterpret_cast<PhysicsWorld*>(world);
     Transform t = to_rp3d_transform(transform);
@@ -250,6 +279,7 @@ RP3D_RigidBody* rp3d_world_create_rigid_body(RP3D_PhysicsWorld* world, const RP3
     return reinterpret_cast<RP3D_RigidBody*>(body);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_world_destroy_rigid_body(RP3D_PhysicsWorld* world, RP3D_RigidBody* body) {
     PhysicsWorld* pw = reinterpret_cast<PhysicsWorld*>(world);
     RigidBody* rb = reinterpret_cast<RigidBody*>(body);
@@ -281,6 +311,7 @@ class SingleRaycastCallback : public RaycastCallback {
 };
 
 // Raycasting
+EMSCRIPTEN_KEEPALIVE
 uint8_t rp3d_world_raycast(const RP3D_PhysicsWorld* world, const RP3D_Ray* ray, RP3D_RaycastInfo* raycastInfo) {
     const PhysicsWorld* pw = reinterpret_cast<const PhysicsWorld*>(world);
 
@@ -303,11 +334,13 @@ uint8_t rp3d_world_raycast(const RP3D_PhysicsWorld* world, const RP3D_Ray* ray, 
 
 // ==================== RigidBody ====================
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_body_get_transform(const RP3D_RigidBody* body, RP3D_Transform* outTransform) {
     const RigidBody* rb = reinterpret_cast<const RigidBody*>(body);
     from_rp3d_transform(rb->getTransform(), outTransform);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_body_set_transform(RP3D_RigidBody* body, float posX, float posY, float posZ, float quatX, float quatY, float quatZ, float quatW) {
     RigidBody* rb = reinterpret_cast<RigidBody*>(body);
     Vector3 position(posX, posY, posZ);
@@ -316,16 +349,19 @@ void rp3d_body_set_transform(RP3D_RigidBody* body, float posX, float posY, float
     rb->setTransform(transform);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_body_get_position(const RP3D_RigidBody* body, RP3D_Vector3* outPosition) {
     const RigidBody* rb = reinterpret_cast<const RigidBody*>(body);
     from_rp3d_vector3(rb->getTransform().getPosition(), outPosition);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_body_get_orientation(const RP3D_RigidBody* body, RP3D_Quaternion* outOrientation) {
     const RigidBody* rb = reinterpret_cast<const RigidBody*>(body);
     from_rp3d_quaternion(rb->getTransform().getOrientation(), outOrientation);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_body_set_type(RP3D_RigidBody* body, RP3D_BodyType type) {
     RigidBody* rb = reinterpret_cast<RigidBody*>(body);
     BodyType bt;
@@ -348,6 +384,7 @@ void rp3d_body_set_type(RP3D_RigidBody* body, RP3D_BodyType type) {
     rb->setType(bt);
 }
 
+EMSCRIPTEN_KEEPALIVE
 RP3D_BodyType rp3d_body_get_type(const RP3D_RigidBody* body) {
     const RigidBody* rb = reinterpret_cast<const RigidBody*>(body);
     BodyType bt = rb->getType();
@@ -364,100 +401,119 @@ RP3D_BodyType rp3d_body_get_type(const RP3D_RigidBody* body) {
     }
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_body_set_mass(RP3D_RigidBody* body, float mass) {
     RigidBody* rb = reinterpret_cast<RigidBody*>(body);
     rb->setMass(mass);
 }
 
+EMSCRIPTEN_KEEPALIVE
 float rp3d_body_get_mass(const RP3D_RigidBody* body) {
     const RigidBody* rb = reinterpret_cast<const RigidBody*>(body);
     return rb->getMass();
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_body_set_linear_velocity(RP3D_RigidBody* body, const RP3D_Vector3* linearVelocity) {
     RigidBody* rb = reinterpret_cast<RigidBody*>(body);
     rb->setLinearVelocity(to_rp3d_vector3(linearVelocity));
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_body_get_linear_velocity(const RP3D_RigidBody* body, RP3D_Vector3* outLinearVelocity) {
     const RigidBody* rb = reinterpret_cast<const RigidBody*>(body);
     from_rp3d_vector3(rb->getLinearVelocity(), outLinearVelocity);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_body_set_angular_velocity(RP3D_RigidBody* body, const RP3D_Vector3* angularVelocity) {
     RigidBody* rb = reinterpret_cast<RigidBody*>(body);
     rb->setAngularVelocity(to_rp3d_vector3(angularVelocity));
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_body_get_angular_velocity(const RP3D_RigidBody* body, RP3D_Vector3* outAngularVelocity) {
     const RigidBody* rb = reinterpret_cast<const RigidBody*>(body);
     from_rp3d_vector3(rb->getAngularVelocity(), outAngularVelocity);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_body_apply_force(RP3D_RigidBody* body, const RP3D_Vector3* force) {
     RigidBody* rb = reinterpret_cast<RigidBody*>(body);
     rb->applyWorldForceAtCenterOfMass(to_rp3d_vector3(force));
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_body_apply_force_at_position(RP3D_RigidBody* body, const RP3D_Vector3* force, const RP3D_Vector3* position) {
     RigidBody* rb = reinterpret_cast<RigidBody*>(body);
     rb->applyWorldForceAtWorldPosition(to_rp3d_vector3(force), to_rp3d_vector3(position));
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_body_apply_torque(RP3D_RigidBody* body, const RP3D_Vector3* torque) {
     RigidBody* rb = reinterpret_cast<RigidBody*>(body);
     rb->applyWorldTorque(to_rp3d_vector3(torque));
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_body_set_is_active(RP3D_RigidBody* body, uint8_t isActive) {
     RigidBody* rb = reinterpret_cast<RigidBody*>(body);
     rb->setIsActive(isActive != 0);
 }
 
+EMSCRIPTEN_KEEPALIVE
 uint8_t rp3d_body_get_is_active(const RP3D_RigidBody* body) {
     const RigidBody* rb = reinterpret_cast<const RigidBody*>(body);
     return rb->isActive() ? 1 : 0;
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_body_set_is_sleeping_allowed(RP3D_RigidBody* body, uint8_t isAllowed) {
     RigidBody* rb = reinterpret_cast<RigidBody*>(body);
     rb->setIsAllowedToSleep(isAllowed != 0);
 }
 
+EMSCRIPTEN_KEEPALIVE
 uint8_t rp3d_body_get_is_sleeping_allowed(const RP3D_RigidBody* body) {
     const RigidBody* rb = reinterpret_cast<const RigidBody*>(body);
     return rb->isAllowedToSleep() ? 1 : 0;
 }
 
 // Gravity control
+EMSCRIPTEN_KEEPALIVE
 void rp3d_body_enable_gravity(RP3D_RigidBody* body, uint8_t enableGravity) {
     RigidBody* rb = reinterpret_cast<RigidBody*>(body);
     rb->enableGravity(enableGravity != 0);
 }
 
+EMSCRIPTEN_KEEPALIVE
 uint8_t rp3d_body_is_gravity_enabled(const RP3D_RigidBody* body) {
     const RigidBody* rb = reinterpret_cast<const RigidBody*>(body);
     return rb->isGravityEnabled() ? 1 : 0;
 }
 
 // Debug rendering
+EMSCRIPTEN_KEEPALIVE
 void rp3d_body_set_is_debug_enabled(RP3D_RigidBody* body, uint8_t isEnabled) {
     RigidBody* rb = reinterpret_cast<RigidBody*>(body);
     rb->setIsDebugEnabled(isEnabled != 0);
 }
 
+EMSCRIPTEN_KEEPALIVE
 uint8_t rp3d_body_get_is_debug_enabled(const RP3D_RigidBody* body) {
     const RigidBody* rb = reinterpret_cast<const RigidBody*>(body);
     return rb->isDebugEnabled() ? 1 : 0;
 }
 
 // Mass properties
+EMSCRIPTEN_KEEPALIVE
 void rp3d_body_update_mass_properties_from_colliders(RP3D_RigidBody* body) {
     RigidBody* rb = reinterpret_cast<RigidBody*>(body);
     rb->updateMassPropertiesFromColliders();
 }
 
 // Collider management
+EMSCRIPTEN_KEEPALIVE
 RP3D_Collider* rp3d_body_add_collider(RP3D_RigidBody* body, RP3D_CollisionShape* shape, const RP3D_Transform* transform) {
     RigidBody* rb = reinterpret_cast<RigidBody*>(body);
     CollisionShape* cs = reinterpret_cast<CollisionShape*>(shape);
@@ -467,12 +523,14 @@ RP3D_Collider* rp3d_body_add_collider(RP3D_RigidBody* body, RP3D_CollisionShape*
     return reinterpret_cast<RP3D_Collider*>(collider);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_body_remove_collider(RP3D_RigidBody* body, RP3D_Collider* collider) {
     RigidBody* rb = reinterpret_cast<RigidBody*>(body);
     Collider* c = reinterpret_cast<Collider*>(collider);
     rb->removeCollider(c);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_collider_set_material(RP3D_Collider* collider, const RP3D_Material* material) {
     Collider* c = reinterpret_cast<Collider*>(collider);
     const Material* m = reinterpret_cast<const Material*>(material);
@@ -481,12 +539,14 @@ void rp3d_collider_set_material(RP3D_Collider* collider, const RP3D_Material* ma
 
 // ==================== Collider ====================
 
+EMSCRIPTEN_KEEPALIVE
 RP3D_Material* rp3d_collider_get_material(RP3D_Collider* collider) {
     Collider* c = reinterpret_cast<Collider*>(collider);
     Material& material = c->getMaterial();
     return reinterpret_cast<RP3D_Material*>(&material);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_collider_get_local_bounds(const RP3D_Collider* collider, RP3D_AABB* outAABB) {
     const Collider* c = reinterpret_cast<const Collider*>(collider);
     const CollisionShape* shape = c->getCollisionShape();
@@ -495,11 +555,13 @@ void rp3d_collider_get_local_bounds(const RP3D_Collider* collider, RP3D_AABB* ou
     from_rp3d_vector3(aabb.getMax(), &outAABB->max);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_collider_set_is_trigger(RP3D_Collider* collider, uint8_t isTrigger) {
     Collider* c = reinterpret_cast<Collider*>(collider);
     c->setIsTrigger(isTrigger != 0);
 }
 
+EMSCRIPTEN_KEEPALIVE
 uint8_t rp3d_collider_get_is_trigger(const RP3D_Collider* collider) {
     const Collider* c = reinterpret_cast<const Collider*>(collider);
     return c->getIsTrigger() ? 1 : 0;
@@ -507,36 +569,43 @@ uint8_t rp3d_collider_get_is_trigger(const RP3D_Collider* collider) {
 
 // ==================== Material ====================
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_material_destroy(RP3D_Material* material) {
     Material* m = reinterpret_cast<Material*>(material);
     delete m;
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_material_set_bounciness(RP3D_Material* material, float bounciness) {
     Material* m = reinterpret_cast<Material*>(material);
     m->setBounciness(bounciness);
 }
 
+EMSCRIPTEN_KEEPALIVE
 float rp3d_material_get_bounciness(const RP3D_Material* material) {
     const Material* m = reinterpret_cast<const Material*>(material);
     return m->getBounciness();
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_material_set_friction_coefficient(RP3D_Material* material, float frictionCoefficient) {
     Material* m = reinterpret_cast<Material*>(material);
     m->setFrictionCoefficient(frictionCoefficient);
 }
 
+EMSCRIPTEN_KEEPALIVE
 float rp3d_material_get_friction_coefficient(const RP3D_Material* material) {
     const Material* m = reinterpret_cast<const Material*>(material);
     return m->getFrictionCoefficient();
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_material_set_mass_density(RP3D_Material* material, float massDensity) {
     Material* m = reinterpret_cast<Material*>(material);
     m->setMassDensity(massDensity);
 }
 
+EMSCRIPTEN_KEEPALIVE
 float rp3d_material_get_mass_density(const RP3D_Material* material) {
     const Material* m = reinterpret_cast<const Material*>(material);
     return m->getMassDensity();
@@ -544,6 +613,7 @@ float rp3d_material_get_mass_density(const RP3D_Material* material) {
 
 // ==================== CollisionShape (base) ====================
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_shape_get_local_bounds(const RP3D_CollisionShape* shape, RP3D_AABB* outAABB) {
     const CollisionShape* cs = reinterpret_cast<const CollisionShape*>(shape);
     AABB aabb = cs->getLocalBounds();
@@ -551,6 +621,7 @@ void rp3d_shape_get_local_bounds(const RP3D_CollisionShape* shape, RP3D_AABB* ou
     from_rp3d_vector3(aabb.getMax(), &outAABB->max);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_concave_shape_set_scale(RP3D_HeightFieldShape* shape, const RP3D_Vector3* scale) {
     ConcaveShape* concaveShape = reinterpret_cast<ConcaveShape*>(shape);
     Vector3 scaleVec = to_rp3d_vector3(scale);
@@ -562,29 +633,34 @@ void rp3d_concave_shape_set_scale(RP3D_HeightFieldShape* shape, const RP3D_Vecto
 // ==================== Math Utilities ====================
 
 // Vector3
+EMSCRIPTEN_KEEPALIVE
 void rp3d_vector3_zero(RP3D_Vector3* v) {
     v->x = 0.0f;
     v->y = 0.0f;
     v->z = 0.0f;
 }
 
+EMSCRIPTEN_KEEPALIVE
 float rp3d_vector3_length(const RP3D_Vector3* v) {
     Vector3 vec = to_rp3d_vector3(v);
     return vec.length();
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_vector3_normalize(RP3D_Vector3* v) {
     Vector3 vec = to_rp3d_vector3(v);
     vec = vec.getUnit();
     from_rp3d_vector3(vec, v);
 }
 
+EMSCRIPTEN_KEEPALIVE
 float rp3d_vector3_dot(const RP3D_Vector3* v1, const RP3D_Vector3* v2) {
     Vector3 vec1 = to_rp3d_vector3(v1);
     Vector3 vec2 = to_rp3d_vector3(v2);
     return vec1.dot(vec2);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_vector3_cross(const RP3D_Vector3* v1, const RP3D_Vector3* v2, RP3D_Vector3* outResult) {
     Vector3 vec1 = to_rp3d_vector3(v1);
     Vector3 vec2 = to_rp3d_vector3(v2);
@@ -593,17 +669,20 @@ void rp3d_vector3_cross(const RP3D_Vector3* v1, const RP3D_Vector3* v2, RP3D_Vec
 }
 
 // Quaternion
+EMSCRIPTEN_KEEPALIVE
 void rp3d_quaternion_identity(RP3D_Quaternion* q) {
     Quaternion quat = Quaternion::identity();
     from_rp3d_quaternion(quat, q);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_quaternion_from_axis_angle(const RP3D_Vector3* axis, float angle, RP3D_Quaternion* outQuat) {
     Vector3 axisVec = to_rp3d_vector3(axis);
     Quaternion quat(axisVec, angle);
     from_rp3d_quaternion(quat, outQuat);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_quaternion_normalize(RP3D_Quaternion* q) {
     Quaternion quat = to_rp3d_quaternion(q);
     quat = quat.getUnit();
@@ -611,17 +690,20 @@ void rp3d_quaternion_normalize(RP3D_Quaternion* q) {
 }
 
 // Transform
+EMSCRIPTEN_KEEPALIVE
 void rp3d_transform_identity(RP3D_Transform* t) {
     Transform transform = Transform::identity();
     from_rp3d_transform(transform, t);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_transform_inverse(const RP3D_Transform* t, RP3D_Transform* outInverse) {
     Transform transform = to_rp3d_transform(t);
     Transform inverse = transform.getInverse();
     from_rp3d_transform(inverse, outInverse);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_transform_get_opengl_matrix(const RP3D_Transform* t, float* outMatrix) {
     Transform transform = to_rp3d_transform(t);
     
@@ -630,6 +712,7 @@ void rp3d_transform_get_opengl_matrix(const RP3D_Transform* t, float* outMatrix)
 
 // ==================== DebugRenderer ====================
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_debug_renderer_set_is_debug_item_displayed(RP3D_DebugRenderer* renderer, RP3D_DebugItem item, uint8_t isDisplayed) {
     DebugRenderer* dr = reinterpret_cast<DebugRenderer*>(renderer);
     DebugRenderer::DebugItem debugItem;
@@ -657,6 +740,7 @@ void rp3d_debug_renderer_set_is_debug_item_displayed(RP3D_DebugRenderer* rendere
     dr->setIsDebugItemDisplayed(debugItem, isDisplayed != 0);
 }
 
+EMSCRIPTEN_KEEPALIVE
 uint8_t rp3d_debug_renderer_get_is_debug_item_displayed(const RP3D_DebugRenderer* renderer, RP3D_DebugItem item) {
     const DebugRenderer* dr = reinterpret_cast<const DebugRenderer*>(renderer);
     DebugRenderer::DebugItem debugItem;
@@ -684,16 +768,19 @@ uint8_t rp3d_debug_renderer_get_is_debug_item_displayed(const RP3D_DebugRenderer
     return dr->getIsDebugItemDisplayed(debugItem) ? 1 : 0;
 }
 
+EMSCRIPTEN_KEEPALIVE
 uint32_t rp3d_debug_renderer_get_nb_lines(const RP3D_DebugRenderer* renderer) {
     const DebugRenderer* dr = reinterpret_cast<const DebugRenderer*>(renderer);
     return dr->getNbLines();
 }
 
+EMSCRIPTEN_KEEPALIVE
 uint32_t rp3d_debug_renderer_get_nb_triangles(const RP3D_DebugRenderer* renderer) {
     const DebugRenderer* dr = reinterpret_cast<const DebugRenderer*>(renderer);
     return dr->getNbTriangles();
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_debug_renderer_get_lines_array(const RP3D_DebugRenderer* renderer, float* outVertices, uint32_t* outColors) {
     const DebugRenderer* dr = reinterpret_cast<const DebugRenderer*>(renderer);
     const Array<DebugRenderer::DebugLine>& lines = dr->getLines();
@@ -716,6 +803,7 @@ void rp3d_debug_renderer_get_lines_array(const RP3D_DebugRenderer* renderer, flo
     }
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_debug_renderer_get_triangles_array(const RP3D_DebugRenderer* renderer, float* outVertices, uint32_t* outColors) {
     const DebugRenderer* dr = reinterpret_cast<const DebugRenderer*>(renderer);
     const Array<DebugRenderer::DebugTriangle>& triangles = dr->getTriangles();
@@ -745,6 +833,7 @@ void rp3d_debug_renderer_get_triangles_array(const RP3D_DebugRenderer* renderer,
 
 // ==================== Joints ====================
 
+EMSCRIPTEN_KEEPALIVE
 RP3D_BallAndSocketJoint* rp3d_world_create_ball_and_socket_joint(
     RP3D_PhysicsWorld* world,
     const RP3D_BallAndSocketJointInfo* jointInfo
@@ -762,6 +851,7 @@ RP3D_BallAndSocketJoint* rp3d_world_create_ball_and_socket_joint(
     return reinterpret_cast<RP3D_BallAndSocketJoint*>(joint);
 }
 
+EMSCRIPTEN_KEEPALIVE
 RP3D_HingeJoint* rp3d_world_create_hinge_joint(
     RP3D_PhysicsWorld* world,
     const RP3D_HingeJointInfo* jointInfo
@@ -786,6 +876,7 @@ RP3D_HingeJoint* rp3d_world_create_hinge_joint(
     return reinterpret_cast<RP3D_HingeJoint*>(joint);
 }
 
+EMSCRIPTEN_KEEPALIVE
 RP3D_SliderJoint* rp3d_world_create_slider_joint(
     RP3D_PhysicsWorld* world,
     const RP3D_SliderJointInfo* jointInfo
@@ -810,6 +901,7 @@ RP3D_SliderJoint* rp3d_world_create_slider_joint(
     return reinterpret_cast<RP3D_SliderJoint*>(joint);
 }
 
+EMSCRIPTEN_KEEPALIVE
 RP3D_FixedJoint* rp3d_world_create_fixed_joint(
     RP3D_PhysicsWorld* world,
     const RP3D_FixedJointInfo* jointInfo
@@ -827,6 +919,7 @@ RP3D_FixedJoint* rp3d_world_create_fixed_joint(
     return reinterpret_cast<RP3D_FixedJoint*>(joint);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_world_destroy_joint(RP3D_PhysicsWorld* world, void* joint) {
     PhysicsWorld* pw = reinterpret_cast<PhysicsWorld*>(world);
     Joint* j = reinterpret_cast<Joint*>(joint);
@@ -835,6 +928,7 @@ void rp3d_world_destroy_joint(RP3D_PhysicsWorld* world, void* joint) {
 
 // ==================== HeightFieldShape ====================
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_height_field_shape_get_vertex_at(
     const RP3D_HeightFieldShape* heightFieldShape,
     uint32_t row,
@@ -848,6 +942,7 @@ void rp3d_height_field_shape_get_vertex_at(
 
 // ==================== TriangleVertexArray ====================
 
+EMSCRIPTEN_KEEPALIVE
 RP3D_TriangleVertexArray* rp3d_triangle_vertex_array_create(
     uint32_t nbVertices,
     const float* verticesStart,
@@ -873,35 +968,41 @@ RP3D_TriangleVertexArray* rp3d_triangle_vertex_array_create(
     return reinterpret_cast<RP3D_TriangleVertexArray*>(triangleArray);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_triangle_vertex_array_destroy(RP3D_TriangleVertexArray* triangleVertexArray) {
     TriangleVertexArray* tva = reinterpret_cast<TriangleVertexArray*>(triangleVertexArray);
     delete tva;
 }
 
+EMSCRIPTEN_KEEPALIVE
 uint32_t rp3d_triangle_vertex_array_get_nb_vertices(const RP3D_TriangleVertexArray* triangleVertexArray) {
     const TriangleVertexArray* tva = reinterpret_cast<const TriangleVertexArray*>(triangleVertexArray);
     if (!tva) return 0;
     return tva->getNbVertices();
 }
 
+EMSCRIPTEN_KEEPALIVE
 uint32_t rp3d_triangle_vertex_array_get_nb_triangles(const RP3D_TriangleVertexArray* triangleVertexArray) {
     const TriangleVertexArray* tva = reinterpret_cast<const TriangleVertexArray*>(triangleVertexArray);
     if (!tva) return 0;
     return tva->getNbTriangles();
 }
 
+EMSCRIPTEN_KEEPALIVE
 const float* rp3d_triangle_vertex_array_get_vertices_start(const RP3D_TriangleVertexArray* triangleVertexArray) {
     const TriangleVertexArray* tva = reinterpret_cast<const TriangleVertexArray*>(triangleVertexArray);
     if (!tva) return nullptr;
     return static_cast<const float*>(tva->getVerticesStart());
 }
 
+EMSCRIPTEN_KEEPALIVE
 const uint32_t* rp3d_triangle_vertex_array_get_indices_start(const RP3D_TriangleVertexArray* triangleVertexArray) {
     const TriangleVertexArray* tva = reinterpret_cast<const TriangleVertexArray*>(triangleVertexArray);
     if (!tva) return nullptr;
     return static_cast<const uint32_t*>(tva->getIndicesStart());
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_triangle_vertex_array_get_triangle_vertices_indices(
     const RP3D_TriangleVertexArray* triangleVertexArray,
     uint32_t triangleIndex,
@@ -912,6 +1013,7 @@ void rp3d_triangle_vertex_array_get_triangle_vertices_indices(
 
 // ==================== PolygonVertexArray ====================
 
+EMSCRIPTEN_KEEPALIVE
 RP3D_PolygonVertexArray* rp3d_polygon_vertex_array_create(
     uint32_t nbVertices,
     const float* verticesStart,
@@ -928,6 +1030,7 @@ RP3D_PolygonVertexArray* rp3d_polygon_vertex_array_create(
     return nullptr;
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_polygon_vertex_array_destroy(RP3D_PolygonVertexArray* polygonVertexArray) {
     PolygonVertexArray* pva = reinterpret_cast<PolygonVertexArray*>(polygonVertexArray);
     delete pva;
@@ -935,6 +1038,7 @@ void rp3d_polygon_vertex_array_destroy(RP3D_PolygonVertexArray* polygonVertexArr
 
 // ==================== TriangleMesh ====================
 
+EMSCRIPTEN_KEEPALIVE
 RP3D_TriangleMesh* rp3d_physics_common_create_triangle_mesh(
     RP3D_PhysicsCommon* common,
     RP3D_TriangleVertexArray* triangleVertexArray
@@ -953,24 +1057,28 @@ RP3D_TriangleMesh* rp3d_physics_common_create_triangle_mesh(
     return reinterpret_cast<RP3D_TriangleMesh*>(triangleMesh);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_physics_common_destroy_triangle_mesh(RP3D_PhysicsCommon* common, RP3D_TriangleMesh* triangleMesh) {
     PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
     TriangleMesh* tm = reinterpret_cast<TriangleMesh*>(triangleMesh);
     pc->destroyTriangleMesh(tm);
 }
 
+EMSCRIPTEN_KEEPALIVE
 uint32_t rp3d_triangle_mesh_get_nb_vertices(const RP3D_TriangleMesh* triangleMesh) {
     const TriangleMesh* tm = reinterpret_cast<const TriangleMesh*>(triangleMesh);
     if (!tm) return 0;
     return tm->getNbVertices();
 }
 
+EMSCRIPTEN_KEEPALIVE
 uint32_t rp3d_triangle_mesh_get_nb_triangles(const RP3D_TriangleMesh* triangleMesh) {
     const TriangleMesh* tm = reinterpret_cast<const TriangleMesh*>(triangleMesh);
     if (!tm) return 0;
     return tm->getNbTriangles();
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_triangle_mesh_get_vertex(
     const RP3D_TriangleMesh* triangleMesh,
     uint32_t vertexIndex,
@@ -984,6 +1092,7 @@ void rp3d_triangle_mesh_get_vertex(
     }
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_triangle_mesh_get_triangle_vertices_indices(
     const RP3D_TriangleMesh* triangleMesh,
     uint32_t triangleIndex,
@@ -994,6 +1103,7 @@ void rp3d_triangle_mesh_get_triangle_vertices_indices(
 
 // ==================== ConvexMesh ====================
 
+EMSCRIPTEN_KEEPALIVE
 RP3D_ConvexMesh* rp3d_physics_common_create_convex_mesh_from_triangles(
     RP3D_PhysicsCommon* common,
     RP3D_TriangleVertexArray* triangleVertexArray
@@ -1029,6 +1139,7 @@ RP3D_ConvexMesh* rp3d_physics_common_create_convex_mesh_from_triangles(
     }
 
     try {
+
         VertexArray vertexArray(
             verticesData,
             tva->getVerticesStride(),
@@ -1061,6 +1172,7 @@ RP3D_ConvexMesh* rp3d_physics_common_create_convex_mesh_from_triangles(
     }
 }
 
+EMSCRIPTEN_KEEPALIVE
 RP3D_ConvexMesh* rp3d_physics_common_create_convex_mesh_from_polygons(
     RP3D_PhysicsCommon* common,
     RP3D_PolygonVertexArray* polygonVertexArray
@@ -1070,6 +1182,7 @@ RP3D_ConvexMesh* rp3d_physics_common_create_convex_mesh_from_polygons(
     return nullptr;
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_physics_common_destroy_convex_mesh(RP3D_PhysicsCommon* common, RP3D_ConvexMesh* convexMesh) {
     PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
     ConvexMesh* cm = reinterpret_cast<ConvexMesh*>(convexMesh);
@@ -1078,6 +1191,7 @@ void rp3d_physics_common_destroy_convex_mesh(RP3D_PhysicsCommon* common, RP3D_Co
 
 // ==================== ConvexMeshShape ====================
 
+EMSCRIPTEN_KEEPALIVE
 RP3D_ConvexMeshShape* rp3d_physics_common_create_convex_mesh_shape(
     RP3D_PhysicsCommon* common,
     RP3D_ConvexMesh* convexMesh
@@ -1089,6 +1203,7 @@ RP3D_ConvexMeshShape* rp3d_physics_common_create_convex_mesh_shape(
     return reinterpret_cast<RP3D_ConvexMeshShape*>(convexMeshShape);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_physics_common_destroy_convex_mesh_shape(RP3D_PhysicsCommon* common, RP3D_ConvexMeshShape* convexMeshShape) {
     PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
     ConvexMeshShape* cms = reinterpret_cast<ConvexMeshShape*>(convexMeshShape);
@@ -1097,6 +1212,7 @@ void rp3d_physics_common_destroy_convex_mesh_shape(RP3D_PhysicsCommon* common, R
 
 // ==================== ConcaveMeshShape ====================
 
+EMSCRIPTEN_KEEPALIVE
 RP3D_ConcaveMeshShape* rp3d_physics_common_create_concave_mesh_shape(
     RP3D_PhysicsCommon* common,
     RP3D_TriangleMesh* triangleMesh,
@@ -1110,6 +1226,7 @@ RP3D_ConcaveMeshShape* rp3d_physics_common_create_concave_mesh_shape(
     return reinterpret_cast<RP3D_ConcaveMeshShape*>(concaveMeshShape);
 }
 
+EMSCRIPTEN_KEEPALIVE
 void rp3d_physics_common_destroy_concave_mesh_shape(RP3D_PhysicsCommon* common, RP3D_ConcaveMeshShape* concaveMeshShape) {
     PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
     ConcaveMeshShape* cms = reinterpret_cast<ConcaveMeshShape*>(concaveMeshShape);
