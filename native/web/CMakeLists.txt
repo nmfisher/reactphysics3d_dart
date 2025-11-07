@@ -1,0 +1,80 @@
+cmake_minimum_required(VERSION 3.16)
+
+set(PROJECT_NAME "reactphysics3d_dart")
+project(${PROJECT_NAME})
+
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE "Release")
+endif(NOT CMAKE_BUILD_TYPE)
+
+set(MODULE_NAME ${PROJECT_NAME})
+
+set(EMCC_CFLAGS --bind)
+set(EMCC_CFLAGS ${EMCC_CFLAGS} -sALLOW_TABLE_GROWTH=1)
+set(EMCC_CFLAGS ${EMCC_CFLAGS} -sALLOW_MEMORY_GROWTH=0)
+set(EMCC_CFLAGS ${EMCC_CFLAGS} -sEXPORT_NAME=${MODULE_NAME})
+
+set(EMCC_CFLAGS ${EMCC_CFLAGS} -sINITIAL_MEMORY=512mb)
+set(EMCC_CFLAGS ${EMCC_CFLAGS} -sMODULARIZE)
+set(EMCC_CFLAGS ${EMCC_CFLAGS} -sERROR_ON_UNDEFINED_SYMBOLS=0 )
+set(EMCC_CFLAGS ${EMCC_CFLAGS} -sEXPORTED_RUNTIME_METHODS=wasmExports,wasmTable,addFunction,removeFunction,ccall,cwrap,allocate,intArrayFromString,intArrayToString,getValue,setValue,UTF8ToString,stringToUTF8,writeArrayToMemory,lengthBytesUTF8,HEAPU8,HEAPF32)
+set(EMCC_CFLAGS ${EMCC_CFLAGS} -sEXPORTED_FUNCTIONS=_malloc,stackAlloc,_free,stackSave,stackRestore)
+set(EMCC_CFLAGS ${EMCC_CFLAGS} -sFULL_ES3)
+set(EMCC_CFLAGS ${EMCC_CFLAGS} -sPTHREAD_POOL_SIZE=1)
+set(EMCC_CFLAGS ${EMCC_CFLAGS} -sALLOW_BLOCKING_ON_MAIN_THREAD=1)
+set(EMCC_CFLAGS ${EMCC_CFLAGS} -sMALLOC=mimalloc)
+set(EMCC_CFLAGS ${EMCC_CFLAGS} -sOFFSCREENCANVAS_SUPPORT=1)
+set(EMCC_CFLAGS ${EMCC_CFLAGS} -sNO_DISABLE_EXCEPTION_CATCHING)
+set(EMCC_CFLAGS ${EMCC_CFLAGS} -sASYNCIFY=0)
+set(EMCC_CFLAGS ${EMCC_CFLAGS} -sMIN_WEBGL_VERSION=2)
+set(EMCC_CFLAGS ${EMCC_CFLAGS} -sMAX_WEBGL_VERSION=2)
+set(EMCC_CFLAGS ${EMCC_CFLAGS} -sFETCH=0)
+set(EMCC_CFLAGS ${EMCC_CFLAGS} -sSHARED_MEMORY=0)
+set(EMCC_CFLAGS ${EMCC_CFLAGS} -sFILESYSTEM=0)
+set(EMCC_CFLAGS ${EMCC_CFLAGS} -sUSE_PTHREADS)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  set(EMCC_CFLAGS ${EMCC_CFLAGS} -sASSERTIONS=2)
+  set(EMCC_CFLAGS ${EMCC_CFLAGS} -sGL_ASSERTIONS=1)
+  set(EMCC_CFLAGS ${EMCC_CFLAGS} -sGL_DEBUG=1)
+  set(EMCC_CFLAGS ${EMCC_CFLAGS} -sSAFE_HEAP=1)
+  # add_compile_definitions(ENABLE_TRACING=1)
+  set(EMCC_CFLAGS ${EMCC_CFLAGS} -sWARN_UNALIGNED=1)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wcast-align -Wover-aligned")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wcast-align -Wover-aligned")
+  set(EMCC_CFLAGS ${EMCC_CFLAGS} -sSTACK_SIZE=10485760)
+endif()
+
+set(EMCC_CFLAGS ${EMCC_CFLAGS} -sSTACK_SIZE=10485760)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -std=c++17 -Wno-invalid-specialization -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=1")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+
+add_link_options(${EMCC_CFLAGS} -pthread)
+
+link_directories("${CMAKE_CURRENT_SOURCE_DIR}/lib") 
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY build/out)
+
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/c_api
+)
+
+file(GLOB SOURCES
+  "${CMAKE_CURRENT_SOURCE_DIR}/../src/*.cpp"
+)
+
+
+add_executable(${MODULE_NAME} ${SOURCES})
+
+set_target_properties(${MODULE_NAME} PROPERTIES
+  CXX_VISIBILITY_PRESET hidden)
+target_compile_definitions(${MODULE_NAME} PRIVATE FLUTTER_PLUGIN_IMPL)
+target_compile_options(${MODULE_NAME} PRIVATE -matomics -mbulk-memory)
+target_compile_features(${MODULE_NAME} PRIVATE cxx_std_17)
+
+
+target_link_libraries(${MODULE_NAME}  
+    "${CMAKE_CURRENT_SOURCE_DIR}/libreactphysics3d.a"
+)
+
