@@ -6,7 +6,7 @@ import 'implementation/ffi_physics_common.dart';
 extension TransformStruct on Transform {
   /// Helper function to convert Transform to FFI Transform
   RP3D_Transform toStruct() {
-    final xform = Struct.create<RP3D_Transform>();
+    final xform = StructAllocator.create<RP3D_Transform>();
     xform.position.x = position.x;
     xform.position.y = position.y;
     xform.position.z = position.z;

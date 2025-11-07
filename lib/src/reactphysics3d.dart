@@ -23,7 +23,7 @@ extension TransformExtension on Transform {
   /// Returns a 4x4 column-major matrix as Float32List
   Float32List getOpenGLMatrix() {
     // Create FFI transform struct
-    final ffiTransform = bindings.Struct.create<bindings.RP3D_Transform>();
+    final ffiTransform = bindings.StructAllocator.create<bindings.RP3D_Transform>();
     ffiTransform.position.x = position.x;
     ffiTransform.position.y = position.y;
     ffiTransform.position.z = position.z;

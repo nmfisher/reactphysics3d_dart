@@ -39,8 +39,8 @@ targetOS: $targetOS
 
     // Library directories
     final libDirs = [
-      path.join(pkgRootFilePath, "native/lib/macos"),
-      path.join(pkgRootFilePath, "native/lib/wasm"),
+      path.join(pkgRootFilePath, "native/macos"),
+      path.join(pkgRootFilePath, "native/wasm"),
     ];
 
     // Libraries to link against

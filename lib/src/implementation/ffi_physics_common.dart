@@ -295,7 +295,7 @@ class FFIPhysicsCommon implements PhysicsCommon {
 
   /// Helper function to convert Vector3 to FFI Vector3
   RP3D_Vector3 _toFFIVector3(Vector3 v) {
-    final ptr = Struct.create<RP3D_Vector3>();
+    final ptr = StructAllocator.create<RP3D_Vector3>();
     ptr.x = v.x;
     ptr.y = v.y;
     ptr.z = v.z;

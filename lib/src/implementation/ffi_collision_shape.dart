@@ -103,7 +103,7 @@ class FFIHeightFieldShape extends FFICollisionShape
 
   @override
   void setScale(Vector3 scale) {
-    final scalePtr = Struct.create<RP3D_Vector3>();
+    final scalePtr = StructAllocator.create<RP3D_Vector3>();
 
     scalePtr.x = scale.x;
     scalePtr.y = scale.y;
@@ -113,7 +113,7 @@ class FFIHeightFieldShape extends FFICollisionShape
 
   @override
   Vector3 getVertexAt(int row, int column) {
-    final outVertexPtr = Struct.create<RP3D_Vector3>();
+    final outVertexPtr = StructAllocator.create<RP3D_Vector3>();
 
     final heightFieldShapeHandle = _handle.cast<RP3D_HeightFieldShape>();
     rp3d_height_field_shape_get_vertex_at(
@@ -233,7 +233,7 @@ class FFITriangleMesh implements TriangleMesh {
 
   @override
   Vector3 getVertex(int index) {
-    final outVertex = Struct.create<RP3D_Vector3>();
+    final outVertex = StructAllocator.create<RP3D_Vector3>();
 
     rp3d_triangle_mesh_get_vertex(_handle, index, outVertex.address);
     return Vector3(outVertex.x, outVertex.y, outVertex.z);

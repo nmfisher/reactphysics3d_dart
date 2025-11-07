@@ -1743,6 +1743,7 @@ extension RP3D_PhysicsCommonExt on Pointer<RP3D_PhysicsCommon> {
 }
 
 final class RP3D_PhysicsCommon extends Struct {
+  Pointer<RP3D_PhysicsCommon> get address => super.address.cast();
   RP3D_PhysicsCommon(super.address);
 
   static Pointer<RP3D_PhysicsCommon> stackAlloc() {
@@ -1759,6 +1760,7 @@ extension RP3D_PhysicsWorldExt on Pointer<RP3D_PhysicsWorld> {
 }
 
 final class RP3D_PhysicsWorld extends Struct {
+  Pointer<RP3D_PhysicsWorld> get address => super.address.cast();
   RP3D_PhysicsWorld(super.address);
 
   static Pointer<RP3D_PhysicsWorld> stackAlloc() {
@@ -1775,6 +1777,7 @@ extension RP3D_BoxShapeExt on Pointer<RP3D_BoxShape> {
 }
 
 final class RP3D_BoxShape extends Struct {
+  Pointer<RP3D_BoxShape> get address => super.address.cast();
   RP3D_BoxShape(super.address);
 
   static Pointer<RP3D_BoxShape> stackAlloc() {
@@ -1793,6 +1796,7 @@ extension RP3D_Vector3Ext on Pointer<RP3D_Vector3> {
 }
 
 final class RP3D_Vector3 extends Struct {
+  Pointer<RP3D_Vector3> get address => super.address.cast();
   double get x {
     final addr = this.address + 0;
     final value = NativeLibrary.instance.getValue(addr, 'float').toDartDouble;
@@ -1839,6 +1843,7 @@ extension RP3D_SphereShapeExt on Pointer<RP3D_SphereShape> {
 }
 
 final class RP3D_SphereShape extends Struct {
+  Pointer<RP3D_SphereShape> get address => super.address.cast();
   RP3D_SphereShape(super.address);
 
   static Pointer<RP3D_SphereShape> stackAlloc() {
@@ -1855,6 +1860,7 @@ extension RP3D_CapsuleShapeExt on Pointer<RP3D_CapsuleShape> {
 }
 
 final class RP3D_CapsuleShape extends Struct {
+  Pointer<RP3D_CapsuleShape> get address => super.address.cast();
   RP3D_CapsuleShape(super.address);
 
   static Pointer<RP3D_CapsuleShape> stackAlloc() {
@@ -1871,6 +1877,7 @@ extension RP3D_HeightFieldExt on Pointer<RP3D_HeightField> {
 }
 
 final class RP3D_HeightField extends Struct {
+  Pointer<RP3D_HeightField> get address => super.address.cast();
   RP3D_HeightField(super.address);
 
   static Pointer<RP3D_HeightField> stackAlloc() {
@@ -1887,6 +1894,7 @@ extension RP3D_HeightFieldShapeExt on Pointer<RP3D_HeightFieldShape> {
 }
 
 final class RP3D_HeightFieldShape extends Struct {
+  Pointer<RP3D_HeightFieldShape> get address => super.address.cast();
   RP3D_HeightFieldShape(super.address);
 
   static Pointer<RP3D_HeightFieldShape> stackAlloc() {
@@ -1903,6 +1911,7 @@ extension RP3D_TriangleVertexArrayExt on Pointer<RP3D_TriangleVertexArray> {
 }
 
 final class RP3D_TriangleVertexArray extends Struct {
+  Pointer<RP3D_TriangleVertexArray> get address => super.address.cast();
   RP3D_TriangleVertexArray(super.address);
 
   static Pointer<RP3D_TriangleVertexArray> stackAlloc() {
@@ -1919,6 +1928,7 @@ extension RP3D_PolygonVertexArrayExt on Pointer<RP3D_PolygonVertexArray> {
 }
 
 final class RP3D_PolygonVertexArray extends Struct {
+  Pointer<RP3D_PolygonVertexArray> get address => super.address.cast();
   RP3D_PolygonVertexArray(super.address);
 
   static Pointer<RP3D_PolygonVertexArray> stackAlloc() {
@@ -1935,6 +1945,7 @@ extension RP3D_TriangleMeshExt on Pointer<RP3D_TriangleMesh> {
 }
 
 final class RP3D_TriangleMesh extends Struct {
+  Pointer<RP3D_TriangleMesh> get address => super.address.cast();
   RP3D_TriangleMesh(super.address);
 
   static Pointer<RP3D_TriangleMesh> stackAlloc() {
@@ -1951,6 +1962,7 @@ extension RP3D_ConvexMeshExt on Pointer<RP3D_ConvexMesh> {
 }
 
 final class RP3D_ConvexMesh extends Struct {
+  Pointer<RP3D_ConvexMesh> get address => super.address.cast();
   RP3D_ConvexMesh(super.address);
 
   static Pointer<RP3D_ConvexMesh> stackAlloc() {
@@ -1967,6 +1979,7 @@ extension RP3D_ConvexMeshShapeExt on Pointer<RP3D_ConvexMeshShape> {
 }
 
 final class RP3D_ConvexMeshShape extends Struct {
+  Pointer<RP3D_ConvexMeshShape> get address => super.address.cast();
   RP3D_ConvexMeshShape(super.address);
 
   static Pointer<RP3D_ConvexMeshShape> stackAlloc() {
@@ -1983,6 +1996,7 @@ extension RP3D_ConcaveMeshShapeExt on Pointer<RP3D_ConcaveMeshShape> {
 }
 
 final class RP3D_ConcaveMeshShape extends Struct {
+  Pointer<RP3D_ConcaveMeshShape> get address => super.address.cast();
   RP3D_ConcaveMeshShape(super.address);
 
   static Pointer<RP3D_ConcaveMeshShape> stackAlloc() {
@@ -1999,6 +2013,7 @@ extension RP3D_DebugRendererExt on Pointer<RP3D_DebugRenderer> {
 }
 
 final class RP3D_DebugRenderer extends Struct {
+  Pointer<RP3D_DebugRenderer> get address => super.address.cast();
   RP3D_DebugRenderer(super.address);
 
   static Pointer<RP3D_DebugRenderer> stackAlloc() {
@@ -2015,6 +2030,7 @@ extension RP3D_RigidBodyExt on Pointer<RP3D_RigidBody> {
 }
 
 final class RP3D_RigidBody extends Struct {
+  Pointer<RP3D_RigidBody> get address => super.address.cast();
   RP3D_RigidBody(super.address);
 
   static Pointer<RP3D_RigidBody> stackAlloc() {
@@ -2031,6 +2047,7 @@ extension RP3D_TransformExt on Pointer<RP3D_Transform> {
 }
 
 final class RP3D_Transform extends Struct {
+  Pointer<RP3D_Transform> get address => super.address.cast();
   RP3D_Vector3 get position {
     final addr = this.address + 0;
     final value = NativeLibrary.instance.getValue(addr, '*');
@@ -2067,6 +2084,7 @@ extension RP3D_QuaternionExt on Pointer<RP3D_Quaternion> {
 }
 
 final class RP3D_Quaternion extends Struct {
+  Pointer<RP3D_Quaternion> get address => super.address.cast();
   double get x {
     final addr = this.address + 0;
     final value = NativeLibrary.instance.getValue(addr, 'float').toDartDouble;
@@ -2123,6 +2141,7 @@ extension RP3D_RayExt on Pointer<RP3D_Ray> {
 }
 
 final class RP3D_Ray extends Struct {
+  Pointer<RP3D_Ray> get address => super.address.cast();
   RP3D_Vector3 get point1 {
     final addr = this.address + 0;
     final value = NativeLibrary.instance.getValue(addr, '*');
@@ -2167,6 +2186,7 @@ extension RP3D_RaycastInfoExt on Pointer<RP3D_RaycastInfo> {
 }
 
 final class RP3D_RaycastInfo extends Struct {
+  Pointer<RP3D_RaycastInfo> get address => super.address.cast();
   Pointer<RP3D_RigidBody> get body {
     final addr = this.address + 0;
     final value = NativeLibrary.instance.getValue(addr, '*');
@@ -2233,6 +2253,7 @@ extension RP3D_ColliderExt on Pointer<RP3D_Collider> {
 }
 
 final class RP3D_Collider extends Struct {
+  Pointer<RP3D_Collider> get address => super.address.cast();
   RP3D_Collider(super.address);
 
   static Pointer<RP3D_Collider> stackAlloc() {
@@ -2256,6 +2277,7 @@ extension RP3D_CollisionShapeExt on Pointer<RP3D_CollisionShape> {
 }
 
 final class RP3D_CollisionShape extends Struct {
+  Pointer<RP3D_CollisionShape> get address => super.address.cast();
   RP3D_CollisionShape(super.address);
 
   static Pointer<RP3D_CollisionShape> stackAlloc() {
@@ -2272,6 +2294,7 @@ extension RP3D_MaterialExt on Pointer<RP3D_Material> {
 }
 
 final class RP3D_Material extends Struct {
+  Pointer<RP3D_Material> get address => super.address.cast();
   RP3D_Material(super.address);
 
   static Pointer<RP3D_Material> stackAlloc() {
@@ -2288,6 +2311,7 @@ extension RP3D_AABBExt on Pointer<RP3D_AABB> {
 }
 
 final class RP3D_AABB extends Struct {
+  Pointer<RP3D_AABB> get address => super.address.cast();
   RP3D_Vector3 get min {
     final addr = this.address + 0;
     final value = NativeLibrary.instance.getValue(addr, '*');
@@ -2330,6 +2354,7 @@ extension RP3D_BallAndSocketJointExt on Pointer<RP3D_BallAndSocketJoint> {
 }
 
 final class RP3D_BallAndSocketJoint extends Struct {
+  Pointer<RP3D_BallAndSocketJoint> get address => super.address.cast();
   RP3D_BallAndSocketJoint(super.address);
 
   static Pointer<RP3D_BallAndSocketJoint> stackAlloc() {
@@ -2349,6 +2374,7 @@ extension RP3D_BallAndSocketJointInfoExt
 }
 
 final class RP3D_BallAndSocketJointInfo extends Struct {
+  Pointer<RP3D_BallAndSocketJointInfo> get address => super.address.cast();
   RP3D_Vector3 get anchorPointWorldSpace {
     final addr = this.address + 0;
     final value = NativeLibrary.instance.getValue(addr, '*');
@@ -2405,6 +2431,7 @@ extension RP3D_HingeJointExt on Pointer<RP3D_HingeJoint> {
 }
 
 final class RP3D_HingeJoint extends Struct {
+  Pointer<RP3D_HingeJoint> get address => super.address.cast();
   RP3D_HingeJoint(super.address);
 
   static Pointer<RP3D_HingeJoint> stackAlloc() {
@@ -2421,6 +2448,7 @@ extension RP3D_HingeJointInfoExt on Pointer<RP3D_HingeJointInfo> {
 }
 
 final class RP3D_HingeJointInfo extends Struct {
+  Pointer<RP3D_HingeJointInfo> get address => super.address.cast();
   RP3D_Vector3 get anchorPointWorldSpace {
     final addr = this.address + 0;
     final value = NativeLibrary.instance.getValue(addr, '*');
@@ -2547,6 +2575,7 @@ extension RP3D_SliderJointExt on Pointer<RP3D_SliderJoint> {
 }
 
 final class RP3D_SliderJoint extends Struct {
+  Pointer<RP3D_SliderJoint> get address => super.address.cast();
   RP3D_SliderJoint(super.address);
 
   static Pointer<RP3D_SliderJoint> stackAlloc() {
@@ -2563,6 +2592,7 @@ extension RP3D_SliderJointInfoExt on Pointer<RP3D_SliderJointInfo> {
 }
 
 final class RP3D_SliderJointInfo extends Struct {
+  Pointer<RP3D_SliderJointInfo> get address => super.address.cast();
   RP3D_Vector3 get anchorPointWorldSpace {
     final addr = this.address + 0;
     final value = NativeLibrary.instance.getValue(addr, '*');
@@ -2689,6 +2719,7 @@ extension RP3D_FixedJointExt on Pointer<RP3D_FixedJoint> {
 }
 
 final class RP3D_FixedJoint extends Struct {
+  Pointer<RP3D_FixedJoint> get address => super.address.cast();
   RP3D_FixedJoint(super.address);
 
   static Pointer<RP3D_FixedJoint> stackAlloc() {
@@ -2705,6 +2736,7 @@ extension RP3D_FixedJointInfoExt on Pointer<RP3D_FixedJointInfo> {
 }
 
 final class RP3D_FixedJointInfo extends Struct {
+  Pointer<RP3D_FixedJointInfo> get address => super.address.cast();
   RP3D_Vector3 get anchorPointWorldSpace {
     final addr = this.address + 0;
     final value = NativeLibrary.instance.getValue(addr, '*');

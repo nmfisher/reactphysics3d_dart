@@ -48,7 +48,7 @@ class FFIRigidBody implements RigidBody {
 
   @override
   Transform get transform {
-    final out = Struct.create<RP3D_Transform>();
+    final out = StructAllocator.create<RP3D_Transform>();
     rp3d_body_get_transform(_ptr, out.address);
     return out.toDart();
   }
@@ -80,7 +80,7 @@ class FFIRigidBody implements RigidBody {
 
   @override
   Vector3 get linearVelocity {
-    final outPtr = Struct.create<RP3D_Vector3>();
+    final outPtr = StructAllocator.create<RP3D_Vector3>();
     rp3d_body_get_linear_velocity(_ptr, outPtr.address);
     return Vector3(outPtr.x, outPtr.y, outPtr.z);
   }
@@ -167,7 +167,7 @@ class FFIRigidBody implements RigidBody {
 
   /// Helper function to convert Vector3 to FFI Vector3
   RP3D_Vector3 _toFFIVector3(Vector3 v) {
-    final ptr = Struct.create<RP3D_Vector3>();
+    final ptr = StructAllocator.create<RP3D_Vector3>();
     ptr.x = v.x;
     ptr.y = v.y;
     ptr.z = v.z;
