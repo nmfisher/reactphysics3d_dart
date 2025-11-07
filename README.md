@@ -54,10 +54,6 @@ void main() {
 }
 ```
 
-## Documentation
-
-See [DART_PACKAGE_PLAN.md](../reactphysics3d/DART_PACKAGE_PLAN.md) for implementation details.
-
 ## License
 
 This package uses ReactPhysics3D which is licensed under the [ZLib license](http://opensource.org/licenses/zlib).
@@ -65,4 +61,3 @@ This package uses ReactPhysics3D which is licensed under the [ZLib license](http
 ## Credits
 
 - ReactPhysics3D by [Daniel Chappuis](https://github.com/DanielChappuis)
-- Dart bindings by the reactphysics3d_dart contributors
