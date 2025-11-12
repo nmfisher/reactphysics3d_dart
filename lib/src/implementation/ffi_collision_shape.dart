@@ -188,18 +188,132 @@ class FFITriangleVertexArray implements TriangleVertexArray {
   }
 }
 
+/// Vertex array implementation
+class FFIVertexArray implements VertexArray {
+  final Pointer<RP3D_VertexArray> _handle;
+  final Float32List _vertices;
+
+  FFIVertexArray.internal(this._handle, this._vertices);
+
+  @override
+  Pointer<RP3D_VertexArray> get handle => _handle;
+
+  @override
+  void dispose() {
+    // Free the vertex data first, then destroy the array
+    _vertices.free();
+    rp3d_vertex_array_destroy(_handle);
+  }
+
+  @override
+  int getVertexCount() {
+    return rp3d_vertex_array_get_nb_vertices(_handle);
+  }
+
+  @override
+  int getStride() {
+    return rp3d_vertex_array_get_stride(_handle);
+  }
+
+  @override
+  Vector3 getVertex(int index) {
+    final verticesStart = rp3d_vertex_array_get_vertices_start(_handle);
+    if (verticesStart == null) {
+      throw Exception('Cannot get vertex data: vertices start pointer is null');
+    }
+
+    // Each vertex has 3 float components (x, y, z)
+    final vertexPtr = verticesStart + (index * 3);
+    return Vector3(
+      vertexPtr.value,
+      (vertexPtr + 1).value,
+      (vertexPtr + 2).value,
+    );
+  }
+}
+
 /// Polygon vertex array implementation
 class FFIPolygonVertexArray implements PolygonVertexArray {
   final Pointer<RP3D_PolygonVertexArray> _handle;
+  final Float32List _vertices;
+  final Int32List _indices;
+  final Int32List _polygonIndices;
 
-  FFIPolygonVertexArray.internal(this._handle);
+  FFIPolygonVertexArray.internal(
+    this._handle,
+    this._vertices,
+    this._indices,
+    this._polygonIndices,
+  );
 
   @override
   Pointer<RP3D_PolygonVertexArray> get handle => _handle;
 
   @override
   void dispose() {
+    // Free the allocated memory first, then destroy the array
+    _vertices.free();
+    _indices.free();
+    _polygonIndices.free();
     rp3d_polygon_vertex_array_destroy(_handle);
+  }
+
+  @override
+  int getVertexCount() {
+    return rp3d_polygon_vertex_array_get_nb_vertices(_handle);
+  }
+
+  @override
+  int getFaceCount() {
+    return rp3d_polygon_vertex_array_get_nb_faces(_handle);
+  }
+
+  @override
+  Vector3 getVertex(int index) {
+    final outVertex = makeFloat32List(3);
+    rp3d_polygon_vertex_array_get_vertex(_handle, index, outVertex.address);
+    return Vector3(outVertex[0], outVertex[1], outVertex[2]);
+  }
+
+  @override
+  Map<String, int> getPolygonFace(int faceIndex) {
+    final outNbVertices = makeUint32List(1);
+    final outIndexBase = makeUint32List(1);
+
+    rp3d_polygon_vertex_array_get_polygon_face(
+      _handle,
+      faceIndex,
+      outNbVertices.address,
+      outIndexBase.address,
+    );
+
+    return {
+      'nbVertices': outNbVertices[0],
+      'indexBase': outIndexBase[0],
+    };
+  }
+
+  @override
+  int getIndicesStride() {
+    return rp3d_polygon_vertex_array_get_indices_stride(_handle);
+  }
+
+  @override
+  int getIndex(int indexPosition) {
+    final indicesStart = rp3d_polygon_vertex_array_get_indices_start(_handle);
+
+    // indicesStart is already a Pointer<Uint32>, so we can directly access by index
+    // The pointer arithmetic handles the byte offset automatically
+    return indicesStart[indexPosition];
+  }
+
+  @override
+  int getVertexIndexInFace(int faceIndex, int vertexInFace) {
+    return rp3d_polygon_vertex_array_get_vertex_index_in_face(
+      _handle,
+      faceIndex,
+      vertexInFace,
+    );
   }
 }
 

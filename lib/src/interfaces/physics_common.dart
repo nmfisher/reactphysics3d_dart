@@ -30,25 +30,19 @@ abstract class PhysicsCommon extends BaseRP3DType<ffi.Pointer<ffi.RP3D_PhysicsCo
 
   /// Create a triangle vertex array from vertex and index data
   TriangleVertexArray createTriangleVertexArray({
-    required int verticesCount,
     required Float32List vertices,
-    required int verticesStride,
-    required int indicesCount,
     required Uint32List indices,
-    required int indicesStride,
   });
 
   /// Create a polygon vertex array from vertex and index data
   PolygonVertexArray createPolygonVertexArray({
-    required int verticesCount,
     required Float32List vertices,
-    required int verticesStride,
-    required int indicesCount,
     required Uint32List indices,
-    required int indicesStride,
     required Uint32List polygonIndices,
-    required int polygonIndicesStride,
   });
+
+  /// Create a vertex array from vertex data
+  VertexArray createVertexArray(Float32List vertices);
 
   /// Create a triangle mesh from triangle vertex array
   TriangleMesh createTriangleMesh(TriangleVertexArray triangleVertexArray);
@@ -59,8 +53,11 @@ abstract class PhysicsCommon extends BaseRP3DType<ffi.Pointer<ffi.RP3D_PhysicsCo
   /// Create a convex mesh from polygon vertex array
   ConvexMesh createConvexMeshFromPolygons(PolygonVertexArray polygonVertexArray);
 
+  /// Create a convex mesh from vertex array
+  ConvexMesh? createConvexMeshFromVertices(VertexArray vertexArray);
+
   /// Create a convex mesh shape from convex mesh
-  ConvexMeshShape createConvexMeshShape(ConvexMesh convexMesh);
+  ConvexMeshShape createConvexMeshShape(ConvexMesh convexMesh, {Vector3? scaling});
 
   /// Create a concave mesh shape from triangle mesh
   ConcaveMeshShape createConcaveMeshShape(TriangleMesh triangleMesh, {Vector3? scaling});

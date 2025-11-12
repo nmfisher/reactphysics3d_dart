@@ -82,44 +82,36 @@ class FFIReactPhysics3D implements ReactPhysics3D {
 
   @override
   TriangleVertexArray createTriangleVertexArray({
-    required int verticesCount,
     required Float32List vertices,
-    required int verticesStride,
-    required int indicesCount,
     required Uint32List indices,
-    required int indicesStride,
   }) {
+    if (vertices.length < 9 || indices.length < 3) {
+      throw Exception("At least one triangle (3 vertices) required");
+    }
     return _physicsCommon.createTriangleVertexArray(
-      verticesCount: verticesCount,
       vertices: vertices,
-      verticesStride: verticesStride,
-      indicesCount: indicesCount,
       indices: indices,
-      indicesStride: indicesStride,
     );
   }
 
   @override
   PolygonVertexArray createPolygonVertexArray({
-    required int verticesCount,
     required Float32List vertices,
-    required int verticesStride,
-    required int indicesCount,
     required Uint32List indices,
-    required int indicesStride,
     required Uint32List polygonIndices,
-    required int polygonIndicesStride,
   }) {
     return _physicsCommon.createPolygonVertexArray(
-      verticesCount: verticesCount,
       vertices: vertices,
-      verticesStride: verticesStride,
-      indicesCount: indicesCount,
+
       indices: indices,
-      indicesStride: indicesStride,
+
       polygonIndices: polygonIndices,
-      polygonIndicesStride: polygonIndicesStride,
     );
+  }
+
+  @override
+  VertexArray createVertexArray(Float32List vertices) {
+    return _physicsCommon.createVertexArray(vertices);
   }
 
   @override
@@ -128,23 +120,38 @@ class FFIReactPhysics3D implements ReactPhysics3D {
   }
 
   @override
-  ConvexMesh createConvexMeshFromTriangles(TriangleVertexArray triangleVertexArray) {
+  ConvexMesh createConvexMeshFromTriangles(
+    TriangleVertexArray triangleVertexArray,
+  ) {
     return _physicsCommon.createConvexMeshFromTriangles(triangleVertexArray);
   }
 
   @override
-  ConvexMesh createConvexMeshFromPolygons(PolygonVertexArray polygonVertexArray) {
+  ConvexMesh createConvexMeshFromPolygons(
+    PolygonVertexArray polygonVertexArray,
+  ) {
     return _physicsCommon.createConvexMeshFromPolygons(polygonVertexArray);
   }
 
   @override
-  ConvexMeshShape createConvexMeshShape(ConvexMesh convexMesh) {
-    return _physicsCommon.createConvexMeshShape(convexMesh);
+  ConvexMesh? createConvexMeshFromVertices(VertexArray vertexArray) {
+    return _physicsCommon.createConvexMeshFromVertices(vertexArray);
   }
 
   @override
-  ConcaveMeshShape createConcaveMeshShape(TriangleMesh triangleMesh, {Vector3? scaling}) {
-    return _physicsCommon.createConcaveMeshShape(triangleMesh, scaling: scaling);
+  ConvexMeshShape createConvexMeshShape(ConvexMesh convexMesh, {Vector3? scaling}) {
+    return _physicsCommon.createConvexMeshShape(convexMesh, scaling: scaling);
+  }
+
+  @override
+  ConcaveMeshShape createConcaveMeshShape(
+    TriangleMesh triangleMesh, {
+    Vector3? scaling,
+  }) {
+    return _physicsCommon.createConcaveMeshShape(
+      triangleMesh,
+      scaling: scaling,
+    );
   }
 
   @override
@@ -154,7 +161,7 @@ class FFIReactPhysics3D implements ReactPhysics3D {
     BodyType type = BodyType.DYNAMIC,
     double mass = 1.0,
   }) {
-    final rigidBody = world.createRigidBody(transform:transform);
+    final rigidBody = world.createRigidBody(transform: transform);
     rigidBody.type = type;
     rigidBody.mass = mass;
 

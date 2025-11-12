@@ -17,6 +17,7 @@
 #include <reactphysics3d/collision/VertexArray.h>
 #include <cstring>
 #include <vector>
+#include <unordered_map>
 
 using namespace reactphysics3d;
 
@@ -960,7 +961,7 @@ RP3D_TriangleVertexArray* rp3d_triangle_vertex_array_create(
         verticesStride,
         nbIndices / 3,  // Number of triangles
         indicesStart,
-        3 * indicesStride,  // Index stride should be 12 bytes (3 indices per triangle)
+        indicesStride,  // Index stride should be 12 bytes (3 indices per triangle)
         vertexDataType,
         indexDataType
     );
@@ -1011,7 +1012,72 @@ void rp3d_triangle_vertex_array_get_triangle_vertices_indices(
     tva->getTriangleVerticesIndices(triangleIndex, out[0], out[1], out[2]);
 }
 
+// ==================== VertexArray ====================
+
+EMSCRIPTEN_KEEPALIVE
+RP3D_VertexArray* rp3d_vertex_array_create(
+    uint32_t nbVertices,
+    const float* verticesStart,
+    uint32_t verticesStride
+) {
+    if (!verticesStart) {
+        std::cout << "VertexArray creation failed: null input data" << std::endl;
+        return nullptr;
+    }
+
+    if (nbVertices < 4) {
+        std::cout << "VertexArray creation failed: minimum 4 vertices required for convex hull" << std::endl;
+        return nullptr;
+    }
+
+    // Create the VertexArray
+    VertexArray* va = new VertexArray(
+        verticesStart,
+        verticesStride,
+        nbVertices,
+        VertexArray::DataType::VERTEX_FLOAT_TYPE
+    );
+
+    return reinterpret_cast<RP3D_VertexArray*>(va);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void rp3d_vertex_array_destroy(RP3D_VertexArray* vertexArray) {
+    if (!vertexArray) return;
+    VertexArray* va = reinterpret_cast<VertexArray*>(vertexArray);
+    delete va;
+}
+
+EMSCRIPTEN_KEEPALIVE
+uint32_t rp3d_vertex_array_get_nb_vertices(const RP3D_VertexArray* vertexArray) {
+    if (!vertexArray) return 0;
+    const VertexArray* va = reinterpret_cast<const VertexArray*>(vertexArray);
+    return va->getNbVertices();
+}
+
+EMSCRIPTEN_KEEPALIVE
+const float* rp3d_vertex_array_get_vertices_start(const RP3D_VertexArray* vertexArray) {
+    if (!vertexArray) return nullptr;
+    const VertexArray* va = reinterpret_cast<const VertexArray*>(vertexArray);
+    return reinterpret_cast<const float*>(va->getStart());
+}
+
+EMSCRIPTEN_KEEPALIVE
+uint32_t rp3d_vertex_array_get_stride(const RP3D_VertexArray* vertexArray) {
+    if (!vertexArray) return 0;
+    const VertexArray* va = reinterpret_cast<const VertexArray*>(vertexArray);
+    return va->getStride();
+}
+
 // ==================== PolygonVertexArray ====================
+
+// Storage for polygon faces data - we need to keep this alive
+// as PolygonVertexArray only stores pointers
+struct PolygonArrayData {
+    std::vector<PolygonVertexArray::PolygonFace> faces;
+    PolygonVertexArray* array;
+};
+
 
 EMSCRIPTEN_KEEPALIVE
 RP3D_PolygonVertexArray* rp3d_polygon_vertex_array_create(
@@ -1024,16 +1090,107 @@ RP3D_PolygonVertexArray* rp3d_polygon_vertex_array_create(
     const uint32_t* polygonIndicesStart,
     uint32_t polygonIndicesStride
 ) {
-    // For now, return nullptr to indicate this functionality needs more work
-    // Polygon vertex arrays are complex and require proper PolygonFace structure creation
-    std::cout << "PolygonVertexArray creation not yet implemented" << std::endl;
-    return nullptr;
+    if (!verticesStart || !indicesStart || !polygonIndicesStart) {
+        std::cout << "PolygonVertexArray creation failed: null input data" << std::endl;
+        return nullptr;
+    }
+
+    // Parse polygonIndices to build PolygonFace array
+    // Format: [nbVertices1, indexBase1, nbVertices2, indexBase2, ...]
+    // Each face requires 4 values, so nbFaces = number of indices / 2
+    uint32_t nbFaces = nbIndices / 4;
+
+    if (nbFaces == 0) {
+        std::cout << "PolygonVertexArray creation failed: no faces specified" << std::endl;
+        return nullptr;
+    }
+
+    // Allocate persistent storage for polygon data
+    PolygonArrayData* data = new PolygonArrayData();
+    data->faces.reserve(nbFaces);
+
+    // Build the PolygonFace array from the flat polygonIndices
+    for (uint32_t i = 0; i < nbFaces; i++) {
+        PolygonVertexArray::PolygonFace face;
+        face.nbVertices = polygonIndicesStart[i * 2];
+        
+        face.indexBase = polygonIndicesStart[i * 2 + 1];
+        data->faces.push_back(face);
+    }
+
+    // Create the PolygonVertexArray
+    PolygonVertexArray* pva = new PolygonVertexArray(
+        nbVertices,
+        verticesStart,
+        verticesStride,
+        indicesStart,
+        indicesStride,
+        nbFaces,
+        data->faces.data(),
+        PolygonVertexArray::VertexDataType::VERTEX_FLOAT_TYPE,
+        PolygonVertexArray::IndexDataType::INDEX_INTEGER_TYPE
+    );
+
+    data->array = pva;
+
+    RP3D_PolygonVertexArray* handle = reinterpret_cast<RP3D_PolygonVertexArray*>(pva);
+    
+    return handle;
 }
 
 EMSCRIPTEN_KEEPALIVE
 void rp3d_polygon_vertex_array_destroy(RP3D_PolygonVertexArray* polygonVertexArray) {
+    if (!polygonVertexArray) return;
+
     PolygonVertexArray* pva = reinterpret_cast<PolygonVertexArray*>(polygonVertexArray);
     delete pva;
+}
+
+EMSCRIPTEN_KEEPALIVE
+uint32_t rp3d_polygon_vertex_array_get_nb_vertices(RP3D_PolygonVertexArray* polygonVertexArray) {
+    PolygonVertexArray* pva = reinterpret_cast<PolygonVertexArray*>(polygonVertexArray);
+    return pva->getNbVertices();
+}
+
+EMSCRIPTEN_KEEPALIVE
+uint32_t rp3d_polygon_vertex_array_get_nb_faces(RP3D_PolygonVertexArray* polygonVertexArray) {
+    PolygonVertexArray* pva = reinterpret_cast<PolygonVertexArray*>(polygonVertexArray);
+    return pva->getNbFaces();
+}
+
+EMSCRIPTEN_KEEPALIVE
+void rp3d_polygon_vertex_array_get_vertex(RP3D_PolygonVertexArray* polygonVertexArray, uint32_t vertexIndex, float* outVertex) {
+    PolygonVertexArray* pva = reinterpret_cast<PolygonVertexArray*>(polygonVertexArray);
+    Vector3 vertex = pva->getVertex(vertexIndex);
+    outVertex[0] = vertex.x;
+    outVertex[1] = vertex.y;
+    outVertex[2] = vertex.z;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void rp3d_polygon_vertex_array_get_polygon_face(RP3D_PolygonVertexArray* polygonVertexArray, uint32_t faceIndex, uint32_t* outNbVertices, uint32_t* outIndexBase) {
+    PolygonVertexArray* pva = reinterpret_cast<PolygonVertexArray*>(polygonVertexArray);
+    PolygonVertexArray::PolygonFace* face = pva->getPolygonFace(faceIndex);
+    *outNbVertices = face->nbVertices;
+    *outIndexBase = face->indexBase;
+}
+
+EMSCRIPTEN_KEEPALIVE
+uint32_t rp3d_polygon_vertex_array_get_indices_stride(RP3D_PolygonVertexArray* polygonVertexArray) {
+    PolygonVertexArray* pva = reinterpret_cast<PolygonVertexArray*>(polygonVertexArray);
+    return pva->getIndicesStride();
+}
+
+EMSCRIPTEN_KEEPALIVE
+const uint32_t* rp3d_polygon_vertex_array_get_indices_start(RP3D_PolygonVertexArray* polygonVertexArray) {
+    PolygonVertexArray* pva = reinterpret_cast<PolygonVertexArray*>(polygonVertexArray);
+    return reinterpret_cast<const uint32_t*>(pva->getIndicesStart());
+}
+
+EMSCRIPTEN_KEEPALIVE
+uint32_t rp3d_polygon_vertex_array_get_vertex_index_in_face(RP3D_PolygonVertexArray* polygonVertexArray, uint32_t faceIndex, uint32_t vertexInFace) {
+    PolygonVertexArray* pva = reinterpret_cast<PolygonVertexArray*>(polygonVertexArray);
+    return pva->getVertexIndexInFace(faceIndex, vertexInFace);
 }
 
 // ==================== TriangleMesh ====================
@@ -1177,9 +1334,77 @@ RP3D_ConvexMesh* rp3d_physics_common_create_convex_mesh_from_polygons(
     RP3D_PhysicsCommon* common,
     RP3D_PolygonVertexArray* polygonVertexArray
 ) {
-    // Return nullptr since PolygonVertexArray creation is not implemented
-    std::cout << "ConvexMesh creation from polygons not yet implemented" << std::endl;
-    return nullptr;
+    std::cout << "start" << std::endl;
+    PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
+    PolygonVertexArray* pva = reinterpret_cast<PolygonVertexArray*>(polygonVertexArray);
+
+    if (!pva) {
+        std::cout << "ConvexMesh creation from polygons failed: null polygon vertex array" << std::endl;
+        return nullptr;
+    }
+
+    std::vector<Message> messages;
+    ConvexMesh* convexMesh = pc->createConvexMesh(*pva, messages);
+
+    // Output any error messages
+    if (!messages.empty()) {
+        for(const auto & message : messages) {
+            std::cout << "ConvexMesh creation from polygons warning: " << message.text << std::endl;
+        }
+    } else {
+        std::cout << "No messages" << std::endl;
+    }
+
+    if (!convexMesh) {
+        std::cout << "ConvexMesh creation from polygons failed: algorithm failed" << std::endl;
+        return nullptr;
+    }
+
+    return reinterpret_cast<RP3D_ConvexMesh*>(convexMesh);
+}
+
+EMSCRIPTEN_KEEPALIVE
+RP3D_ConvexMesh* rp3d_physics_common_create_convex_mesh_from_vertices(
+    RP3D_PhysicsCommon* common,
+    RP3D_VertexArray* vertexArray
+) {
+    PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
+    VertexArray* va = reinterpret_cast<VertexArray*>(vertexArray);
+
+    if (!va) {
+        std::cout << "ConvexMesh creation from vertices failed: null vertex array" << std::endl;
+        return nullptr;
+    }
+
+    if (va->getNbVertices() < 4) {
+        std::cout << "ConvexMesh creation from vertices failed: minimum 4 vertices required" << std::endl;
+        return nullptr;
+    }
+
+    try {
+        std::vector<Message> messages;
+        ConvexMesh* convexMesh = pc->createConvexMesh(*va, messages);
+
+        // Output any error messages
+        if (!messages.empty()) {
+            for(const auto & message : messages) {
+                std::cout << "ConvexMesh creation from vertices warning: " << message.text << std::endl;
+            }
+        }
+
+        if (!convexMesh) {
+            std::cout << "ConvexMesh creation from vertices failed: QuickHull algorithm failed" << std::endl;
+            return nullptr;
+        }
+
+        return reinterpret_cast<RP3D_ConvexMesh*>(convexMesh);
+    } catch (const std::exception& e) {
+        std::cout << "ConvexMesh creation from vertices failed with exception: " << e.what() << std::endl;
+        return nullptr;
+    } catch (...) {
+        std::cout << "ConvexMesh creation from vertices failed with unknown exception" << std::endl;
+        return nullptr;
+    }
 }
 
 EMSCRIPTEN_KEEPALIVE
@@ -1194,12 +1419,14 @@ void rp3d_physics_common_destroy_convex_mesh(RP3D_PhysicsCommon* common, RP3D_Co
 EMSCRIPTEN_KEEPALIVE
 RP3D_ConvexMeshShape* rp3d_physics_common_create_convex_mesh_shape(
     RP3D_PhysicsCommon* common,
-    RP3D_ConvexMesh* convexMesh
+    RP3D_ConvexMesh* convexMesh,
+    const RP3D_Vector3* scaling
 ) {
     PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
     ConvexMesh* cm = reinterpret_cast<ConvexMesh*>(convexMesh);
+    Vector3 scaleVec = to_rp3d_vector3(scaling);
 
-    ConvexMeshShape* convexMeshShape = pc->createConvexMeshShape(cm);
+    ConvexMeshShape* convexMeshShape = pc->createConvexMeshShape(cm, scaleVec);
     return reinterpret_cast<RP3D_ConvexMeshShape*>(convexMeshShape);
 }
 

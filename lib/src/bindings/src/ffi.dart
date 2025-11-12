@@ -20,6 +20,10 @@ Int32List makeInt32List(int length) {
   return Int32List(length);
 }
 
+Uint32List makeUint32List(int length) {
+  return Uint32List(length);
+}
+
 Float32List makeFloat32List(int length) {
   return Float32List(length);
 }

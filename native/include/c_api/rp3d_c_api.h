@@ -39,6 +39,7 @@ typedef struct RP3D_HeightFieldShape RP3D_HeightFieldShape;
 typedef struct RP3D_TriangleMesh RP3D_TriangleMesh;
 typedef struct RP3D_TriangleVertexArray RP3D_TriangleVertexArray;
 typedef struct RP3D_PolygonVertexArray RP3D_PolygonVertexArray;
+typedef struct RP3D_VertexArray RP3D_VertexArray;
 typedef struct RP3D_ConvexMesh RP3D_ConvexMesh;
 typedef struct RP3D_HeightField RP3D_HeightField;
 typedef struct RP3D_Material RP3D_Material;
@@ -208,6 +209,24 @@ EMSCRIPTEN_KEEPALIVE RP3D_PolygonVertexArray* rp3d_polygon_vertex_array_create(
     uint32_t polygonIndicesStride
 );
 EMSCRIPTEN_KEEPALIVE void rp3d_polygon_vertex_array_destroy(RP3D_PolygonVertexArray* polygonVertexArray);
+EMSCRIPTEN_KEEPALIVE uint32_t rp3d_polygon_vertex_array_get_nb_vertices(RP3D_PolygonVertexArray* polygonVertexArray);
+EMSCRIPTEN_KEEPALIVE uint32_t rp3d_polygon_vertex_array_get_nb_faces(RP3D_PolygonVertexArray* polygonVertexArray);
+EMSCRIPTEN_KEEPALIVE void rp3d_polygon_vertex_array_get_vertex(RP3D_PolygonVertexArray* polygonVertexArray, uint32_t vertexIndex, float* outVertex);
+EMSCRIPTEN_KEEPALIVE void rp3d_polygon_vertex_array_get_polygon_face(RP3D_PolygonVertexArray* polygonVertexArray, uint32_t faceIndex, uint32_t* outNbVertices, uint32_t* outIndexBase);
+EMSCRIPTEN_KEEPALIVE uint32_t rp3d_polygon_vertex_array_get_indices_stride(RP3D_PolygonVertexArray* polygonVertexArray);
+EMSCRIPTEN_KEEPALIVE const uint32_t* rp3d_polygon_vertex_array_get_indices_start(RP3D_PolygonVertexArray* polygonVertexArray);
+EMSCRIPTEN_KEEPALIVE uint32_t rp3d_polygon_vertex_array_get_vertex_index_in_face(RP3D_PolygonVertexArray* polygonVertexArray, uint32_t faceIndex, uint32_t vertexInFace);
+
+// VertexArray creation/destruction
+EMSCRIPTEN_KEEPALIVE RP3D_VertexArray* rp3d_vertex_array_create(
+    uint32_t nbVertices,
+    const float* verticesStart,
+    uint32_t verticesStride
+);
+EMSCRIPTEN_KEEPALIVE void rp3d_vertex_array_destroy(RP3D_VertexArray* vertexArray);
+EMSCRIPTEN_KEEPALIVE uint32_t rp3d_vertex_array_get_nb_vertices(const RP3D_VertexArray* vertexArray);
+EMSCRIPTEN_KEEPALIVE const float* rp3d_vertex_array_get_vertices_start(const RP3D_VertexArray* vertexArray);
+EMSCRIPTEN_KEEPALIVE uint32_t rp3d_vertex_array_get_stride(const RP3D_VertexArray* vertexArray);
 
 // TriangleMesh creation/destruction
 EMSCRIPTEN_KEEPALIVE RP3D_TriangleMesh* rp3d_physics_common_create_triangle_mesh(
@@ -239,12 +258,17 @@ EMSCRIPTEN_KEEPALIVE RP3D_ConvexMesh* rp3d_physics_common_create_convex_mesh_fro
     RP3D_PhysicsCommon* common,
     RP3D_PolygonVertexArray* polygonVertexArray
 );
+EMSCRIPTEN_KEEPALIVE RP3D_ConvexMesh* rp3d_physics_common_create_convex_mesh_from_vertices(
+    RP3D_PhysicsCommon* common,
+    RP3D_VertexArray* vertexArray
+);
 EMSCRIPTEN_KEEPALIVE void rp3d_physics_common_destroy_convex_mesh(RP3D_PhysicsCommon* common, RP3D_ConvexMesh* convexMesh);
 
 // ConvexMeshShape creation/destruction
 EMSCRIPTEN_KEEPALIVE RP3D_ConvexMeshShape* rp3d_physics_common_create_convex_mesh_shape(
     RP3D_PhysicsCommon* common,
-    RP3D_ConvexMesh* convexMesh
+    RP3D_ConvexMesh* convexMesh,
+    const RP3D_Vector3* scaling
 );
 EMSCRIPTEN_KEEPALIVE void rp3d_physics_common_destroy_convex_mesh_shape(RP3D_PhysicsCommon* common, RP3D_ConvexMeshShape* convexMeshShape);
 

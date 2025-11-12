@@ -98,7 +98,6 @@ class FFIPhysicsCommon implements PhysicsCommon {
     // Convert height list to float array
     final heightsPtr = makeFloat32List(heights.length);
     heightsPtr.setRange(0, heights.length, heights);
-    
 
     final heightFieldHandle = rp3d_physics_common_create_height_field(
       _handle!,
@@ -139,50 +138,30 @@ class FFIPhysicsCommon implements PhysicsCommon {
 
   @override
   TriangleVertexArray createTriangleVertexArray({
-    required int verticesCount,
     required Float32List vertices,
-    required int verticesStride,
-    required int indicesCount,
     required Uint32List indices,
-    required int indicesStride,
   }) {
     _checkDisposed();
 
-    // Validate inputs
-    if (verticesCount <= 0) {
-      throw ArgumentError('Vertices count must be positive');
-    }
-    if (vertices.length < verticesCount * verticesStride ~/ 4) {
-      throw ArgumentError(
-        'Vertices array too small for specified count and stride',
-      );
-    }
-    if (indicesCount <= 0) {
-      throw ArgumentError('Indices count must be positive');
-    }
-    if (indices.length < indicesCount) {
-      throw ArgumentError('Indices array too small for specified count');
-    }
-
     // Allocate vertex data
-    final verticesPtr = makeFloat32List(verticesCount * verticesStride ~/ 4);
+    final verticesPtr = makeFloat32List(vertices.length);
     for (int i = 0; i < vertices.length; i++) {
       verticesPtr[i] = vertices[i];
     }
 
     // Allocate index data
-    final indicesPtr = makeInt32List(indicesCount);
+    final indicesPtr = makeInt32List(indices.length);
     for (int i = 0; i < indices.length; i++) {
       indicesPtr[i] = indices[i];
     }
 
     final triangleArrayHandle = rp3d_triangle_vertex_array_create(
-      verticesCount,
+      vertices.length ~/ 3,
       verticesPtr.address,
-      verticesStride,
-      indicesCount,
+      3 * sizeOf<Float>(),
+      indices.length,
       indicesPtr.address.cast(),
-      indicesStride,
+      3 * sizeOf<Uint32>(),
     );
     if (triangleArrayHandle == nullptr) {
       throw Exception('Failed to create TriangleVertexArray');
@@ -196,21 +175,75 @@ class FFIPhysicsCommon implements PhysicsCommon {
 
   @override
   PolygonVertexArray createPolygonVertexArray({
-    required int verticesCount,
     required Float32List vertices,
-    required int verticesStride,
-    required int indicesCount,
     required Uint32List indices,
-    required int indicesStride,
     required Uint32List polygonIndices,
-    required int polygonIndicesStride,
   }) {
     _checkDisposed();
 
-    // Polygon vertex arrays are not yet implemented
-    throw UnimplementedError(
-      'PolygonVertexArray creation is not yet implemented',
+    // Allocate vertex data
+    final verticesPtr = makeFloat32List(vertices.length);
+    for (int i = 0; i < vertices.length; i++) {
+      verticesPtr[i] = vertices[i];
+    }
+
+    // Allocate index data
+    final indicesPtr = makeInt32List(indices.length);
+    for (int i = 0; i < indices.length; i++) {
+      indicesPtr[i] = indices[i];
+    }
+
+    // Allocate polygon indices data
+    // Format: [nbVertices1, indexBase1, nbVertices2, indexBase2, ...]
+    final polygonIndicesPtr = makeInt32List(polygonIndices.length);
+    for (int i = 0; i < polygonIndices.length; i++) {
+      polygonIndicesPtr[i] = polygonIndices[i];
+    }
+
+    final polygonArrayHandle = rp3d_polygon_vertex_array_create(
+      vertices.length ~/ 3, // nbVertices (3 floats per vertex)
+      verticesPtr.address,
+      3 * sizeOf<Float>(), // verticesStride: 3 floats * 4 bytes
+      indices.length, // nbIndices (used to determine nbFaces)
+      indicesPtr.address.cast(),
+      sizeOf<Uint32>(), // indicesStride: 4 bytes per int
+      polygonIndicesPtr.address.cast(),
+      2 * sizeOf<Uint32>(), // polygonIndicesStride: 2 values per face
     );
+
+    if (polygonArrayHandle == nullptr) {
+      throw Exception('Failed to create PolygonVertexArray');
+    }
+
+    return FFIPolygonVertexArray.internal(
+      polygonArrayHandle,
+      verticesPtr,
+      indicesPtr,
+      polygonIndicesPtr,
+    );
+  }
+
+  @override
+  VertexArray createVertexArray(Float32List vertices) {
+    _checkDisposed();
+
+    // Allocate vertex data
+    final verticesPtr = makeFloat32List(vertices.length);
+    for (int i = 0; i < vertices.length; i++) {
+      verticesPtr[i] = vertices[i];
+    }
+
+    final vertexArrayHandle = rp3d_vertex_array_create(
+      vertices.length ~/ 3, // nbVertices (3 floats per vertex)
+      verticesPtr.address,
+      3 * sizeOf<Float>(), // stride: 3 floats * 4 bytes
+    );
+
+    if (vertexArrayHandle == nullptr) {
+      throw Exception('Failed to create VertexArray');
+    }
+
+    return FFIVertexArray.internal(vertexArrayHandle, verticesPtr);
   }
 
   @override
@@ -251,19 +284,48 @@ class FFIPhysicsCommon implements PhysicsCommon {
     PolygonVertexArray polygonVertexArray,
   ) {
     _checkDisposed();
-    // Convex mesh from polygons is not yet implemented
-    throw UnimplementedError(
-      'ConvexMesh creation from polygons is not yet implemented',
-    );
+
+    final convexMeshHandle =
+        rp3d_physics_common_create_convex_mesh_from_polygons(
+          _handle!,
+          polygonVertexArray.handle,
+        );
+    if (convexMeshHandle == nullptr) {
+      throw Exception(
+        'Failed to create ConvexMesh from triangles - invalid vertex data or algorithm failed',
+      );
+    }
+    return FFIConvexMesh.internal(convexMeshHandle, this);
   }
 
   @override
-  ConvexMeshShape createConvexMeshShape(ConvexMesh convexMesh) {
+  ConvexMesh? createConvexMeshFromVertices(VertexArray vertexArray) {
+    _checkDisposed();
+    final convexMeshHandle =
+        rp3d_physics_common_create_convex_mesh_from_vertices(
+          _handle!,
+          vertexArray.handle,
+        );
+
+    // Return null if convex mesh creation failed (QuickHull algorithm can fail)
+    if (convexMeshHandle == nullptr) {
+      return null;
+    }
+
+    return FFIConvexMesh.internal(convexMeshHandle, this);
+  }
+
+  @override
+  ConvexMeshShape createConvexMeshShape(ConvexMesh convexMesh, {Vector3? scaling}) {
     _checkDisposed();
     final ffiConvexMesh = convexMesh as FFIConvexMesh;
+
+    final scalePtr = _toFFIVector3(scaling ?? Vector3.all(1.0));
+
     final convexMeshShapeHandle = rp3d_physics_common_create_convex_mesh_shape(
       _handle!,
       ffiConvexMesh.handle,
+      scalePtr.address,
     );
     if (convexMeshShapeHandle == nullptr) {
       throw Exception('Failed to create ConvexMeshShape');
