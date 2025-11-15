@@ -61,4 +61,14 @@ class FFICollider implements Collider {
   bool get isTrigger {
     return ffi.rp3d_collider_get_is_trigger(_ptr) != 0;
   }
+
+  @override
+  void setIsWorldQueryCollider(bool isWorldQueryCollider) {
+    ffi.rp3d_collider_set_is_world_query_collider(_ptr, isWorldQueryCollider ? 1 : 0);
+  }
+
+  @override
+  bool get isWorldQueryCollider {
+    return ffi.rp3d_collider_get_is_world_query_collider(_ptr) != 0;
+  }
 }

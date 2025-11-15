@@ -30,4 +30,10 @@ abstract class Collider extends BaseRP3DType<ffi.Pointer<ffi.RP3D_Collider>> {
 
   /// Check if this collider is a trigger
   bool get isTrigger;
+
+  /// Set whether this collider will be part of world query results
+  void setIsWorldQueryCollider(bool isWorldQueryCollider);
+
+  /// Check if this collider will be part of world query results
+  bool get isWorldQueryCollider;
 }

@@ -19,6 +19,9 @@ export 'collider.dart';
 export 'collision_shape.dart';
 export 'material.dart';
 
+// Collision callback interfaces
+export 'collision_callback.dart';
+
 // Debug rendering interfaces
 export 'debug_renderer.dart';
 export 'debug_item.dart';
