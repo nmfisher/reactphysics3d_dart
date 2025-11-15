@@ -28,6 +28,7 @@ extern "C" {
 typedef struct RP3D_PhysicsCommon RP3D_PhysicsCommon;
 typedef struct RP3D_PhysicsWorld RP3D_PhysicsWorld;
 typedef struct RP3D_RigidBody RP3D_RigidBody;
+typedef struct RP3D_Body RP3D_Body;
 typedef struct RP3D_Collider RP3D_Collider;
 typedef struct RP3D_CollisionShape RP3D_CollisionShape;
 typedef struct RP3D_BoxShape RP3D_BoxShape;
@@ -48,6 +49,7 @@ typedef struct RP3D_HingeJoint RP3D_HingeJoint;
 typedef struct RP3D_SliderJoint RP3D_SliderJoint;
 typedef struct RP3D_FixedJoint RP3D_FixedJoint;
 typedef struct RP3D_DebugRenderer RP3D_DebugRenderer;
+typedef struct TCollisionCallback TCollisionCallback;
 
 // ==================== Enums ====================
 
@@ -369,6 +371,9 @@ EMSCRIPTEN_KEEPALIVE void rp3d_collider_get_local_bounds(const RP3D_Collider* co
 EMSCRIPTEN_KEEPALIVE void rp3d_collider_set_is_trigger(RP3D_Collider* collider, uint8_t isTrigger);
 EMSCRIPTEN_KEEPALIVE uint8_t rp3d_collider_get_is_trigger(const RP3D_Collider* collider);
 
+EMSCRIPTEN_KEEPALIVE void rp3d_collider_set_is_world_query_collider(RP3D_Collider* collider, uint8_t isWorldQueryCollider);
+EMSCRIPTEN_KEEPALIVE uint8_t rp3d_collider_get_is_world_query_collider(const RP3D_Collider* collider);
+
 // ==================== Material ====================
 EMSCRIPTEN_KEEPALIVE void rp3d_material_destroy(RP3D_Material* material);
 
@@ -446,6 +451,30 @@ EMSCRIPTEN_KEEPALIVE RP3D_FixedJoint* rp3d_world_create_fixed_joint(
 );
 
 EMSCRIPTEN_KEEPALIVE void rp3d_world_destroy_joint(RP3D_PhysicsWorld* world, void* joint);
+
+// ==================== Collision Callbacks ====================
+
+// Create callbacks
+EMSCRIPTEN_KEEPALIVE TCollisionCallback* rp3d_create_logging_collision_callback(const char* prefix, uint8_t logContactPoints, uint8_t verbose);
+EMSCRIPTEN_KEEPALIVE TCollisionCallback* rp3d_create_contact_counter_callback();
+
+// Get callback properties
+EMSCRIPTEN_KEEPALIVE uint8_t rp3d_get_logging_callback_has_contact(TCollisionCallback* callback);
+
+// Get callback statistics
+EMSCRIPTEN_KEEPALIVE void rp3d_get_logging_callback_stats(TCollisionCallback* callback, uint32_t* callbackCount,
+                                                         uint32_t* totalContactPairs, uint32_t* totalContactPoints);
+EMSCRIPTEN_KEEPALIVE void rp3d_get_counter_callback_stats(TCollisionCallback* callback, uint32_t* callbackCount,
+                                                        uint32_t* totalContactPairs, uint32_t* totalContactPoints);
+
+// Reset callback statistics
+EMSCRIPTEN_KEEPALIVE void rp3d_reset_callback_stats(TCollisionCallback* callback);
+
+// Collision testing with callbacks
+EMSCRIPTEN_KEEPALIVE void rp3d_test_collision_bodies_direct(RP3D_PhysicsWorld* world, RP3D_Body* body1, RP3D_Body* body2, TCollisionCallback* callback);
+
+// Destroy callbacks
+EMSCRIPTEN_KEEPALIVE void rp3d_destroy_collision_callback(TCollisionCallback* callback);
 
 #ifdef __cplusplus
 }

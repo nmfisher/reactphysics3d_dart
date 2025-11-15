@@ -568,6 +568,18 @@ uint8_t rp3d_collider_get_is_trigger(const RP3D_Collider* collider) {
     return c->getIsTrigger() ? 1 : 0;
 }
 
+EMSCRIPTEN_KEEPALIVE
+void rp3d_collider_set_is_world_query_collider(RP3D_Collider* collider, uint8_t isWorldQueryCollider) {
+    Collider* c = reinterpret_cast<Collider*>(collider);
+    c->setIsWorldQueryCollider(isWorldQueryCollider != 0);
+}
+
+EMSCRIPTEN_KEEPALIVE
+uint8_t rp3d_collider_get_is_world_query_collider(const RP3D_Collider* collider) {
+    const Collider* c = reinterpret_cast<const Collider*>(collider);
+    return c->getIsWorldQueryCollider() ? 1 : 0;
+}
+
 // ==================== Material ====================
 
 EMSCRIPTEN_KEEPALIVE
