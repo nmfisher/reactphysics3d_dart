@@ -71,4 +71,24 @@ class FFICollider implements Collider {
   bool get isWorldQueryCollider {
     return ffi.rp3d_collider_get_is_world_query_collider(_ptr) != 0;
   }
+
+  @override
+  int get collisionCategoryBits {
+    return ffi.rp3d_collider_get_collision_category_bits(_ptr);
+  }
+
+  @override
+  set collisionCategoryBits(int value) {
+    ffi.rp3d_collider_set_collision_category_bits(_ptr, value);
+  }
+
+  @override
+  int get collideWithMaskBits {
+    return ffi.rp3d_collider_get_collide_with_mask_bits(_ptr);
+  }
+
+  @override
+  set collideWithMaskBits(int value) {
+    ffi.rp3d_collider_set_collide_with_mask_bits(_ptr, value);
+  }
 }

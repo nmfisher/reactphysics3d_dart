@@ -580,6 +580,30 @@ uint8_t rp3d_collider_get_is_world_query_collider(const RP3D_Collider* collider)
     return c->getIsWorldQueryCollider() ? 1 : 0;
 }
 
+EMSCRIPTEN_KEEPALIVE
+void rp3d_collider_set_collision_category_bits(RP3D_Collider* collider, unsigned short collisionCategoryBits) {
+    Collider* c = reinterpret_cast<Collider*>(collider);
+    c->setCollisionCategoryBits(collisionCategoryBits);
+}
+
+EMSCRIPTEN_KEEPALIVE
+unsigned short rp3d_collider_get_collision_category_bits(const RP3D_Collider* collider) {
+    const Collider* c = reinterpret_cast<const Collider*>(collider);
+    return c->getCollisionCategoryBits();
+}
+
+EMSCRIPTEN_KEEPALIVE
+void rp3d_collider_set_collide_with_mask_bits(RP3D_Collider* collider, unsigned short collideWithMaskBits) {
+    Collider* c = reinterpret_cast<Collider*>(collider);
+    c->setCollideWithMaskBits(collideWithMaskBits);
+}
+
+EMSCRIPTEN_KEEPALIVE
+unsigned short rp3d_collider_get_collide_with_mask_bits(const RP3D_Collider* collider) {
+    const Collider* c = reinterpret_cast<const Collider*>(collider);
+    return c->getCollideWithMaskBits();
+}
+
 // ==================== Material ====================
 
 EMSCRIPTEN_KEEPALIVE

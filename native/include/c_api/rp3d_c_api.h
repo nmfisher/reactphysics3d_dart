@@ -374,6 +374,12 @@ EMSCRIPTEN_KEEPALIVE uint8_t rp3d_collider_get_is_trigger(const RP3D_Collider* c
 EMSCRIPTEN_KEEPALIVE void rp3d_collider_set_is_world_query_collider(RP3D_Collider* collider, uint8_t isWorldQueryCollider);
 EMSCRIPTEN_KEEPALIVE uint8_t rp3d_collider_get_is_world_query_collider(const RP3D_Collider* collider);
 
+EMSCRIPTEN_KEEPALIVE void rp3d_collider_set_collision_category_bits(RP3D_Collider* collider, unsigned short collisionCategoryBits);
+EMSCRIPTEN_KEEPALIVE unsigned short rp3d_collider_get_collision_category_bits(const RP3D_Collider* collider);
+
+EMSCRIPTEN_KEEPALIVE void rp3d_collider_set_collide_with_mask_bits(RP3D_Collider* collider, unsigned short collideWithMaskBits);
+EMSCRIPTEN_KEEPALIVE unsigned short rp3d_collider_get_collide_with_mask_bits(const RP3D_Collider* collider);
+
 // ==================== Material ====================
 EMSCRIPTEN_KEEPALIVE void rp3d_material_destroy(RP3D_Material* material);
 

@@ -36,4 +36,16 @@ abstract class Collider extends BaseRP3DType<ffi.Pointer<ffi.RP3D_Collider>> {
 
   /// Check if this collider will be part of world query results
   bool get isWorldQueryCollider;
+
+  /// Get the collision category bits
+  int get collisionCategoryBits;
+
+  /// Set the collision category bits
+  set collisionCategoryBits(int value);
+
+  /// Get the collide with mask bits
+  int get collideWithMaskBits;
+
+  /// Set the collide with mask bits
+  set collideWithMaskBits(int value);
 }

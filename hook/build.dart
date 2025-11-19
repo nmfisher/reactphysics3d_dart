@@ -5,6 +5,8 @@ import 'package:native_toolchain_c/native_toolchain_c.dart';
 import 'package:path/path.dart' as path;
 import 'log.dart';
 
+
+
 void main(List<String> args) async {
 
   await build(args, (BuildInput input, BuildOutputBuilder output) async {
@@ -31,8 +33,9 @@ outputDirectory: ${outputDirectory.path}
 targetOS: $targetOS
 """);
 
+
     // Source files
-    var sources = [path.join(pkgRootFilePath, "native/src/rp3d_c_api.cpp")];
+    var sources = [path.join(pkgRootFilePath, "native/src/rp3d_c_api.cpp"), path.join(pkgRootFilePath, "native/src/logging_collision_callback.cpp")];
 
     // Include directories - need both our C API headers and ReactPhysics3D headers
     final includeDirs = [path.join(pkgRootFilePath, "native/include")];
