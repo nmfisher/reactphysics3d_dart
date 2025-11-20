@@ -169,7 +169,9 @@ EMSCRIPTEN_KEEPALIVE RP3D_HeightField* rp3d_physics_common_create_height_field(
     uint32_t nbColumns,
     const float* heights,
     float minHeight,
-    float maxHeight
+    float maxHeight,
+    char* errorBuffer,
+    uint32_t errorBufferSize
 );
 EMSCRIPTEN_KEEPALIVE void rp3d_physics_common_destroy_height_field(RP3D_PhysicsCommon* common, RP3D_HeightField* heightField);
 

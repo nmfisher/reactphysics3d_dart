@@ -132,9 +132,16 @@ RP3D_HeightField* rp3d_physics_common_create_height_field(
     uint32_t nbColumns,
     const float* heights,
     float minHeight,
-    float maxHeight
+    float maxHeight,
+    char* errorBuffer,
+    uint32_t errorBufferSize
 ) {
     PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
+
+    // Initialize error buffer with null bytes
+    if (errorBuffer != nullptr && errorBufferSize > 0) {
+        memset(errorBuffer, 0, errorBufferSize);
+    }
 
     // Create height data array and copy from input
     std::vector<float> heightData(nbRows * nbColumns);
@@ -152,10 +159,47 @@ RP3D_HeightField* rp3d_physics_common_create_height_field(
         messages,
         1.0f        // integerHeightScale parameter
     );
-    for(const auto & message : messages) {
-        std::cout << message.text << std::endl;
+
+    // Log all messages for debugging
+    std::cout << "HeightField creation - Total messages: " << messages.size() << std::endl;
+    for(size_t i = 0; i < messages.size(); ++i) {
+        const auto& message = messages[i];
+        std::string messageTypeStr;
+        switch(message.type) {
+            case Message::Type::Error: messageTypeStr = "ERROR"; break;
+            case Message::Type::Warning: messageTypeStr = "WARNING"; break;
+            case Message::Type::Information: messageTypeStr = "INFO"; break;
+            default: messageTypeStr = "UNKNOWN"; break;
+        }
+        std::cout << "Message " << i << " [" << messageTypeStr << "]: " << message.text << std::endl;
     }
-    std::cout << messages.size() << " messages"  << std::endl;
+
+    // Copy error messages to buffer if provided
+    if (errorBuffer != nullptr && errorBufferSize > 0) {
+        uint32_t currentOffset = 0;
+        for(const auto & message : messages) {
+            // Only copy error messages (not warnings or info)
+            if (message.type == Message::Type::Error) {
+                uint32_t messageLength = message.text.length();
+
+                // Check if we have space for message + null terminator
+                if (currentOffset + messageLength + 1 < errorBufferSize) {
+                    strcpy(errorBuffer + currentOffset, message.text.c_str());
+                    currentOffset += messageLength + 1; // +1 for null terminator
+                } else {
+                    // Not enough space, truncate the message
+                    uint32_t remainingSpace = errorBufferSize - currentOffset - 1;
+                    if (remainingSpace > 0) {
+                        strncpy(errorBuffer + currentOffset, message.text.c_str(), remainingSpace);
+                        errorBuffer[currentOffset + remainingSpace] = '\0';
+                        currentOffset += remainingSpace + 1;
+                    }
+                    break; // Buffer is full
+                }
+            }
+        }
+    }
+
     return reinterpret_cast<RP3D_HeightField*>(heightField);
 }
 

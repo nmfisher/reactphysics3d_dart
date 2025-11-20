@@ -421,6 +421,84 @@ void main() {
         expect(vertex, isNotNull);
         expect(vertex, isA<Vector3>());
       });
+
+      test('createHeightField should throw exception for invalid height data', () {
+        // Test with NaN values in heights array - this should trigger error messages
+        const rows = 1;
+        const columns = 1;
+        final heights = [1.0]; // Contains NaN
+
+        expect(
+          () => physics3D.createHeightField(
+            rows: rows,
+            columns: columns,
+            heights: heights,
+            minHeight: 1.0,
+            maxHeight: 2.0,
+          ),
+          throwsA(isA<Exception>()),
+        );
+      });
+
+      test('createHeightField should throw exception for infinite height values', () {
+        // Test with infinite values in heights array
+        const rows = 2;
+        const columns = 2;
+        final heights = [1.0, double.infinity, 1.5, 2.0]; // Contains infinity
+        const minHeight = 0.0;
+        const maxHeight = 3.0;
+
+        expect(
+          () => physics3D.createHeightField(
+            rows: rows,
+            columns: columns,
+            heights: heights,
+            minHeight: minHeight,
+            maxHeight: maxHeight,
+          ),
+          throwsA(isA<Exception>()),
+        );
+      });
+
+      test('createHeightField should throw exception for invalid dimensions', () {
+        // Test with dimensions that should definitely cause an error
+        const rows = 0; // Invalid - zero rows
+        const columns = 2;
+        final heights = [1.0, 2.0]; // Heights for 0x2 grid
+        const minHeight = 0.0;
+        const maxHeight = 3.0;
+
+        expect(
+          () => physics3D.createHeightField(
+            rows: rows,
+            columns: columns,
+            heights: heights,
+            minHeight: minHeight,
+            maxHeight: maxHeight,
+          ),
+          throwsA(isA<Exception>()),
+        );
+      });
+
+      test('createHeightField should throw exception for invalid height range', () {
+        // Test with invalid height range (minHeight > maxHeight)
+        const rows = 2;
+        const columns = 2;
+        final heights = [1.0, 2.0, 1.5, 2.0];
+        const minHeight = 5.0; // Higher than any height value
+        const maxHeight = 3.0;  // Lower than minHeight
+
+        expect(
+          () => physics3D.createHeightField(
+            rows: rows,
+            columns: columns,
+            heights: heights,
+            minHeight: minHeight,
+            maxHeight: maxHeight,
+          ),
+          throwsA(isA<Exception>()),
+        );
+      });
     });
 
     group('mesh shapes', () {

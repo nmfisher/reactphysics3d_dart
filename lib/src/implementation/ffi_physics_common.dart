@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:reactphysics3d_dart/src/implementation/ffi_physics_world.dart';
 import '../../reactphysics3d_dart.dart';
 import '../bindings/src/bindings.dart';
@@ -77,6 +76,8 @@ class FFIPhysicsCommon implements PhysicsCommon {
     return FFICapsuleShape.internal(shapeHandle, this);
   }
 
+  final _error = Uint8List.fromList(List<int>.filled(0, 1024));
+
   @override
   HeightField createHeightField({
     required int rows,
@@ -95,6 +96,12 @@ class FFIPhysicsCommon implements PhysicsCommon {
       throw ArgumentError('Heights array length must match rows * columns');
     }
 
+    // Allocate 1024-byte error buffer
+    const int errorBufferSize = 1024;
+
+    // Initialize error buffer with null bytes
+    _error.fillRange(0, _error.length, 0);
+
     // Convert height list to float array
     final heightsPtr = makeFloat32List(heights.length);
     heightsPtr.setRange(0, heights.length, heights);
@@ -106,10 +113,52 @@ class FFIPhysicsCommon implements PhysicsCommon {
       heightsPtr.address,
       minHeight,
       maxHeight,
+      _error.address.cast(),
+      errorBufferSize,
     );
+
     if (heightFieldHandle == nullptr) {
       throw Exception('Failed to create HeightField');
     }
+
+    // Check if first byte is non-null, indicating error messages
+    if (_error[0] != 0) {
+      final errorMessages = <String>[];
+      int currentOffset = 0;
+
+      // Iterate over null-separated chunks
+      while (currentOffset < errorBufferSize) {
+        if (_error[currentOffset] == 0) {
+          break; // End of messages
+        }
+
+        // Find the end of the current message (next null byte or end of buffer)
+        int messageEnd = currentOffset;
+        while (messageEnd < errorBufferSize && _error[messageEnd] != 0) {
+          messageEnd++;
+        }
+
+        // Extract the message
+        if (messageEnd > currentOffset) {
+          final messageBytes = <int>[];
+          for (int i = currentOffset; i < messageEnd; i++) {
+            messageBytes.add(_error[i]);
+          }
+          final message = String.fromCharCodes(messageBytes);
+          errorMessages.add(message);
+        }
+
+        currentOffset = messageEnd + 1; // Skip the null byte
+      }
+
+      // Concatenate all error messages and throw exception
+      if (errorMessages.isNotEmpty) {
+        throw Exception(
+          'HeightField creation failed: ${errorMessages.join('; ')}',
+        );
+      }
+    }
+
     return FFIHeightField.internal(heightFieldHandle, this);
   }
 
@@ -316,7 +365,10 @@ class FFIPhysicsCommon implements PhysicsCommon {
   }
 
   @override
-  ConvexMeshShape createConvexMeshShape(ConvexMesh convexMesh, {Vector3? scaling}) {
+  ConvexMeshShape createConvexMeshShape(
+    ConvexMesh convexMesh, {
+    Vector3? scaling,
+  }) {
     _checkDisposed();
     final ffiConvexMesh = convexMesh as FFIConvexMesh;
 
