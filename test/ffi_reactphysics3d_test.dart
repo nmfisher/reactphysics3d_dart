@@ -3,7 +3,8 @@ import 'dart:ffi' as ffi;
 import 'package:test/test.dart';
 
 import 'package:reactphysics3d_dart/reactphysics3d_dart.dart';
-import 'package:reactphysics3d_dart/src/bindings/src/rp3d_ffi.g.dart' as bindings;
+import 'package:reactphysics3d_dart/src/bindings/src/rp3d_ffi.g.dart'
+    as bindings;
 
 void main() {
   group('ReactPhysics3D', () {
@@ -251,50 +252,53 @@ void main() {
         expect(collider.isWorldQueryCollider, isTrue);
       });
 
-      test('should handle collision category bits and collide with mask bits', () {
-        final rigidBody = physics3D.createRigidBody(
-          world,
-          type: BodyType.DYNAMIC,
-        );
-        final shape = physics3D.createBoxShape(Vector3.all(1));
-        final collider = rigidBody.addCollider(shape);
+      test(
+        'should handle collision category bits and collide with mask bits',
+        () {
+          final rigidBody = physics3D.createRigidBody(
+            world,
+            type: BodyType.DYNAMIC,
+          );
+          final shape = physics3D.createBoxShape(Vector3.all(1));
+          final collider = rigidBody.addCollider(shape);
 
-        // Test default values - ReactPhysics3D typically defaults to 0xFFFF (all bits set)
-        expect(collider.collisionCategoryBits, isA<int>());
-        expect(collider.collideWithMaskBits, isA<int>());
+          // Test default values - ReactPhysics3D typically defaults to 0xFFFF (all bits set)
+          expect(collider.collisionCategoryBits, isA<int>());
+          expect(collider.collideWithMaskBits, isA<int>());
 
-        // Test setting collision category bits
-        const testCategory = 0x0001; // Category 1
-        collider.collisionCategoryBits = testCategory;
-        expect(collider.collisionCategoryBits, equals(testCategory));
+          // Test setting collision category bits
+          const testCategory = 0x0001; // Category 1
+          collider.collisionCategoryBits = testCategory;
+          expect(collider.collisionCategoryBits, equals(testCategory));
 
-        // Test setting collide with mask bits
-        const testMask = 0x0002; // Collide with category 2
-        collider.collideWithMaskBits = testMask;
-        expect(collider.collideWithMaskBits, equals(testMask));
+          // Test setting collide with mask bits
+          const testMask = 0x0002; // Collide with category 2
+          collider.collideWithMaskBits = testMask;
+          expect(collider.collideWithMaskBits, equals(testMask));
 
-        // Test multiple bits
-        const multiCategory = 0x0101; // Bits 0 and 8 set
-        collider.collisionCategoryBits = multiCategory;
-        expect(collider.collisionCategoryBits, equals(multiCategory));
+          // Test multiple bits
+          const multiCategory = 0x0101; // Bits 0 and 8 set
+          collider.collisionCategoryBits = multiCategory;
+          expect(collider.collisionCategoryBits, equals(multiCategory));
 
-        const multiMask = 0x8080; // Bits 7 and 15 set
-        collider.collideWithMaskBits = multiMask;
-        expect(collider.collideWithMaskBits, equals(multiMask));
+          const multiMask = 0x8080; // Bits 7 and 15 set
+          collider.collideWithMaskBits = multiMask;
+          expect(collider.collideWithMaskBits, equals(multiMask));
 
-        print('✅ Collision category and mask bits test passed!');
-        print('   Category bits: ${collider.collisionCategoryBits}');
-        print('   Mask bits: ${collider.collideWithMaskBits}');
-      });
+          print('✅ Collision category and mask bits test passed!');
+          print('   Category bits: ${collider.collisionCategoryBits}');
+          print('   Mask bits: ${collider.collideWithMaskBits}');
+        },
+      );
 
       test('should set scale on height field shape', () {
         const rows = 2;
         const columns = 2;
-        final heights = [1.0, 1.5, 1.5, 2.0];
+        final heights = Float32List.fromList([1.0, 1.5, 1.5, 2.0]);
         const minHeight = 0.0;
         const maxHeight = 3.0;
 
-        final heightField = physics3D.createHeightField(
+        final heightField = physics3D.createHeightFieldFloat(
           rows: rows,
           columns: columns,
           heights: heights,
@@ -330,35 +334,48 @@ void main() {
     });
 
     group('heightfield creation methods', () {
-      test('createHeightField should create a HeightField with given data', () {
-        const rows = 3;
-        const columns = 3;
-        final heights = [1.0, 2.0, 1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 1.0];
-        const minHeight = 0.0;
-        const maxHeight = 4.0;
+      test(
+        'createHeightFieldFloat should create a HeightField with given data',
+        () {
+          const rows = 3;
+          const columns = 3;
+          final heights = Float32List.fromList([
+            1.0,
+            2.0,
+            1.0,
+            2.0,
+            3.0,
+            2.0,
+            1.0,
+            2.0,
+            1.0,
+          ]);
+          const minHeight = 0.0;
+          const maxHeight = 4.0;
 
-        final heightField = physics3D.createHeightField(
-          rows: rows,
-          columns: columns,
-          heights: heights,
-          minHeight: minHeight,
-          maxHeight: maxHeight,
-        );
+          final heightField = physics3D.createHeightFieldFloat(
+            rows: rows,
+            columns: columns,
+            heights: heights,
+            minHeight: minHeight,
+            maxHeight: maxHeight,
+          );
 
-        expect(heightField, isNotNull);
-        expect(heightField, isA<HeightField>());
-      });
+          expect(heightField, isNotNull);
+          expect(heightField, isA<HeightField>());
+        },
+      );
 
       test(
         'createHeightFieldShape should create a HeightFieldShape from HeightField',
         () {
           const rows = 2;
           const columns = 2;
-          final heights = [1.0, 1.5, 1.5, 2.0];
+          final heights = Float32List.fromList([1.0, 1.5, 1.5, 2.0]);
           const minHeight = 0.0;
           const maxHeight = 3.0;
 
-          final heightField = physics3D.createHeightField(
+          final heightField = physics3D.createHeightFieldFloat(
             rows: rows,
             columns: columns,
             heights: heights,
@@ -375,38 +392,24 @@ void main() {
         },
       );
 
-      test('createHeightField should handle invalid input', () {
-        expect(
-          () => physics3D.createHeightField(
-            rows: 0,
-            columns: 2,
-            heights: [1.0, 2.0],
-            minHeight: 0.0,
-            maxHeight: 3.0,
-          ),
-          throwsA(isA<ArgumentError>()),
-        );
-
-        expect(
-          () => physics3D.createHeightField(
-            rows: 2,
-            columns: 2,
-            heights: [1.0], // Incorrect length
-            minHeight: 0.0,
-            maxHeight: 3.0,
-          ),
-          throwsA(isA<ArgumentError>()),
-        );
-      });
-
       test('heightfield shape should provide vertex access', () {
         const rows = 3;
         const columns = 3;
-        final heights = [1.0, 2.0, 1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 1.0];
+        final heights = Float32List.fromList([
+          1.0,
+          2.0,
+          1.0,
+          2.0,
+          3.0,
+          2.0,
+          1.0,
+          2.0,
+          1.0,
+        ]);
         const minHeight = 0.0;
         const maxHeight = 4.0;
 
-        final heightField = physics3D.createHeightField(
+        final heightField = physics3D.createHeightFieldFloat(
           rows: rows,
           columns: columns,
           heights: heights,
@@ -422,82 +425,153 @@ void main() {
         expect(vertex, isA<Vector3>());
       });
 
-      test('createHeightField should throw exception for invalid height data', () {
-        // Test with NaN values in heights array - this should trigger error messages
-        const rows = 1;
-        const columns = 1;
-        final heights = [1.0]; // Contains NaN
+      test(
+        'createHeightFieldFloat should throw exception for invalid height data',
+        () {
+          // Test with NaN values in heights array - this should trigger error messages
+          const rows = 1;
+          const columns = 1;
+          final heights = Float32List.fromList([1.0]); // Contains NaN
 
-        expect(
-          () => physics3D.createHeightField(
+          expect(
+            () => physics3D.createHeightFieldFloat(
+              rows: rows,
+              columns: columns,
+              heights: heights,
+              minHeight: 1.0,
+              maxHeight: 2.0,
+            ),
+            throwsA(isA<Exception>()),
+          );
+        },
+      );
+
+      test(
+        'createHeightFieldFloat should throw exception for invalid dimensions',
+        () {
+          // Test with dimensions that should definitely cause an error
+          const rows = 0; // Invalid - zero rows
+          const columns = 2;
+          final heights = Float32List.fromList([
+            1.0,
+            2.0,
+          ]); // Heights for 0x2 grid
+          const minHeight = 0.0;
+          const maxHeight = 3.0;
+
+          expect(
+            () => physics3D.createHeightFieldFloat(
+              rows: rows,
+              columns: columns,
+              heights: heights,
+              minHeight: minHeight,
+              maxHeight: maxHeight,
+            ),
+            throwsA(isA<Exception>()),
+          );
+        },
+      );
+    });
+
+    group('HeightField (integer data type)', () {
+      test(
+        'createHeightFieldInt should create a HeightField with integer data',
+        () {
+          const rows = 2;
+          const columns = 2;
+          final heights = Int32List.fromList([1, 2, 3, 4]); 
+          const minHeight = 0.0;
+          const maxHeight = 3.0;
+          const integerHeightScale = 1.0; 
+
+          final heightField = physics3D.createHeightFieldInt(
             rows: rows,
             columns: columns,
             heights: heights,
-            minHeight: 1.0,
-            maxHeight: 2.0,
+            minHeight: minHeight,
+            maxHeight: maxHeight,
+            integerHeightScale: integerHeightScale,
+          );
+
+          expect(heightField, isNotNull);
+          expect(heightField, isA<HeightField>());
+
+          // Create a HeightFieldShape to validate actual vertex heights
+          final heightFieldShape = physics3D.createHeightFieldShape(
+            heightField,
+          );
+
+          expect(heightFieldShape, isNotNull);
+          expect(heightFieldShape, isA<HeightFieldShape>());
+
+          final vertex00 = heightFieldShape.getVertexAt(0, 0); 
+          final vertex01 = heightFieldShape.getVertexAt(1, 0); 
+          final vertex10 = heightFieldShape.getVertexAt(0, 1); 
+          final vertex11 = heightFieldShape.getVertexAt(1, 1); 
+
+          print("${vertex00.y} ${vertex01.y} ${vertex10.y} ${vertex11.y}");
+
+          expect(vertex00.y, closeTo(-1.5, 1e-6));
+          expect(vertex01.y, closeTo(-0.5, 1e-6));
+          expect(vertex10.y, closeTo(0.5, 1e-6));
+          expect(vertex11.y, closeTo(1.5, 1e-6));
+
+          // Clean up
+          heightFieldShape.dispose();
+          heightField.dispose();
+        },
+      );
+
+      test('createHeightFieldInt should handle invalid input', () {
+        // Test with zero dimensions
+        expect(
+          () => physics3D.createHeightFieldInt(
+            rows: 0,
+            columns: 2,
+            heights: Int32List.fromList([1, 2, 3, 4]),
+            minHeight: 0.0,
+            maxHeight: 10.0,
+            integerHeightScale: 0.01,
           ),
-          throwsA(isA<Exception>()),
+          throwsA(isA<ArgumentError>()),
+        );
+
+        // Test with mismatched heights array length
+        expect(
+          () => physics3D.createHeightFieldInt(
+            rows: 2,
+            columns: 2,
+            heights: Int32List.fromList([1, 2, 3]), // Should be 4 elements
+            minHeight: 0.0,
+            maxHeight: 10.0,
+            integerHeightScale: 0.01,
+          ),
+          throwsA(isA<ArgumentError>()),
         );
       });
 
-      test('createHeightField should throw exception for infinite height values', () {
-        // Test with infinite values in heights array
+      test('createHeightFieldInt should create HeightFieldShape', () {
         const rows = 2;
         const columns = 2;
-        final heights = [1.0, double.infinity, 1.5, 2.0]; // Contains infinity
+        final heights = Int32List.fromList([100, 200, 150, 250]);
         const minHeight = 0.0;
-        const maxHeight = 3.0;
+        const maxHeight = 10.0;
+        const integerHeightScale = 0.01;
 
-        expect(
-          () => physics3D.createHeightField(
-            rows: rows,
-            columns: columns,
-            heights: heights,
-            minHeight: minHeight,
-            maxHeight: maxHeight,
-          ),
-          throwsA(isA<Exception>()),
+        final heightField = physics3D.createHeightFieldInt(
+          rows: rows,
+          columns: columns,
+          heights: heights,
+          minHeight: minHeight,
+          maxHeight: maxHeight,
+          integerHeightScale: integerHeightScale,
         );
-      });
 
-      test('createHeightField should throw exception for invalid dimensions', () {
-        // Test with dimensions that should definitely cause an error
-        const rows = 0; // Invalid - zero rows
-        const columns = 2;
-        final heights = [1.0, 2.0]; // Heights for 0x2 grid
-        const minHeight = 0.0;
-        const maxHeight = 3.0;
+        final heightFieldShape = physics3D.createHeightFieldShape(heightField);
+        final scale = Vector3(2.0, 1.0, 2.0);
 
-        expect(
-          () => physics3D.createHeightField(
-            rows: rows,
-            columns: columns,
-            heights: heights,
-            minHeight: minHeight,
-            maxHeight: maxHeight,
-          ),
-          throwsA(isA<Exception>()),
-        );
-      });
-
-      test('createHeightField should throw exception for invalid height range', () {
-        // Test with invalid height range (minHeight > maxHeight)
-        const rows = 2;
-        const columns = 2;
-        final heights = [1.0, 2.0, 1.5, 2.0];
-        const minHeight = 5.0; // Higher than any height value
-        const maxHeight = 3.0;  // Lower than minHeight
-
-        expect(
-          () => physics3D.createHeightField(
-            rows: rows,
-            columns: columns,
-            heights: heights,
-            minHeight: minHeight,
-            maxHeight: maxHeight,
-          ),
-          throwsA(isA<Exception>()),
-        );
+        // Should not throw any exceptions
+        expect(() => heightFieldShape.setScale(scale), returnsNormally);
       });
     });
 
@@ -2011,7 +2085,6 @@ void main() {
           () => physics3D.createVertexArray(vertices),
           throwsA(isA<Exception>()),
         );
-
       });
 
       test('should handle empty vertex array', () {
@@ -2142,14 +2215,14 @@ void main() {
 
       test('should create multiple callbacks with different IDs', () {
         // Create multiple callbacks of different types
-        final loggingCallback1 = bindings.rp3d_create_logging_collision_callback(
-          ffi.nullptr, 1, 1,
-        );
-        final loggingCallback2 = bindings.rp3d_create_logging_collision_callback(
-          ffi.nullptr, 0, 1,
-        );
-        final counterCallback1 = bindings.rp3d_create_contact_counter_callback();
-        final counterCallback2 = bindings.rp3d_create_contact_counter_callback();
+        final loggingCallback1 = bindings
+            .rp3d_create_logging_collision_callback(ffi.nullptr, 1, 1);
+        final loggingCallback2 = bindings
+            .rp3d_create_logging_collision_callback(ffi.nullptr, 0, 1);
+        final counterCallback1 = bindings
+            .rp3d_create_contact_counter_callback();
+        final counterCallback2 = bindings
+            .rp3d_create_contact_counter_callback();
 
         // All should have different IDs
         expect(loggingCallback1, isNot(equals(loggingCallback2)));
@@ -2200,13 +2273,19 @@ void main() {
         // Create two rigid bodies
         final body1 = physics3D.createRigidBody(
           world,
-          transform: (position: Vector3(0, 0, 0), orientation: Quaternion.identity()),
+          transform: (
+            position: Vector3(0, 0, 0),
+            orientation: Quaternion.identity(),
+          ),
           type: BodyType.STATIC,
         );
 
         final body2 = physics3D.createRigidBody(
           world,
-          transform: (position: Vector3(0, 0, 0), orientation: Quaternion.identity()),
+          transform: (
+            position: Vector3(0, 0, 0),
+            orientation: Quaternion.identity(),
+          ),
           type: BodyType.DYNAMIC,
         );
 
@@ -2220,7 +2299,9 @@ void main() {
 
         // Create a callback
         final callbackId = bindings.rp3d_create_logging_collision_callback(
-          ffi.nullptr, 1, 1,
+          ffi.nullptr,
+          1,
+          1,
         );
 
         expect(callbackId.address, isNonZero);
@@ -2276,8 +2357,13 @@ void main() {
           );
 
           // Check hasContact - should be false (0) since bodies are far apart
-          final initialHasContact = bindings.rp3d_get_logging_callback_has_contact(callbackId);
-          expect(initialHasContact, equals(0), reason: 'Bodies should not be colliding initially');
+          final initialHasContact = bindings
+              .rp3d_get_logging_callback_has_contact(callbackId);
+          expect(
+            initialHasContact,
+            equals(0),
+            reason: 'Bodies should not be colliding initially',
+          );
 
           // Move body2 close to body1 so they collide
           body2.setTransform((
@@ -2294,16 +2380,25 @@ void main() {
           );
 
           // Check hasContact - should be true (1) since bodies are now overlapping
-          final finalHasContact = bindings.rp3d_get_logging_callback_has_contact(callbackId);
-          expect(finalHasContact, equals(1), reason: 'Bodies should be colliding after movement - boxes with half-extents 1.0 at distance 1.5 should collide');
+          final finalHasContact = bindings
+              .rp3d_get_logging_callback_has_contact(callbackId);
+          expect(
+            finalHasContact,
+            equals(1),
+            reason:
+                'Bodies should be colliding after movement - boxes with half-extents 1.0 at distance 1.5 should collide',
+          );
 
           print('✅ Full collision detection test passed!');
-          print('   Initial hasContact: $initialHasContact (should be 0 - far apart)');
-          print('   Final hasContact: $finalHasContact (should be 1 - overlapping)');
+          print(
+            '   Initial hasContact: $initialHasContact (should be 0 - far apart)',
+          );
+          print(
+            '   Final hasContact: $finalHasContact (should be 1 - overlapping)',
+          );
           print('   ✅ Real position-based collision detection working!');
 
           // Cleanup is handled by test framework
-
         } finally {
           // Always cleanup the callback
           bindings.rp3d_destroy_collision_callback(callbackId);

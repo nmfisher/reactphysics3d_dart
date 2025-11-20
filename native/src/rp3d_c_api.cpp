@@ -124,9 +124,9 @@ void rp3d_physics_common_destroy_capsule_shape(RP3D_PhysicsCommon* common, RP3D_
     pc->destroyCapsuleShape(cs);
 }
 
-// HeightField creation
+// HeightField creation (float data type)
 EMSCRIPTEN_KEEPALIVE
-RP3D_HeightField* rp3d_physics_common_create_height_field(
+RP3D_HeightField* rp3d_physics_common_create_height_field_float(
     RP3D_PhysicsCommon* common,
     uint32_t nbRows,
     uint32_t nbColumns,
@@ -162,6 +162,80 @@ RP3D_HeightField* rp3d_physics_common_create_height_field(
 
     // Log all messages for debugging
     std::cout << "HeightField creation - Total messages: " << messages.size() << std::endl;
+    for(size_t i = 0; i < messages.size(); ++i) {
+        const auto& message = messages[i];
+        std::string messageTypeStr;
+        switch(message.type) {
+            case Message::Type::Error: messageTypeStr = "ERROR"; break;
+            case Message::Type::Warning: messageTypeStr = "WARNING"; break;
+            case Message::Type::Information: messageTypeStr = "INFO"; break;
+            default: messageTypeStr = "UNKNOWN"; break;
+        }
+        std::cout << "Message " << i << " [" << messageTypeStr << "]: " << message.text << std::endl;
+    }
+
+    // Copy error messages to buffer if provided
+    if (errorBuffer != nullptr && errorBufferSize > 0) {
+        uint32_t currentOffset = 0;
+        for(const auto & message : messages) {
+            // Only copy error messages (not warnings or info)
+            if (message.type == Message::Type::Error) {
+                uint32_t messageLength = message.text.length();
+
+                // Check if we have space for message + null terminator
+                if (currentOffset + messageLength + 1 < errorBufferSize) {
+                    strcpy(errorBuffer + currentOffset, message.text.c_str());
+                    currentOffset += messageLength + 1; // +1 for null terminator
+                } else {
+                    // Not enough space, truncate the message
+                    uint32_t remainingSpace = errorBufferSize - currentOffset - 1;
+                    if (remainingSpace > 0) {
+                        strncpy(errorBuffer + currentOffset, message.text.c_str(), remainingSpace);
+                        errorBuffer[currentOffset + remainingSpace] = '\0';
+                        currentOffset += remainingSpace + 1;
+                    }
+                    break; // Buffer is full
+                }
+            }
+        }
+    }
+
+    return reinterpret_cast<RP3D_HeightField*>(heightField);
+}
+
+// HeightField creation (integer data type)
+EMSCRIPTEN_KEEPALIVE
+RP3D_HeightField* rp3d_physics_common_create_height_field_int(
+    RP3D_PhysicsCommon* common,
+    uint32_t nbRows,
+    uint32_t nbColumns,
+    const int32_t* heights,
+    float minHeight,
+    float maxHeight,
+    double integerHeightScale,
+    char* errorBuffer,
+    uint32_t errorBufferSize
+) {
+    PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
+
+    // Initialize error buffer with null bytes
+    if (errorBuffer != nullptr && errorBufferSize > 0) {
+        memset(errorBuffer, 0, errorBufferSize);
+    }
+
+    // Create height field with integer data type
+    std::vector<Message> messages;
+    HeightField* heightField = pc->createHeightField(
+        nbColumns,  // Note: columns first in ReactPhysics3D API
+        nbRows,     // Note: rows second in ReactPhysics3D API
+        heights,
+        HeightField::HeightDataType::HEIGHT_INT_TYPE,
+        messages,
+        static_cast<decimal>(integerHeightScale)
+    );
+
+    // Log all messages for debugging
+    std::cout << "HeightField creation (int) - Total messages: " << messages.size() << std::endl;
     for(size_t i = 0; i < messages.size(); ++i) {
         const auto& message = messages[i];
         std::string messageTypeStr;

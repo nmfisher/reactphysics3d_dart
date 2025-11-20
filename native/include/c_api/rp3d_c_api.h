@@ -162,14 +162,27 @@ EMSCRIPTEN_KEEPALIVE RP3D_BoxShape* rp3d_physics_common_create_box_shape(RP3D_Ph
 EMSCRIPTEN_KEEPALIVE RP3D_SphereShape* rp3d_physics_common_create_sphere_shape(RP3D_PhysicsCommon* common, float radius);
 EMSCRIPTEN_KEEPALIVE RP3D_CapsuleShape* rp3d_physics_common_create_capsule_shape(RP3D_PhysicsCommon* common, float radius, float height);
 
-// HeightField creation/destruction
-EMSCRIPTEN_KEEPALIVE RP3D_HeightField* rp3d_physics_common_create_height_field(
+// HeightField creation/destruction (float data type)
+EMSCRIPTEN_KEEPALIVE RP3D_HeightField* rp3d_physics_common_create_height_field_float(
     RP3D_PhysicsCommon* common,
     uint32_t nbRows,
     uint32_t nbColumns,
     const float* heights,
     float minHeight,
     float maxHeight,
+    char* errorBuffer,
+    uint32_t errorBufferSize
+);
+
+// HeightField creation/destruction (integer data type)
+EMSCRIPTEN_KEEPALIVE RP3D_HeightField* rp3d_physics_common_create_height_field_int(
+    RP3D_PhysicsCommon* common,
+    uint32_t nbRows,
+    uint32_t nbColumns,
+    const int32_t* heights,
+    float minHeight,
+    float maxHeight,
+    double integerHeightScale,
     char* errorBuffer,
     uint32_t errorBufferSize
 );

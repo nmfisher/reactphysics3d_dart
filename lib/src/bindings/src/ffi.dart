@@ -16,6 +16,10 @@ Uint8List makeUint8List(int length) {
   return Uint8List(length);
 }
 
+Int16List makeInt16List(int length) {
+  return Int16List(length);
+}
+
 Int32List makeInt32List(int length) {
   return Int32List(length);
 }

@@ -136,8 +136,11 @@ class FFIRigidBody implements RigidBody {
 
   @override
   void removeCollider(Collider collider) {
-    // Not implemented yet
-    throw UnimplementedError('Collider implementation not yet complete');
+    if (collider is! FFICollider) {
+      throw ArgumentError('Collider must be an FFICollider instance');
+    }
+
+    rp3d_body_remove_collider(_ptr, collider.handle);
   }
 
   @override

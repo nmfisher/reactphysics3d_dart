@@ -76,15 +76,95 @@ class FFIPhysicsCommon implements PhysicsCommon {
     return FFICapsuleShape.internal(shapeHandle, this);
   }
 
-  final _error = Uint8List.fromList(List<int>.filled(0, 1024));
+  // Allocate 1024-byte error buffer
+  static final int errorBufferSize = 1024;
+  final _error = Uint8List.fromList(List<int>.filled(errorBufferSize, 0));
 
   @override
-  HeightField createHeightField({
+  HeightField createHeightFieldFloat({
     required int rows,
     required int columns,
-    required List<double> heights,
+    required Float32List heights,
     required double minHeight,
     required double maxHeight,
+  }) {
+    _checkDisposed();
+
+    // Validate inputs
+    if (rows <= 0 || columns <= 0) {
+      throw Exception('Rows and columns must be positive');
+    }
+    if (heights.length != rows * columns) {
+      throw Exception('Heights array length must match rows * columns');
+    }
+
+    // Initialize error buffer with null bytes
+    _error.fillRange(0, _error.length, 0);
+
+    final heightFieldHandle = rp3d_physics_common_create_height_field_float(
+      _handle!,
+      rows,
+      columns,
+      heights.address,
+      minHeight,
+      maxHeight,
+      _error.address.cast(),
+      errorBufferSize,
+    );
+
+    if (heightFieldHandle == nullptr) {
+      throw Exception('Failed to create HeightField');
+    }
+
+    // Check if first byte is non-null, indicating error messages
+    if (_error[0] != 0) {
+      final errorMessages = <String>[];
+      int currentOffset = 0;
+
+      // Iterate over null-separated chunks
+      while (currentOffset < errorBufferSize) {
+        if (_error[currentOffset] == 0) {
+          break; // End of messages
+        }
+
+        // Find the end of the current message (next null byte or end of buffer)
+        int messageEnd = currentOffset;
+        while (messageEnd < errorBufferSize && _error[messageEnd] != 0) {
+          messageEnd++;
+        }
+
+        // Extract the message
+        if (messageEnd > currentOffset) {
+          final messageBytes = <int>[];
+          for (int i = currentOffset; i < messageEnd; i++) {
+            messageBytes.add(_error[i]);
+          }
+          final message = String.fromCharCodes(messageBytes);
+          errorMessages.add(message);
+        }
+
+        currentOffset = messageEnd + 1; // Skip the null byte
+      }
+
+      // Concatenate all error messages and throw exception
+      if (errorMessages.isNotEmpty) {
+        throw Exception(
+          'HeightField creation failed: ${errorMessages.join('; ')}',
+        );
+      }
+    }
+
+    return FFIHeightField.internal(heightFieldHandle, this);
+  }
+
+  @override
+  HeightField createHeightFieldInt({
+    required int rows,
+    required int columns,
+    required Int32List heights,
+    required double minHeight,
+    required double maxHeight,
+    required double integerHeightScale,
   }) {
     _checkDisposed();
 
@@ -96,23 +176,16 @@ class FFIPhysicsCommon implements PhysicsCommon {
       throw ArgumentError('Heights array length must match rows * columns');
     }
 
-    // Allocate 1024-byte error buffer
-    const int errorBufferSize = 1024;
-
-    // Initialize error buffer with null bytes
     _error.fillRange(0, _error.length, 0);
 
-    // Convert height list to float array
-    final heightsPtr = makeFloat32List(heights.length);
-    heightsPtr.setRange(0, heights.length, heights);
-
-    final heightFieldHandle = rp3d_physics_common_create_height_field(
+    final heightFieldHandle = rp3d_physics_common_create_height_field_int(
       _handle!,
       rows,
       columns,
-      heightsPtr.address,
+      heights.address,
       minHeight,
       maxHeight,
+      integerHeightScale,
       _error.address.cast(),
       errorBufferSize,
     );

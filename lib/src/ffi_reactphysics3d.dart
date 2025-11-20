@@ -59,19 +59,38 @@ class FFIReactPhysics3D implements ReactPhysics3D {
   }
 
   @override
-  HeightField createHeightField({
+  HeightField createHeightFieldFloat({
     required int rows,
     required int columns,
-    required List<double> heights,
+    required Float32List heights,
     required double minHeight,
     required double maxHeight,
   }) {
-    return _physicsCommon.createHeightField(
+    return _physicsCommon.createHeightFieldFloat(
       rows: rows,
       columns: columns,
       heights: heights,
       minHeight: minHeight,
       maxHeight: maxHeight,
+    );
+  }
+
+  @override
+  HeightField createHeightFieldInt({
+    required int rows,
+    required int columns,
+    required Int32List heights,
+    required double minHeight,
+    required double maxHeight,
+    required double integerHeightScale,
+  }) {
+    return _physicsCommon.createHeightFieldInt(
+      rows: rows,
+      columns: columns,
+      heights: heights,
+      minHeight: minHeight,
+      maxHeight: maxHeight,
+      integerHeightScale: integerHeightScale,
     );
   }
 
