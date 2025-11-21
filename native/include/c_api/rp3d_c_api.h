@@ -189,7 +189,7 @@ EMSCRIPTEN_KEEPALIVE RP3D_HeightField* rp3d_physics_common_create_height_field_i
 EMSCRIPTEN_KEEPALIVE void rp3d_physics_common_destroy_height_field(RP3D_PhysicsCommon* common, RP3D_HeightField* heightField);
 
 // HeightFieldShape creation/destruction
-EMSCRIPTEN_KEEPALIVE RP3D_HeightFieldShape* rp3d_physics_common_create_height_field_shape(RP3D_PhysicsCommon* common, RP3D_HeightField* heightField);
+EMSCRIPTEN_KEEPALIVE RP3D_HeightFieldShape* rp3d_physics_common_create_height_field_shape(RP3D_PhysicsCommon* common, RP3D_HeightField* heightField, RP3D_Vector3* scaling);
 EMSCRIPTEN_KEEPALIVE void rp3d_physics_common_destroy_height_field_shape(RP3D_PhysicsCommon* common, RP3D_HeightFieldShape* heightFieldShape);
 
 // TriangleVertexArray creation/destruction

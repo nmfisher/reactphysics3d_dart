@@ -50,4 +50,8 @@ abstract class PhysicsWorld
 
   /// Get the debug renderer
   DebugRenderer getDebugRenderer();
+
+  /// Raycast from point1 to point2 and return hit information if hit
+  /// Returns null if no hit
+  RaycastInfo? raycast(Ray ray);
 }

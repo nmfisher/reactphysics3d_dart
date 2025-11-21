@@ -36,7 +36,7 @@ abstract class PhysicsCommon extends BaseRP3DType<ffi.Pointer<ffi.RP3D_PhysicsCo
   });
 
   /// Create a height field shape from height field data
-  HeightFieldShape createHeightFieldShape(HeightField heightField);
+  HeightFieldShape createHeightFieldShape(HeightField heightField, { Vector3? scaling});
 
   /// Create a triangle vertex array from vertex and index data
   TriangleVertexArray createTriangleVertexArray({

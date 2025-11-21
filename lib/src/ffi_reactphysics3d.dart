@@ -95,8 +95,8 @@ class FFIReactPhysics3D implements ReactPhysics3D {
   }
 
   @override
-  HeightFieldShape createHeightFieldShape(HeightField heightField) {
-    return _physicsCommon.createHeightFieldShape(heightField);
+  HeightFieldShape createHeightFieldShape(HeightField heightField, { Vector3? scaling}) {
+    return _physicsCommon.createHeightFieldShape(heightField, scaling:scaling);
   }
 
   @override

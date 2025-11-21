@@ -286,10 +286,11 @@ void rp3d_physics_common_destroy_height_field(RP3D_PhysicsCommon* common, RP3D_H
 
 // HeightFieldShape creation
 EMSCRIPTEN_KEEPALIVE
-RP3D_HeightFieldShape* rp3d_physics_common_create_height_field_shape(RP3D_PhysicsCommon* common, RP3D_HeightField* heightField) {
+RP3D_HeightFieldShape* rp3d_physics_common_create_height_field_shape(RP3D_PhysicsCommon* common, RP3D_HeightField* heightField, RP3D_Vector3* scaling) {
     PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
     HeightField* hf = reinterpret_cast<HeightField*>(heightField);
-    HeightFieldShape* shape = pc->createHeightFieldShape(hf);
+    Vector3 *rpScaling = reinterpret_cast<Vector3 *>(scaling);
+    HeightFieldShape* shape = pc->createHeightFieldShape(hf, *rpScaling);
     return reinterpret_cast<RP3D_HeightFieldShape*>(shape);
 }
 

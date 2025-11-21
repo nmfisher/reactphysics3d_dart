@@ -49,13 +49,22 @@ extension type GeneratedBindings(NativeLibrary _) implements JSObject {
   );
 
   /// HeightField creation/destruction
-  external Pointer<RP3D_HeightField> _rp3d_physics_common_create_height_field(
+  external Pointer<RP3D_HeightField> _rp3d_physics_common_create_height_field_float(
     Pointer<RP3D_PhysicsCommon> common,
     int nbRows,
     int nbColumns,
     Pointer<Float32> heights,
     double minHeight,
     double maxHeight,
+  );
+  external Pointer<RP3D_HeightField> _rp3d_physics_common_create_height_field_int(
+    Pointer<RP3D_PhysicsCommon> common,
+    int nbRows,
+    int nbColumns,
+    Pointer<Int16> heights,
+    double minHeight,
+    double maxHeight,
+    double integerHeightScale,
   );
   external void _rp3d_physics_common_destroy_height_field(
     Pointer<RP3D_PhysicsCommon> common,
@@ -119,6 +128,53 @@ extension type GeneratedBindings(NativeLibrary _) implements JSObject {
   external void _rp3d_polygon_vertex_array_destroy(
     Pointer<RP3D_PolygonVertexArray> polygonVertexArray,
   );
+  external int _rp3d_polygon_vertex_array_get_nb_vertices(
+    Pointer<RP3D_PolygonVertexArray> polygonVertexArray,
+  );
+  external int _rp3d_polygon_vertex_array_get_nb_faces(
+    Pointer<RP3D_PolygonVertexArray> polygonVertexArray,
+  );
+  external void _rp3d_polygon_vertex_array_get_vertex(
+    Pointer<RP3D_PolygonVertexArray> polygonVertexArray,
+    int vertexIndex,
+    Pointer<Float32> outVertex,
+  );
+  external void _rp3d_polygon_vertex_array_get_polygon_face(
+    Pointer<RP3D_PolygonVertexArray> polygonVertexArray,
+    int faceIndex,
+    Pointer<Uint32> outNbVertices,
+    Pointer<Uint32> outIndexBase,
+  );
+  external int _rp3d_polygon_vertex_array_get_indices_stride(
+    Pointer<RP3D_PolygonVertexArray> polygonVertexArray,
+  );
+  external Pointer<Uint32> _rp3d_polygon_vertex_array_get_indices_start(
+    Pointer<RP3D_PolygonVertexArray> polygonVertexArray,
+  );
+  external int _rp3d_polygon_vertex_array_get_vertex_index_in_face(
+    Pointer<RP3D_PolygonVertexArray> polygonVertexArray,
+    int faceIndex,
+    int vertexInFace,
+  );
+
+  /// VertexArray creation/destruction
+  external Pointer<RP3D_VertexArray> _rp3d_vertex_array_create(
+    int nbVertices,
+    Pointer<Float32> verticesStart,
+    int verticesStride,
+  );
+  external void _rp3d_vertex_array_destroy(
+    Pointer<RP3D_VertexArray> vertexArray,
+  );
+  external int _rp3d_vertex_array_get_nb_vertices(
+    Pointer<RP3D_VertexArray> vertexArray,
+  );
+  external Pointer<Float32> _rp3d_vertex_array_get_vertices_start(
+    Pointer<RP3D_VertexArray> vertexArray,
+  );
+  external int _rp3d_vertex_array_get_stride(
+    Pointer<RP3D_VertexArray> vertexArray,
+  );
 
   /// TriangleMesh creation/destruction
   external Pointer<RP3D_TriangleMesh> _rp3d_physics_common_create_triangle_mesh(
@@ -159,6 +215,11 @@ extension type GeneratedBindings(NativeLibrary _) implements JSObject {
     Pointer<RP3D_PhysicsCommon> common,
     Pointer<RP3D_PolygonVertexArray> polygonVertexArray,
   );
+  external Pointer<RP3D_ConvexMesh>
+  _rp3d_physics_common_create_convex_mesh_from_vertices(
+    Pointer<RP3D_PhysicsCommon> common,
+    Pointer<RP3D_VertexArray> vertexArray,
+  );
   external void _rp3d_physics_common_destroy_convex_mesh(
     Pointer<RP3D_PhysicsCommon> common,
     Pointer<RP3D_ConvexMesh> convexMesh,
@@ -169,6 +230,7 @@ extension type GeneratedBindings(NativeLibrary _) implements JSObject {
   _rp3d_physics_common_create_convex_mesh_shape(
     Pointer<RP3D_PhysicsCommon> common,
     Pointer<RP3D_ConvexMesh> convexMesh,
+    Pointer<RP3D_Vector3> scaling,
   );
   external void _rp3d_physics_common_destroy_convex_mesh_shape(
     Pointer<RP3D_PhysicsCommon> common,
@@ -390,6 +452,13 @@ extension type GeneratedBindings(NativeLibrary _) implements JSObject {
     int isTrigger,
   );
   external int _rp3d_collider_get_is_trigger(Pointer<RP3D_Collider> collider);
+  external void _rp3d_collider_set_is_world_query_collider(
+    Pointer<RP3D_Collider> collider,
+    int isWorldQueryCollider,
+  );
+  external int _rp3d_collider_get_is_world_query_collider(
+    Pointer<RP3D_Collider> collider,
+  );
 
   /// ==================== Material ====================
   external void _rp3d_material_destroy(Pointer<RP3D_Material> material);
@@ -578,7 +647,7 @@ Pointer<RP3D_CapsuleShape> rp3d_physics_common_create_capsule_shape(
 }
 
 /// HeightField creation/destruction
-Pointer<RP3D_HeightField> rp3d_physics_common_create_height_field(
+Pointer<RP3D_HeightField> rp3d_physics_common_create_height_field_float(
   Pointer<RP3D_PhysicsCommon> common,
   int nbRows,
   int nbColumns,
@@ -587,13 +656,35 @@ Pointer<RP3D_HeightField> rp3d_physics_common_create_height_field(
   double maxHeight,
 ) {
   final result = GeneratedBindings.instance
-      ._rp3d_physics_common_create_height_field(
+      ._rp3d_physics_common_create_height_field_float(
         common.cast(),
         nbRows,
         nbColumns,
         heights,
         minHeight,
         maxHeight,
+      );
+  return Pointer<RP3D_HeightField>(result);
+}
+
+Pointer<RP3D_HeightField> rp3d_physics_common_create_height_field_int(
+  Pointer<RP3D_PhysicsCommon> common,
+  int nbRows,
+  int nbColumns,
+  Pointer<Int16> heights,
+  double minHeight,
+  double maxHeight,
+  double integerHeightScale,
+) {
+  final result = GeneratedBindings.instance
+      ._rp3d_physics_common_create_height_field_int(
+        common.cast(),
+        nbRows,
+        nbColumns,
+        heights,
+        minHeight,
+        maxHeight,
+        integerHeightScale,
       );
   return Pointer<RP3D_HeightField>(result);
 }
@@ -748,6 +839,125 @@ void rp3d_polygon_vertex_array_destroy(
   return result;
 }
 
+int rp3d_polygon_vertex_array_get_nb_vertices(
+  Pointer<RP3D_PolygonVertexArray> polygonVertexArray,
+) {
+  final result = GeneratedBindings.instance
+      ._rp3d_polygon_vertex_array_get_nb_vertices(polygonVertexArray.cast());
+  return result;
+}
+
+int rp3d_polygon_vertex_array_get_nb_faces(
+  Pointer<RP3D_PolygonVertexArray> polygonVertexArray,
+) {
+  final result = GeneratedBindings.instance
+      ._rp3d_polygon_vertex_array_get_nb_faces(polygonVertexArray.cast());
+  return result;
+}
+
+void rp3d_polygon_vertex_array_get_vertex(
+  Pointer<RP3D_PolygonVertexArray> polygonVertexArray,
+  int vertexIndex,
+  Pointer<Float32> outVertex,
+) {
+  final result = GeneratedBindings.instance
+      ._rp3d_polygon_vertex_array_get_vertex(
+        polygonVertexArray.cast(),
+        vertexIndex,
+        outVertex,
+      );
+  return result;
+}
+
+void rp3d_polygon_vertex_array_get_polygon_face(
+  Pointer<RP3D_PolygonVertexArray> polygonVertexArray,
+  int faceIndex,
+  Pointer<Uint32> outNbVertices,
+  Pointer<Uint32> outIndexBase,
+) {
+  final result = GeneratedBindings.instance
+      ._rp3d_polygon_vertex_array_get_polygon_face(
+        polygonVertexArray.cast(),
+        faceIndex,
+        outNbVertices,
+        outIndexBase,
+      );
+  return result;
+}
+
+int rp3d_polygon_vertex_array_get_indices_stride(
+  Pointer<RP3D_PolygonVertexArray> polygonVertexArray,
+) {
+  final result = GeneratedBindings.instance
+      ._rp3d_polygon_vertex_array_get_indices_stride(polygonVertexArray.cast());
+  return result;
+}
+
+Pointer<Uint32> rp3d_polygon_vertex_array_get_indices_start(
+  Pointer<RP3D_PolygonVertexArray> polygonVertexArray,
+) {
+  final result = GeneratedBindings.instance
+      ._rp3d_polygon_vertex_array_get_indices_start(polygonVertexArray.cast());
+  return Pointer<Uint32>(result);
+}
+
+int rp3d_polygon_vertex_array_get_vertex_index_in_face(
+  Pointer<RP3D_PolygonVertexArray> polygonVertexArray,
+  int faceIndex,
+  int vertexInFace,
+) {
+  final result = GeneratedBindings.instance
+      ._rp3d_polygon_vertex_array_get_vertex_index_in_face(
+        polygonVertexArray.cast(),
+        faceIndex,
+        vertexInFace,
+      );
+  return result;
+}
+
+/// VertexArray creation/destruction
+Pointer<RP3D_VertexArray> rp3d_vertex_array_create(
+  int nbVertices,
+  Pointer<Float32> verticesStart,
+  int verticesStride,
+) {
+  final result = GeneratedBindings.instance._rp3d_vertex_array_create(
+    nbVertices,
+    verticesStart,
+    verticesStride,
+  );
+  return Pointer<RP3D_VertexArray>(result);
+}
+
+void rp3d_vertex_array_destroy(Pointer<RP3D_VertexArray> vertexArray) {
+  final result = GeneratedBindings.instance._rp3d_vertex_array_destroy(
+    vertexArray.cast(),
+  );
+  return result;
+}
+
+int rp3d_vertex_array_get_nb_vertices(Pointer<RP3D_VertexArray> vertexArray) {
+  final result = GeneratedBindings.instance._rp3d_vertex_array_get_nb_vertices(
+    vertexArray.cast(),
+  );
+  return result;
+}
+
+Pointer<Float32> rp3d_vertex_array_get_vertices_start(
+  Pointer<RP3D_VertexArray> vertexArray,
+) {
+  final result = GeneratedBindings.instance
+      ._rp3d_vertex_array_get_vertices_start(vertexArray.cast());
+  return Pointer<Float32>(result);
+}
+
+int rp3d_vertex_array_get_stride(Pointer<RP3D_VertexArray> vertexArray) {
+  final result = GeneratedBindings.instance._rp3d_vertex_array_get_stride(
+    vertexArray.cast(),
+  );
+  return result;
+}
+
 /// TriangleMesh creation/destruction
 Pointer<RP3D_TriangleMesh> rp3d_physics_common_create_triangle_mesh(
   Pointer<RP3D_PhysicsCommon> common,
@@ -843,6 +1053,18 @@ Pointer<RP3D_ConvexMesh> rp3d_physics_common_create_convex_mesh_from_polygons(
   return Pointer<RP3D_ConvexMesh>(result);
 }
 
+Pointer<RP3D_ConvexMesh> rp3d_physics_common_create_convex_mesh_from_vertices(
+  Pointer<RP3D_PhysicsCommon> common,
+  Pointer<RP3D_VertexArray> vertexArray,
+) {
+  final result = GeneratedBindings.instance
+      ._rp3d_physics_common_create_convex_mesh_from_vertices(
+        common.cast(),
+        vertexArray.cast(),
+      );
+  return Pointer<RP3D_ConvexMesh>(result);
+}
+
 void rp3d_physics_common_destroy_convex_mesh(
   Pointer<RP3D_PhysicsCommon> common,
   Pointer<RP3D_ConvexMesh> convexMesh,
@@ -859,11 +1081,13 @@ void rp3d_physics_common_destroy_convex_mesh(
 Pointer<RP3D_ConvexMeshShape> rp3d_physics_common_create_convex_mesh_shape(
   Pointer<RP3D_PhysicsCommon> common,
   Pointer<RP3D_ConvexMesh> convexMesh,
+  Pointer<RP3D_Vector3> scaling,
 ) {
   final result = GeneratedBindings.instance
       ._rp3d_physics_common_create_convex_mesh_shape(
         common.cast(),
         convexMesh.cast(),
+        scaling.cast(),
       );
   return Pointer<RP3D_ConvexMeshShape>(result);
 }
@@ -1424,6 +1648,24 @@ int rp3d_collider_get_is_trigger(Pointer<RP3D_Collider> collider) {
   return result;
 }
 
+void rp3d_collider_set_is_world_query_collider(
+  Pointer<RP3D_Collider> collider,
+  int isWorldQueryCollider,
+) {
+  final result = GeneratedBindings.instance
+      ._rp3d_collider_set_is_world_query_collider(
+        collider.cast(),
+        isWorldQueryCollider,
+      );
+  return result;
+}
+
+int rp3d_collider_get_is_world_query_collider(Pointer<RP3D_Collider> collider) {
+  final result = GeneratedBindings.instance
+      ._rp3d_collider_get_is_world_query_collider(collider.cast());
+  return result;
+}
+
 /// ==================== Material ====================
 void rp3d_material_destroy(Pointer<RP3D_Material> material) {
   final result = GeneratedBindings.instance._rp3d_material_destroy(
@@ -1934,6 +2176,23 @@ final class RP3D_PolygonVertexArray extends Struct {
   static Pointer<RP3D_PolygonVertexArray> stackAlloc() {
     return Pointer<RP3D_PolygonVertexArray>(
       NativeLibrary.instance.stackAlloc<RP3D_PolygonVertexArray>(0),
+    );
+  }
+}
+
+extension RP3D_VertexArrayExt on Pointer<RP3D_VertexArray> {
+  RP3D_VertexArray toDart() {
+    return RP3D_VertexArray(this);
+  }
+}
+
+final class RP3D_VertexArray extends Struct {
+  Pointer<RP3D_VertexArray> get address => super.address.cast();
+  RP3D_VertexArray(super.address);
+
+  static Pointer<RP3D_VertexArray> stackAlloc() {
+    return Pointer<RP3D_VertexArray>(
+      NativeLibrary.instance.stackAlloc<RP3D_VertexArray>(0),
     );
   }
 }
@@ -2818,6 +3077,9 @@ extension StructAllocator on Struct {
         return ptr.toDart() as T;
       case RP3D_PolygonVertexArray:
         final ptr = RP3D_PolygonVertexArray.stackAlloc();
+        return ptr.toDart() as T;
+      case RP3D_VertexArray:
+        final ptr = RP3D_VertexArray.stackAlloc();
         return ptr.toDart() as T;
       case RP3D_TriangleMesh:
         final ptr = RP3D_TriangleMesh.stackAlloc();

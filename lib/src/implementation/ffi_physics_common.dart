@@ -236,12 +236,18 @@ class FFIPhysicsCommon implements PhysicsCommon {
   }
 
   @override
-  HeightFieldShape createHeightFieldShape(HeightField heightField) {
+  HeightFieldShape createHeightFieldShape(
+    HeightField heightField, {
+    Vector3? scaling,
+  }) {
     _checkDisposed();
+    scaling ??= Vector3.all(1);
+    final rpScaling = _toFFIVector3(scaling);
     final ffiHeightField = heightField as FFIHeightField;
     final shapeHandle = rp3d_physics_common_create_height_field_shape(
       _handle!,
       ffiHeightField.handle,
+      rpScaling.address
     );
     if (shapeHandle == nullptr) {
       throw Exception('Failed to create HeightFieldShape');

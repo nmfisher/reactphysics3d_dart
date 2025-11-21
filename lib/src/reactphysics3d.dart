@@ -47,6 +47,31 @@ extension TransformExtension on Transform {
 /// Body type enumeration
 enum BodyType { STATIC, KINEMATIC, DYNAMIC }
 
+/// Ray for raycasting queries
+class Ray {
+  final Vector3 point1;
+  final Vector3 point2;
+
+  Ray(this.point1, this.point2);
+}
+
+/// Raycast hit information
+class RaycastInfo {
+  final RigidBody? body;
+  final Collider? collider;
+  final Vector3 worldPoint;
+  final Vector3 worldNormal;
+  final double hitFraction;
+
+  RaycastInfo({
+    required this.body,
+    required this.collider,
+    required this.worldPoint,
+    required this.worldNormal,
+    required this.hitFraction,
+  });
+}
+
 /// Abstract interface for ReactPhysics3D physics engine
 abstract class ReactPhysics3D {
   PhysicsCommon get physicsCommon;
@@ -75,7 +100,7 @@ abstract class ReactPhysics3D {
   });
 
   /// Create a height field shape from height field data
-  HeightFieldShape createHeightFieldShape(HeightField heightField);
+  HeightFieldShape createHeightFieldShape(HeightField heightField, { Vector3? scaling});
 
   /// Create a triangle vertex array from vertex and index data
   TriangleVertexArray createTriangleVertexArray({

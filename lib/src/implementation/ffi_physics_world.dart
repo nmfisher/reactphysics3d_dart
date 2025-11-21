@@ -1,5 +1,6 @@
 import 'package:reactphysics3d_dart/src/implementation/ffi_rigid_body.dart';
 import 'package:reactphysics3d_dart/src/implementation/ffi_debug_renderer.dart';
+import 'package:reactphysics3d_dart/src/implementation/ffi_collider.dart';
 import '../bindings/src/bindings.dart';
 import '../ffi_reactphysics3d.dart';
 import '../reactphysics3d.dart';
@@ -110,6 +111,53 @@ class FFIPhysicsWorld implements PhysicsWorld {
       throw Exception('Failed to get DebugRenderer');
     }
     return FFIDebugRenderer(rendererPtr);
+  }
+
+  @override
+  RaycastInfo? raycast(Ray ray) {
+    // Create FFI ray struct
+    final rayStruct = StructAllocator.create<RP3D_Ray>();
+    rayStruct.point1.x = ray.point1.x;
+    rayStruct.point1.y = ray.point1.y;
+    rayStruct.point1.z = ray.point1.z;
+    rayStruct.point2.x = ray.point2.x;
+    rayStruct.point2.y = ray.point2.y;
+    rayStruct.point2.z = ray.point2.z;
+    rayStruct.maxFraction = 1.0;
+
+    // Create raycast info struct to receive results
+    final raycastInfoStruct = StructAllocator.create<RP3D_RaycastInfo>();
+
+    // Perform raycast
+    final hasHit = rp3d_world_raycast(_ptr, rayStruct.address, raycastInfoStruct.address);
+
+    if (hasHit == 0) {
+      return null;
+    }
+
+    // Convert results to Dart objects
+    final body = raycastInfoStruct.body.address != 0
+        ? FFIRigidBody(raycastInfoStruct.body)
+        : null;
+    final collider = raycastInfoStruct.collider.address != 0
+        ? FFICollider(raycastInfoStruct.collider)
+        : null;
+
+    return RaycastInfo(
+      body: body,
+      collider: collider,
+      worldPoint: Vector3(
+        raycastInfoStruct.worldPoint.x,
+        raycastInfoStruct.worldPoint.y,
+        raycastInfoStruct.worldPoint.z,
+      ),
+      worldNormal: Vector3(
+        raycastInfoStruct.worldNormal.x,
+        raycastInfoStruct.worldNormal.y,
+        raycastInfoStruct.worldNormal.z,
+      ),
+      hitFraction: raycastInfoStruct.hitFraction,
+    );
   }
 
   /// Helper function to convert Vector3 to FFI Vector3

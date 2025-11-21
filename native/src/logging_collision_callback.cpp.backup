@@ -1,0 +1,385 @@
+/*
+ * Logging Collision Callback Implementation
+ *
+ * This file implements a C++ CollisionCallback subclass that logs collision events
+ * for debugging and demonstration purposes.
+ */
+
+#include "c_api/rp3d_c_api.h"
+#include <reactphysics3d/reactphysics3d.h>
+#include <reactphysics3d/collision/CollisionCallback.h>
+#include <reactphysics3d/body/RigidBody.h>
+#include <iostream>
+#include <iomanip>
+#include <unordered_map>
+
+using namespace reactphysics3d;
+
+// ==================== LoggingCollisionCallback Implementation ====================
+
+/**
+ * C++ implementation of CollisionCallback that logs collision events
+ */
+class LoggingCollisionCallback : public reactphysics3d::CollisionCallback {
+private:
+    std::string logPrefix;
+    bool logContactPoints;
+    bool verbose;
+    uint32_t totalCallbacks;
+    uint32_t totalContactPairs;
+    uint32_t totalContactPoints;
+
+public:
+    /**
+     * Constructor
+     * @param prefix Prefix for log messages
+     * @param logPoints Whether to log detailed contact point information
+     * @param verboseLogging Whether to log all contact pairs or just summary
+     */
+    LoggingCollisionCallback(const std::string& prefix = "CollisionCallback",
+                           bool logPoints = true,
+                           bool verboseLogging = true)
+        : logPrefix(prefix), logContactPoints(logPoints), verbose(verboseLogging),
+          totalCallbacks(0), totalContactPairs(0), totalContactPoints(0) {}
+
+    /**
+     * Get the number of times onContact has been called
+     */
+    uint32_t getCallbackCount() const { return totalCallbacks; }
+
+    /**
+     * Get the total number of contact pairs across all callbacks
+     */
+    uint32_t getTotalContactPairs() const { return totalContactPairs; }
+
+    /**
+     * Get the total number of contact points across all callbacks
+     */
+    uint32_t getTotalContactPoints() const { return totalContactPoints; }
+
+    /**
+     * Reset all counters to zero
+     */
+    void reset() {
+        totalCallbacks = 0;
+        totalContactPairs = 0;
+        totalContactPoints = 0;
+    }
+
+    /**
+     * Called when contacts occur during collision testing
+     */
+    virtual void onContact(const CallbackData& callbackData) override {
+        totalCallbacks++;
+        uint32_t contactPairs = callbackData.getNbContactPairs();
+        totalContactPairs += contactPairs;
+
+        std::cout << logPrefix << ": Contact callback #" << totalCallbacks
+                  << " received with " << contactPairs << " contact pair(s)" << std::endl;
+
+        if (contactPairs == 0) {
+            std::cout << logPrefix << ": No contacts reported" << std::endl;
+            return;
+        }
+
+        if (verbose) {
+            for (uint64_t i = 0; i < contactPairs; i++) {
+                ContactPair contactPair = callbackData.getContactPair(i);
+                logContactPair(i, contactPair);
+                totalContactPoints += contactPair.getNbContactPoints();
+            }
+        } else {
+            // Summary mode
+            uint32_t totalPoints = 0;
+            for (uint64_t i = 0; i < contactPairs; i++) {
+                totalPoints += callbackData.getContactPair(i).getNbContactPoints();
+            }
+            totalContactPoints += totalPoints;
+            std::cout << logPrefix << ": Summary: " << contactPairs
+                      << " contact pair(s) with " << totalPoints << " total contact point(s)" << std::endl;
+        }
+
+        std::cout << logPrefix << ": --- End of contact callback ---" << std::endl;
+    }
+
+private:
+    /**
+     * Log information about a specific contact pair
+     */
+    void logContactPair(uint64_t index, const ContactPair& contactPair) {
+        std::cout << logPrefix << ": Contact Pair #" << index << ":" << std::endl;
+
+        // Log event type
+        std::cout << logPrefix << ":   Event Type: ";
+        switch (contactPair.getEventType()) {
+            case ContactPair::EventType::ContactStart:
+                std::cout << "ContactStart";
+                break;
+            case ContactPair::EventType::ContactStay:
+                std::cout << "ContactStay";
+                break;
+            case ContactPair::EventType::ContactExit:
+                std::cout << "ContactExit";
+                break;
+        }
+        std::cout << std::endl;
+
+        // Log body information (if available)
+        Body* body1 = contactPair.getBody1();
+        Body* body2 = contactPair.getBody2();
+        if (body1 && body2) {
+            std::cout << logPrefix << ":   Body1: " << body1 << std::endl;
+            std::cout << logPrefix << ":   Body2: " << body2 << std::endl;
+        }
+
+        // Log collider information (if available)
+        Collider* collider1 = contactPair.getCollider1();
+        Collider* collider2 = contactPair.getCollider2();
+        if (collider1 && collider2) {
+            std::cout << logPrefix << ":   Collider1: " << collider1 << std::endl;
+            std::cout << logPrefix << ":   Collider2: " << collider2 << std::endl;
+        }
+
+        // Log contact points
+        uint32_t nbContactPoints = contactPair.getNbContactPoints();
+        std::cout << logPrefix << ":   Contact Points: " << nbContactPoints << std::endl;
+
+        if (logContactPoints) {
+            for (uint32_t j = 0; j < nbContactPoints; j++) {
+                ContactPoint contactPoint = contactPair.getContactPoint(j);
+                logContactPoint(j, contactPoint);
+            }
+        }
+    }
+
+    /**
+     * Log information about a specific contact point
+     */
+    void logContactPoint(uint32_t index, const ContactPoint& contactPoint) {
+        std::cout << logPrefix << ":     Contact Point #" << index << ":" << std::endl;
+
+        // Penetration depth
+        std::cout << logPrefix << ":       Penetration Depth: "
+                  << std::fixed << std::setprecision(4) << contactPoint.getPenetrationDepth() << std::endl;
+
+        // World normal
+        Vector3 worldNormal = contactPoint.getWorldNormal();
+        std::cout << logPrefix << ":       World Normal: ("
+                  << std::fixed << std::setprecision(3) << worldNormal.x << ", "
+                  << worldNormal.y << ", " << worldNormal.z << ")" << std::endl;
+
+        // Local point on collider 1
+        Vector3 localPoint1 = contactPoint.getLocalPointOnCollider1();
+        std::cout << logPrefix << ":       Local Point on Collider1: ("
+                  << std::fixed << std::setprecision(3) << localPoint1.x << ", "
+                  << localPoint1.y << ", " << localPoint1.z << ")" << std::endl;
+
+        // Local point on collider 2
+        Vector3 localPoint2 = contactPoint.getLocalPointOnCollider2();
+        std::cout << logPrefix << ":       Local Point on Collider2: ("
+                  << std::fixed << std::setprecision(3) << localPoint2.x << ", "
+                  << localPoint2.y << ", " << localPoint2.z << ")" << std::endl;
+    }
+};
+
+// ==================== Simple Counter Callback Implementation ====================
+
+/**
+ * A lightweight callback that just counts collision events
+ */
+class ContactCounterCallback : public reactphysics3d::CollisionCallback {
+private:
+    uint32_t callbackCount;
+    uint32_t totalContactPairs;
+    uint32_t totalContactPoints;
+
+public:
+    ContactCounterCallback() : callbackCount(0), totalContactPairs(0), totalContactPoints(0) {}
+
+    uint32_t getCallbackCount() const { return callbackCount; }
+    uint32_t getTotalContactPairs() const { return totalContactPairs; }
+    uint32_t getTotalContactPoints() const { return totalContactPoints; }
+    void reset() { callbackCount = 0; totalContactPairs = 0; totalContactPoints = 0; }
+
+    virtual void onContact(const CallbackData& callbackData) override {
+        callbackCount++;
+        uint32_t contactPairs = callbackData.getNbContactPairs();
+        totalContactPairs += contactPairs;
+
+        for (uint64_t i = 0; i < contactPairs; i++) {
+            totalContactPoints += callbackData.getContactPair(i).getNbContactPoints();
+        }
+    }
+};
+
+// ==================== C API Functions ====================
+
+// Global storage for callback instances (in a real implementation, you'd want better management)
+static std::unordered_map<uint64_t, LoggingCollisionCallback*> g_loggingCallbacks;
+static std::unordered_map<uint64_t, ContactCounterCallback*> g_counterCallbacks;
+static uint64_t g_callbackIdCounter = 1;
+
+/**
+ * Create a new logging collision callback
+ */
+extern "C" EMSCRIPTEN_KEEPALIVE
+uint64_t rp3d_create_logging_collision_callback(const char* prefix, uint8_t logContactPoints, uint8_t verbose) {
+    std::string logPrefix = prefix ? prefix : "CollisionCallback";
+    LoggingCollisionCallback* callback = new LoggingCollisionCallback(logPrefix, logContactPoints != 0, verbose != 0);
+
+    uint64_t id = g_callbackIdCounter++;
+    g_loggingCallbacks[id] = callback;
+
+    return id;
+}
+
+/**
+ * Create a new contact counter callback
+ */
+extern "C" EMSCRIPTEN_KEEPALIVE
+uint64_t rp3d_create_contact_counter_callback() {
+    ContactCounterCallback* callback = new ContactCounterCallback();
+
+    uint64_t id = g_callbackIdCounter++;
+    g_counterCallbacks[id] = callback;
+
+    return id;
+}
+
+/**
+ * Get statistics from a logging callback
+ */
+extern "C" EMSCRIPTEN_KEEPALIVE
+void rp3d_get_logging_callback_stats(uint64_t callbackId, uint32_t* callbackCount,
+                                     uint32_t* totalContactPairs, uint32_t* totalContactPoints) {
+    auto it = g_loggingCallbacks.find(callbackId);
+    if (it != g_loggingCallbacks.end()) {
+        LoggingCollisionCallback* callback = it->second;
+        if (callbackCount) *callbackCount = callback->getCallbackCount();
+        if (totalContactPairs) *totalContactPairs = callback->getTotalContactPairs();
+        if (totalContactPoints) *totalContactPoints = callback->getTotalContactPoints();
+    }
+}
+
+/**
+ * Get statistics from a counter callback
+ */
+extern "C" EMSCRIPTEN_KEEPALIVE
+void rp3d_get_counter_callback_stats(uint64_t callbackId, uint32_t* callbackCount,
+                                    uint32_t* totalContactPairs, uint32_t* totalContactPoints) {
+    auto it = g_counterCallbacks.find(callbackId);
+    if (it != g_counterCallbacks.end()) {
+        ContactCounterCallback* callback = it->second;
+        if (callbackCount) *callbackCount = callback->getCallbackCount();
+        if (totalContactPairs) *totalContactPairs = callback->getTotalContactPairs();
+        if (totalContactPoints) *totalContactPoints = callback->getTotalContactPoints();
+    }
+}
+
+/**
+ * Reset callback statistics
+ */
+extern "C" EMSCRIPTEN_KEEPALIVE
+void rp3d_reset_callback_stats(uint64_t callbackId) {
+    {
+        auto it = g_loggingCallbacks.find(callbackId);
+        if (it != g_loggingCallbacks.end()) {
+            it->second->reset();
+            return;
+        }
+    }
+
+    {
+        auto it = g_counterCallbacks.find(callbackId);
+        if (it != g_counterCallbacks.end()) {
+            it->second->reset();
+            return;
+        }
+    }
+}
+
+/**
+ * Test collision between two bodies using a callback
+ */
+extern "C" EMSCRIPTEN_KEEPALIVE
+void rp3d_test_collision_bodies(RP3D_RigidBody* body1, RP3D_RigidBody* body2, uint64_t callbackId, uint8_t isLoggingCallback) {
+    if (!body1 || !body2) return;
+
+    // Convert C opaque pointer to C++ object
+    RigidBody* cppBody1 = static_cast<RigidBody*>(body1);
+    RigidBody* cppBody2 = static_cast<RigidBody*>(body2);
+
+    // Get the appropriate callback
+    CollisionCallback* callback = nullptr;
+
+    if (isLoggingCallback) {
+        auto it = g_loggingCallbacks.find(callbackId);
+        if (it != g_loggingCallbacks.end()) {
+            callback = it->second;
+        }
+    } else {
+        auto it = g_counterCallbacks.find(callbackId);
+        if (it != g_counterCallbacks.end()) {
+            callback = it->second;
+        }
+    }
+
+    if (!callback) return;
+
+    // Get the physics world from the first body
+    PhysicsWorld* world = &cppBody1->getWorld();
+
+    // Test collision
+    world->testCollision(cppBody1, cppBody2, *callback);
+}
+
+/**
+ * Test collision for all bodies in the world using a callback
+ */
+extern "C" EMSCRIPTEN_KEEPALIVE
+void rp3d_test_collision_world(RP3D_PhysicsWorld* world, uint64_t callbackId, uint8_t isLoggingCallback) {
+    if (!world) return;
+
+    // Convert C opaque pointer to C++ object using reinterpret_cast for opaque types
+    PhysicsWorld* cppWorld = reinterpret_cast<PhysicsWorld*>(world);
+
+    // Get the appropriate callback
+    CollisionCallback* callback = nullptr;
+
+    if (isLoggingCallback) {
+        auto it = g_loggingCallbacks.find(callbackId);
+        if (it != g_loggingCallbacks.end()) {
+            callback = it->second;
+        }
+    } else {
+        auto it = g_counterCallbacks.find(callbackId);
+        if (it != g_counterCallbacks.end()) {
+            callback = it->second;
+        }
+    }
+
+    if (!callback) return;
+
+    // Test collision for all bodies in the world
+    cppWorld->testCollision(*callback);
+}
+
+/**
+ * Destroy a callback
+ */
+extern "C" EMSCRIPTEN_KEEPALIVE
+void rp3d_destroy_collision_callback(uint64_t callbackId, uint8_t isLoggingCallback) {
+    if (isLoggingCallback) {
+        auto it = g_loggingCallbacks.find(callbackId);
+        if (it != g_loggingCallbacks.end()) {
+            delete it->second;
+            g_loggingCallbacks.erase(it);
+        }
+    } else {
+        auto it = g_counterCallbacks.find(callbackId);
+        if (it != g_counterCallbacks.end()) {
+            delete it->second;
+            g_counterCallbacks.erase(it);
+        }
+    }
+}

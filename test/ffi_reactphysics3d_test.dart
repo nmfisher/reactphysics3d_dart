@@ -2405,5 +2405,193 @@ void main() {
         }
       });
     });
+
+    group('HeightField raycasting', () {
+      test('should raycast and hit a heightfield from above', () {
+        // Create a simple 3x3 heightfield with all heights at y=0
+        const rows = 3;
+        const columns = 3;
+        final heights = Float32List.fromList([
+          0.0, 0.0, 0.0, // Row 0
+          0.0, 0.0, 0.0, // Row 1
+          0.0, 0.0, 0.0, // Row 2
+        ]);
+        const minHeight = -1.0;
+        const maxHeight = 1.0;
+
+        // Create heightfield and shape
+        final heightField = physics3D.createHeightFieldFloat(
+          rows: rows,
+          columns: columns,
+          heights: heights,
+          minHeight: minHeight,
+          maxHeight: maxHeight,
+        );
+        final heightFieldShape = physics3D.createHeightFieldShape(heightField);
+
+        // Create a static rigid body with the heightfield
+        final world = physics3D.createWorld();
+        final body = physics3D.createRigidBody(
+          world,
+          type: BodyType.STATIC,
+          transform: (
+            position: Vector3(0, 0, 0),
+            orientation: Quaternion.identity(),
+          ),
+        );
+        final collider = body.addCollider(heightFieldShape);
+
+        expect(collider, isNotNull);
+        expect(body.type, equals(BodyType.STATIC));
+
+        // Cast a ray from above the heightfield down to below it
+        final ray = Ray(
+          Vector3(0, 5, 0), // Start point above heightfield
+          Vector3(0, -5, 0), // End point below heightfield
+        );
+
+        final raycastInfo = world.raycast(ray);
+
+        // Should hit the heightfield
+        expect(raycastInfo, isNotNull, reason: 'Ray should hit the heightfield');
+        expect(raycastInfo!.body, isNotNull);
+        expect(raycastInfo.collider, isNotNull);
+
+        // Hit point should be approximately at y=0 (the height of the heightfield)
+        expect(
+          raycastInfo.worldPoint.y,
+          closeTo(0.0, 0.1),
+          reason: 'Hit point Y should be near the heightfield surface at y=0',
+        );
+
+        // Normal should point upward (approximately +Y)
+        expect(
+          raycastInfo.worldNormal.y,
+          greaterThan(0.9),
+          reason: 'Normal should point upward (Y component > 0.9)',
+        );
+
+        // Hit fraction should be reasonable (ray travels 10 units total, hits at ~5)
+        expect(
+          raycastInfo.hitFraction,
+          greaterThan(0.4),
+          reason: 'Hit fraction should be > 0.4',
+        );
+        expect(
+          raycastInfo.hitFraction,
+          lessThan(0.6),
+          reason: 'Hit fraction should be < 0.6',
+        );
+
+        print('✅ Heightfield raycast test passed!');
+        print('   Hit point: ${raycastInfo.worldPoint}');
+        print('   Normal: ${raycastInfo.worldNormal}');
+        print('   Hit fraction: ${raycastInfo.hitFraction}');
+      });
+
+      test('should miss heightfield when ray does not intersect', () {
+        // Create a simple 2x2 heightfield centered at origin
+        const rows = 2;
+        const columns = 2;
+        final heights = Float32List.fromList([
+          0.0, 0.0, // Row 0
+          0.0, 0.0, // Row 1
+        ]);
+        const minHeight = -1.0;
+        const maxHeight = 1.0;
+
+        final heightField = physics3D.createHeightFieldFloat(
+          rows: rows,
+          columns: columns,
+          heights: heights,
+          minHeight: minHeight,
+          maxHeight: maxHeight,
+        );
+        final heightFieldShape = physics3D.createHeightFieldShape(heightField);
+
+        final world = physics3D.createWorld();
+        final body = physics3D.createRigidBody(
+          world,
+          type: BodyType.STATIC,
+        );
+        body.addCollider(heightFieldShape);
+
+        // Cast a ray far away from the heightfield (should miss)
+        final ray = Ray(
+          Vector3(100, 5, 100), // Start far away
+          Vector3(100, -5, 100), // End far away
+        );
+
+        final raycastInfo = world.raycast(ray);
+
+        // Should NOT hit
+        expect(raycastInfo, isNull, reason: 'Ray should miss the heightfield');
+
+        print('✅ Heightfield raycast miss test passed!');
+      });
+
+      test('should hit elevated heightfield at correct height', () {
+        // Create a heightfield with varying heights
+        const rows = 3;
+        const columns = 3;
+        final heights = Float32List.fromList([
+          1.0, 1.5, 1.0, // Row 0
+          1.5, 2.0, 1.5, // Row 1 (center is highest)
+          1.0, 1.5, 1.0, // Row 2
+        ]);
+        const minHeight = 0.0;
+        const maxHeight = 3.0;
+
+        final heightField = physics3D.createHeightFieldFloat(
+          rows: rows,
+          columns: columns,
+          heights: heights,
+          minHeight: minHeight,
+          maxHeight: maxHeight,
+        );
+        final heightFieldShape = physics3D.createHeightFieldShape(heightField);
+
+        final world = physics3D.createWorld();
+        final body = physics3D.createRigidBody(
+          world,
+          type: BodyType.STATIC,
+        );
+        body.addCollider(heightFieldShape);
+
+        // Cast a ray at the center where height should be ~2.0
+        final ray = Ray(
+          Vector3(0, 5, 0),
+          Vector3(0, -1, 0),
+        );
+
+        final raycastInfo = world.raycast(ray);
+
+        expect(raycastInfo, isNotNull, reason: 'Ray should hit the heightfield');
+
+        // The hit should be somewhere reasonable (heightfield has varying heights)
+        // Heights range from 1.0 to 2.0, so hit should be in that range or close
+        expect(
+          raycastInfo!.worldPoint.y,
+          greaterThanOrEqualTo(0.0),
+          reason: 'Hit should be at or above y=0.0',
+        );
+        expect(
+          raycastInfo.worldPoint.y,
+          lessThan(3.0),
+          reason: 'Hit should be below maxHeight (3.0)',
+        );
+
+        // Normal should still point generally upward
+        expect(
+          raycastInfo.worldNormal.y,
+          greaterThan(0.5),
+          reason: 'Normal Y component should be positive',
+        );
+
+        print('✅ Elevated heightfield raycast test passed!');
+        print('   Hit point: ${raycastInfo.worldPoint}');
+        print('   Normal: ${raycastInfo.worldNormal}');
+      });
+    });
   });
 }

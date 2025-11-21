@@ -59,7 +59,7 @@ external ffi.Pointer<RP3D_CapsuleShape>
   double height,
 );
 
-/// HeightField creation/destruction
+/// HeightField creation/destruction (float data type)
 @ffi.Native<
     ffi.Pointer<RP3D_HeightField> Function(
         ffi.Pointer<RP3D_PhysicsCommon>,
@@ -67,14 +67,44 @@ external ffi.Pointer<RP3D_CapsuleShape>
         ffi.Uint32,
         ffi.Pointer<ffi.Float>,
         ffi.Float,
-        ffi.Float)>(isLeaf: true)
-external ffi.Pointer<RP3D_HeightField> rp3d_physics_common_create_height_field(
+        ffi.Float,
+        ffi.Pointer<ffi.Char>,
+        ffi.Uint32)>(isLeaf: true)
+external ffi.Pointer<RP3D_HeightField>
+    rp3d_physics_common_create_height_field_float(
   ffi.Pointer<RP3D_PhysicsCommon> common,
   int nbRows,
   int nbColumns,
   ffi.Pointer<ffi.Float> heights,
   double minHeight,
   double maxHeight,
+  ffi.Pointer<ffi.Char> errorBuffer,
+  int errorBufferSize,
+);
+
+/// HeightField creation/destruction (integer data type)
+@ffi.Native<
+    ffi.Pointer<RP3D_HeightField> Function(
+        ffi.Pointer<RP3D_PhysicsCommon>,
+        ffi.Uint32,
+        ffi.Uint32,
+        ffi.Pointer<ffi.Int32>,
+        ffi.Float,
+        ffi.Float,
+        ffi.Double,
+        ffi.Pointer<ffi.Char>,
+        ffi.Uint32)>(isLeaf: true)
+external ffi.Pointer<RP3D_HeightField>
+    rp3d_physics_common_create_height_field_int(
+  ffi.Pointer<RP3D_PhysicsCommon> common,
+  int nbRows,
+  int nbColumns,
+  ffi.Pointer<ffi.Int32> heights,
+  double minHeight,
+  double maxHeight,
+  double integerHeightScale,
+  ffi.Pointer<ffi.Char> errorBuffer,
+  int errorBufferSize,
 );
 
 @ffi.Native<
@@ -88,11 +118,12 @@ external void rp3d_physics_common_destroy_height_field(
 /// HeightFieldShape creation/destruction
 @ffi.Native<
     ffi.Pointer<RP3D_HeightFieldShape> Function(ffi.Pointer<RP3D_PhysicsCommon>,
-        ffi.Pointer<RP3D_HeightField>)>(isLeaf: true)
+        ffi.Pointer<RP3D_HeightField>, ffi.Pointer<RP3D_Vector3>)>(isLeaf: true)
 external ffi.Pointer<RP3D_HeightFieldShape>
     rp3d_physics_common_create_height_field_shape(
   ffi.Pointer<RP3D_PhysicsCommon> common,
   ffi.Pointer<RP3D_HeightField> heightField,
+  ffi.Pointer<RP3D_Vector3> scaling,
 );
 
 @ffi.Native<
@@ -192,6 +223,90 @@ external void rp3d_polygon_vertex_array_destroy(
   ffi.Pointer<RP3D_PolygonVertexArray> polygonVertexArray,
 );
 
+@ffi.Native<ffi.Uint32 Function(ffi.Pointer<RP3D_PolygonVertexArray>)>(
+    isLeaf: true)
+external int rp3d_polygon_vertex_array_get_nb_vertices(
+  ffi.Pointer<RP3D_PolygonVertexArray> polygonVertexArray,
+);
+
+@ffi.Native<ffi.Uint32 Function(ffi.Pointer<RP3D_PolygonVertexArray>)>(
+    isLeaf: true)
+external int rp3d_polygon_vertex_array_get_nb_faces(
+  ffi.Pointer<RP3D_PolygonVertexArray> polygonVertexArray,
+);
+
+@ffi.Native<
+    ffi.Void Function(ffi.Pointer<RP3D_PolygonVertexArray>, ffi.Uint32,
+        ffi.Pointer<ffi.Float>)>(isLeaf: true)
+external void rp3d_polygon_vertex_array_get_vertex(
+  ffi.Pointer<RP3D_PolygonVertexArray> polygonVertexArray,
+  int vertexIndex,
+  ffi.Pointer<ffi.Float> outVertex,
+);
+
+@ffi.Native<
+    ffi.Void Function(ffi.Pointer<RP3D_PolygonVertexArray>, ffi.Uint32,
+        ffi.Pointer<ffi.Uint32>, ffi.Pointer<ffi.Uint32>)>(isLeaf: true)
+external void rp3d_polygon_vertex_array_get_polygon_face(
+  ffi.Pointer<RP3D_PolygonVertexArray> polygonVertexArray,
+  int faceIndex,
+  ffi.Pointer<ffi.Uint32> outNbVertices,
+  ffi.Pointer<ffi.Uint32> outIndexBase,
+);
+
+@ffi.Native<ffi.Uint32 Function(ffi.Pointer<RP3D_PolygonVertexArray>)>(
+    isLeaf: true)
+external int rp3d_polygon_vertex_array_get_indices_stride(
+  ffi.Pointer<RP3D_PolygonVertexArray> polygonVertexArray,
+);
+
+@ffi.Native<
+    ffi.Pointer<ffi.Uint32> Function(
+        ffi.Pointer<RP3D_PolygonVertexArray>)>(isLeaf: true)
+external ffi.Pointer<ffi.Uint32> rp3d_polygon_vertex_array_get_indices_start(
+  ffi.Pointer<RP3D_PolygonVertexArray> polygonVertexArray,
+);
+
+@ffi.Native<
+    ffi.Uint32 Function(ffi.Pointer<RP3D_PolygonVertexArray>, ffi.Uint32,
+        ffi.Uint32)>(isLeaf: true)
+external int rp3d_polygon_vertex_array_get_vertex_index_in_face(
+  ffi.Pointer<RP3D_PolygonVertexArray> polygonVertexArray,
+  int faceIndex,
+  int vertexInFace,
+);
+
+/// VertexArray creation/destruction
+@ffi.Native<
+    ffi.Pointer<RP3D_VertexArray> Function(
+        ffi.Uint32, ffi.Pointer<ffi.Float>, ffi.Uint32)>(isLeaf: true)
+external ffi.Pointer<RP3D_VertexArray> rp3d_vertex_array_create(
+  int nbVertices,
+  ffi.Pointer<ffi.Float> verticesStart,
+  int verticesStride,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<RP3D_VertexArray>)>(isLeaf: true)
+external void rp3d_vertex_array_destroy(
+  ffi.Pointer<RP3D_VertexArray> vertexArray,
+);
+
+@ffi.Native<ffi.Uint32 Function(ffi.Pointer<RP3D_VertexArray>)>(isLeaf: true)
+external int rp3d_vertex_array_get_nb_vertices(
+  ffi.Pointer<RP3D_VertexArray> vertexArray,
+);
+
+@ffi.Native<ffi.Pointer<ffi.Float> Function(ffi.Pointer<RP3D_VertexArray>)>(
+    isLeaf: true)
+external ffi.Pointer<ffi.Float> rp3d_vertex_array_get_vertices_start(
+  ffi.Pointer<RP3D_VertexArray> vertexArray,
+);
+
+@ffi.Native<ffi.Uint32 Function(ffi.Pointer<RP3D_VertexArray>)>(isLeaf: true)
+external int rp3d_vertex_array_get_stride(
+  ffi.Pointer<RP3D_VertexArray> vertexArray,
+);
+
 /// TriangleMesh creation/destruction
 @ffi.Native<
     ffi.Pointer<RP3D_TriangleMesh> Function(ffi.Pointer<RP3D_PhysicsCommon>,
@@ -259,6 +374,15 @@ external ffi.Pointer<RP3D_ConvexMesh>
 );
 
 @ffi.Native<
+    ffi.Pointer<RP3D_ConvexMesh> Function(ffi.Pointer<RP3D_PhysicsCommon>,
+        ffi.Pointer<RP3D_VertexArray>)>(isLeaf: true)
+external ffi.Pointer<RP3D_ConvexMesh>
+    rp3d_physics_common_create_convex_mesh_from_vertices(
+  ffi.Pointer<RP3D_PhysicsCommon> common,
+  ffi.Pointer<RP3D_VertexArray> vertexArray,
+);
+
+@ffi.Native<
     ffi.Void Function(ffi.Pointer<RP3D_PhysicsCommon>,
         ffi.Pointer<RP3D_ConvexMesh>)>(isLeaf: true)
 external void rp3d_physics_common_destroy_convex_mesh(
@@ -269,11 +393,12 @@ external void rp3d_physics_common_destroy_convex_mesh(
 /// ConvexMeshShape creation/destruction
 @ffi.Native<
     ffi.Pointer<RP3D_ConvexMeshShape> Function(ffi.Pointer<RP3D_PhysicsCommon>,
-        ffi.Pointer<RP3D_ConvexMesh>)>(isLeaf: true)
+        ffi.Pointer<RP3D_ConvexMesh>, ffi.Pointer<RP3D_Vector3>)>(isLeaf: true)
 external ffi.Pointer<RP3D_ConvexMeshShape>
     rp3d_physics_common_create_convex_mesh_shape(
   ffi.Pointer<RP3D_PhysicsCommon> common,
   ffi.Pointer<RP3D_ConvexMesh> convexMesh,
+  ffi.Pointer<RP3D_Vector3> scaling,
 );
 
 @ffi.Native<
@@ -686,6 +811,44 @@ external int rp3d_collider_get_is_trigger(
   ffi.Pointer<RP3D_Collider> collider,
 );
 
+@ffi.Native<ffi.Void Function(ffi.Pointer<RP3D_Collider>, ffi.Uint8)>(
+    isLeaf: true)
+external void rp3d_collider_set_is_world_query_collider(
+  ffi.Pointer<RP3D_Collider> collider,
+  int isWorldQueryCollider,
+);
+
+@ffi.Native<ffi.Uint8 Function(ffi.Pointer<RP3D_Collider>)>(isLeaf: true)
+external int rp3d_collider_get_is_world_query_collider(
+  ffi.Pointer<RP3D_Collider> collider,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<RP3D_Collider>, ffi.UnsignedShort)>(
+    isLeaf: true)
+external void rp3d_collider_set_collision_category_bits(
+  ffi.Pointer<RP3D_Collider> collider,
+  int collisionCategoryBits,
+);
+
+@ffi.Native<ffi.UnsignedShort Function(ffi.Pointer<RP3D_Collider>)>(
+    isLeaf: true)
+external int rp3d_collider_get_collision_category_bits(
+  ffi.Pointer<RP3D_Collider> collider,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<RP3D_Collider>, ffi.UnsignedShort)>(
+    isLeaf: true)
+external void rp3d_collider_set_collide_with_mask_bits(
+  ffi.Pointer<RP3D_Collider> collider,
+  int collideWithMaskBits,
+);
+
+@ffi.Native<ffi.UnsignedShort Function(ffi.Pointer<RP3D_Collider>)>(
+    isLeaf: true)
+external int rp3d_collider_get_collide_with_mask_bits(
+  ffi.Pointer<RP3D_Collider> collider,
+);
+
 /// ==================== Material ====================
 @ffi.Native<ffi.Void Function(ffi.Pointer<RP3D_Material>)>(isLeaf: true)
 external void rp3d_material_destroy(
@@ -920,11 +1083,76 @@ external void rp3d_world_destroy_joint(
   ffi.Pointer<ffi.Void> joint,
 );
 
+/// Create callbacks
+@ffi.Native<
+    ffi.Pointer<TCollisionCallback> Function(
+        ffi.Pointer<ffi.Char>, ffi.Uint8, ffi.Uint8)>(isLeaf: true)
+external ffi.Pointer<TCollisionCallback> rp3d_create_logging_collision_callback(
+  ffi.Pointer<ffi.Char> prefix,
+  int logContactPoints,
+  int verbose,
+);
+
+@ffi.Native<ffi.Pointer<TCollisionCallback> Function()>(isLeaf: true)
+external ffi.Pointer<TCollisionCallback> rp3d_create_contact_counter_callback();
+
+/// Get callback properties
+@ffi.Native<ffi.Uint8 Function(ffi.Pointer<TCollisionCallback>)>(isLeaf: true)
+external int rp3d_get_logging_callback_has_contact(
+  ffi.Pointer<TCollisionCallback> callback,
+);
+
+/// Get callback statistics
+@ffi.Native<
+    ffi.Void Function(ffi.Pointer<TCollisionCallback>, ffi.Pointer<ffi.Uint32>,
+        ffi.Pointer<ffi.Uint32>, ffi.Pointer<ffi.Uint32>)>(isLeaf: true)
+external void rp3d_get_logging_callback_stats(
+  ffi.Pointer<TCollisionCallback> callback,
+  ffi.Pointer<ffi.Uint32> callbackCount,
+  ffi.Pointer<ffi.Uint32> totalContactPairs,
+  ffi.Pointer<ffi.Uint32> totalContactPoints,
+);
+
+@ffi.Native<
+    ffi.Void Function(ffi.Pointer<TCollisionCallback>, ffi.Pointer<ffi.Uint32>,
+        ffi.Pointer<ffi.Uint32>, ffi.Pointer<ffi.Uint32>)>(isLeaf: true)
+external void rp3d_get_counter_callback_stats(
+  ffi.Pointer<TCollisionCallback> callback,
+  ffi.Pointer<ffi.Uint32> callbackCount,
+  ffi.Pointer<ffi.Uint32> totalContactPairs,
+  ffi.Pointer<ffi.Uint32> totalContactPoints,
+);
+
+/// Reset callback statistics
+@ffi.Native<ffi.Void Function(ffi.Pointer<TCollisionCallback>)>(isLeaf: true)
+external void rp3d_reset_callback_stats(
+  ffi.Pointer<TCollisionCallback> callback,
+);
+
+/// Collision testing with callbacks
+@ffi.Native<
+    ffi.Void Function(ffi.Pointer<RP3D_PhysicsWorld>, ffi.Pointer<RP3D_Body>,
+        ffi.Pointer<RP3D_Body>, ffi.Pointer<TCollisionCallback>)>(isLeaf: true)
+external void rp3d_test_collision_bodies_direct(
+  ffi.Pointer<RP3D_PhysicsWorld> world,
+  ffi.Pointer<RP3D_Body> body1,
+  ffi.Pointer<RP3D_Body> body2,
+  ffi.Pointer<TCollisionCallback> callback,
+);
+
+/// Destroy callbacks
+@ffi.Native<ffi.Void Function(ffi.Pointer<TCollisionCallback>)>(isLeaf: true)
+external void rp3d_destroy_collision_callback(
+  ffi.Pointer<TCollisionCallback> callback,
+);
+
 final class RP3D_PhysicsCommon extends ffi.Opaque {}
 
 final class RP3D_PhysicsWorld extends ffi.Opaque {}
 
 final class RP3D_RigidBody extends ffi.Opaque {}
+
+final class RP3D_Body extends ffi.Opaque {}
 
 final class RP3D_Collider extends ffi.Opaque {}
 
@@ -948,6 +1176,8 @@ final class RP3D_TriangleVertexArray extends ffi.Opaque {}
 
 final class RP3D_PolygonVertexArray extends ffi.Opaque {}
 
+final class RP3D_VertexArray extends ffi.Opaque {}
+
 final class RP3D_ConvexMesh extends ffi.Opaque {}
 
 final class RP3D_HeightField extends ffi.Opaque {}
@@ -963,6 +1193,8 @@ final class RP3D_SliderJoint extends ffi.Opaque {}
 final class RP3D_FixedJoint extends ffi.Opaque {}
 
 final class RP3D_DebugRenderer extends ffi.Opaque {}
+
+final class TCollisionCallback extends ffi.Opaque {}
 
 /// ==================== Enums ====================
 sealed class RP3D_BodyType {
