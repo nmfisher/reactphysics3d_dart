@@ -1,12 +1,13 @@
 import 'package:reactphysics3d_dart/src/implementation/ffi_rigid_body.dart';
 import 'package:reactphysics3d_dart/src/implementation/ffi_debug_renderer.dart';
 import 'package:reactphysics3d_dart/src/implementation/ffi_collider.dart';
+import 'package:reactphysics3d_dart/src/implementation/ffi_collision_callback.dart';
 import '../bindings/src/bindings.dart';
 import '../ffi_reactphysics3d.dart';
 import '../reactphysics3d.dart';
 
 /// FFI implementation of PhysicsWorld
-class FFIPhysicsWorld implements PhysicsWorld {
+class FFIPhysicsWorld with CollisionCallbackMixin implements PhysicsWorld {
   final Pointer<RP3D_PhysicsWorld> _ptr;
 
   FFIPhysicsWorld(this._ptr);
@@ -167,5 +168,53 @@ class FFIPhysicsWorld implements PhysicsWorld {
     ptr.y = v.y;
     ptr.z = v.z;
     return ptr;
+  }
+
+  @override
+  void testCollisionTwoBodies(RigidBody body1, RigidBody body2, CollisionCallback callback) {
+    final body1Ptr = body1.handle.cast<RP3D_Body>();
+    final body2Ptr = body2.handle.cast<RP3D_Body>();
+    final nativeCallback = createNativeCallback(callback);
+
+    rp3d_test_collision_bodies_direct(_ptr, body1Ptr, body2Ptr, nativeCallback);
+
+    // For now, we keep the native callback around since the EventListener
+    // might need it. In a full implementation, we'd properly manage lifecycle.
+    // cleanupCallback(callback);
+  }
+
+  @override
+  void testCollisionBody(RigidBody body, CollisionCallback callback) {
+    final bodyPtr = body.handle.cast<RP3D_Body>();
+    final nativeCallback = createNativeCallback(callback);
+
+    rp3d_test_collision_body(_ptr, bodyPtr, nativeCallback);
+  }
+
+  @override
+  void testCollision(CollisionCallback callback) {
+    final nativeCallback = createNativeCallback(callback);
+    rp3d_test_collision_world(_ptr, nativeCallback);
+  }
+
+  @override
+  void testOverlap(CollisionCallback callback) {
+    final nativeCallback = createNativeCallback(callback);
+    rp3d_test_overlap_world(_ptr, nativeCallback);
+  }
+
+  @override
+  void setEventListener(CollisionCallback? listener) {
+    if (listener == null) {
+      rp3d_world_set_event_listener(_ptr, nullptr.cast());
+    } else {
+      final nativeCallback = createNativeCallback(listener);
+      rp3d_world_set_event_listener(_ptr, nativeCallback);
+    }
+  }
+
+  @override
+  void removeEventListener() {
+    rp3d_world_remove_event_listener(_ptr);
   }
 }

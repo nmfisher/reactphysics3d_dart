@@ -494,6 +494,56 @@ EMSCRIPTEN_KEEPALIVE void rp3d_reset_callback_stats(TCollisionCallback* callback
 // Collision testing with callbacks
 EMSCRIPTEN_KEEPALIVE void rp3d_test_collision_bodies_direct(RP3D_PhysicsWorld* world, RP3D_Body* body1, RP3D_Body* body2, TCollisionCallback* callback);
 
+// Collision testing (manually query for collisions)
+EMSCRIPTEN_KEEPALIVE void rp3d_test_collision_world(RP3D_PhysicsWorld* world, TCollisionCallback* callback);
+EMSCRIPTEN_KEEPALIVE void rp3d_test_collision_body(RP3D_PhysicsWorld* world, RP3D_Body* body, TCollisionCallback* callback);
+
+// Overlap/Trigger testing (query for trigger overlaps)
+EMSCRIPTEN_KEEPALIVE void rp3d_test_overlap_world(RP3D_PhysicsWorld* world, TCollisionCallback* callback);
+
+// Event listener registration (for automatic callbacks during world.update())
+// Note: These are stub functions for backward compatibility.
+// For actual EventListener functionality, use rp3d_world_set_sendport_listener.
+EMSCRIPTEN_KEEPALIVE void rp3d_world_set_event_listener(RP3D_PhysicsWorld* world, TCollisionCallback* eventListener);
+EMSCRIPTEN_KEEPALIVE void rp3d_world_remove_event_listener(RP3D_PhysicsWorld* world);
+
+// ==================== SendPort Event Listener (Thread-Safe) ====================
+
+/// Create a SendPort-based event listener for thread-safe callbacks
+/// [sendPortId] - The native port ID from Dart's SendPort.nativePort
+/// Returns a unique listener ID
+EMSCRIPTEN_KEEPALIVE uint64_t rp3d_create_sendport_event_listener(uint64_t sendPortId);
+
+/// Set the SendPort event listener for a physics world
+EMSCRIPTEN_KEEPALIVE void rp3d_world_set_sendport_listener(
+    RP3D_PhysicsWorld* world,
+    uint64_t listenerId
+);
+
+/// Destroy a SendPort event listener
+EMSCRIPTEN_KEEPALIVE void rp3d_destroy_sendport_event_listener(uint64_t listenerId);
+
+/// Send data to a Dart SendPort (helper function)
+EMSCRIPTEN_KEEPALIVE int rp3d_send_to_dart_port(
+    uint64_t sendPortId,
+    const uint8_t* data,
+    uint32_t size
+);
+
+/// Check if there's a pending message from any listener
+EMSCRIPTEN_KEEPALIVE int rp3d_has_pending_message();
+
+/// Get the latest message from a listener (for polling)
+/// Returns the actual message size, or 0 if no message
+EMSCRIPTEN_KEEPALIVE uint32_t rp3d_get_listener_message(
+    uint64_t listenerId,
+    uint8_t* buffer,
+    uint32_t bufferSize
+);
+
+/// Get message count for a listener
+EMSCRIPTEN_KEEPALIVE uint32_t rp3d_get_listener_message_count(uint64_t listenerId);
+
 // Destroy callbacks
 EMSCRIPTEN_KEEPALIVE void rp3d_destroy_collision_callback(TCollisionCallback* callback);
 

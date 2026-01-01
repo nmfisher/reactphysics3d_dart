@@ -9,6 +9,7 @@
 #include "c_api/rp3d_c_api.h"
 #include <reactphysics3d/reactphysics3d.h>
 #include <reactphysics3d/collision/CollisionCallback.h>
+#include <reactphysics3d/collision/OverlapCallback.h>
 #include <iostream>
 #include <iomanip>
 #include <unordered_map>
@@ -236,4 +237,189 @@ extern "C" EMSCRIPTEN_KEEPALIVE void rp3d_destroy_collision_callback(TCollisionC
     SimpleLoggingCallback *loggingCallback = reinterpret_cast<SimpleLoggingCallback *>(callback);
     delete loggingCallback;
     std::cout << "Destroyed callback" << std::endl;
+}
+
+// ==================== OverlapCallback Implementation ====================
+
+/**
+ * Simple implementation of OverlapCallback for trigger overlap testing
+ */
+class SimpleOverlapCallback : public reactphysics3d::OverlapCallback
+{
+private:
+    uint32_t totalOverlaps;
+
+public:
+    SimpleOverlapCallback() : totalOverlaps(0) {}
+
+    virtual void onOverlap(CallbackData &callbackData) override
+    {
+        totalOverlaps++;
+        uint32_t overlapPairs = callbackData.getNbOverlappingPairs();
+
+        std::cout << "OverlapCallback: onOverlap called #" << totalOverlaps
+                  << " with " << overlapPairs << " overlap pair(s)" << std::endl;
+
+        for (uint32_t i = 0; i < overlapPairs; i++)
+        {
+            OverlapPair overlapPair = callbackData.getOverlappingPair(i);
+
+            const Collider *collider1 = overlapPair.getCollider1();
+            const Collider *collider2 = overlapPair.getCollider2();
+            const Body *body1 = overlapPair.getBody1();
+            const Body *body2 = overlapPair.getBody2();
+
+            OverlapPair::EventType eventType = overlapPair.getEventType();
+            const char *eventTypeStr = "";
+            switch (eventType)
+            {
+            case OverlapPair::EventType::OverlapStart:
+                eventTypeStr = "OverlapStart";
+                break;
+            case OverlapPair::EventType::OverlapStay:
+                eventTypeStr = "OverlapStay";
+                break;
+            case OverlapPair::EventType::OverlapExit:
+                eventTypeStr = "OverlapExit";
+                break;
+            }
+
+            std::cout << "  OverlapPair " << i << ": " << eventTypeStr
+                      << " between Collider " << collider1 << " and Collider " << collider2
+                      << " (Body " << body1 << " and Body " << body2 << ")" << std::endl;
+        }
+    }
+};
+
+// ==================== Collision Testing Functions ====================
+
+/**
+ * Test collision for all bodies in the world
+ */
+extern "C" EMSCRIPTEN_KEEPALIVE void rp3d_test_collision_world(RP3D_PhysicsWorld *world, TCollisionCallback *callback)
+{
+    if (!world)
+    {
+        std::cout << "Error: null world provided to test_collision_world" << std::endl;
+        return;
+    }
+
+    if (!callback)
+    {
+        std::cout << "Error: null callback provided to test_collision_world" << std::endl;
+        return;
+    }
+
+    reactphysics3d::PhysicsWorld *rp3dWorld = reinterpret_cast<reactphysics3d::PhysicsWorld *>(world);
+    reactphysics3d::CollisionCallback *rp3dCallback = reinterpret_cast<reactphysics3d::CollisionCallback *>(callback);
+
+    std::cout << "Testing collision for all bodies in world" << std::endl;
+    rp3dWorld->testCollision(*rp3dCallback);
+    std::cout << "World collision testing completed" << std::endl;
+}
+
+/**
+ * Test collision for a specific body against all other bodies
+ */
+extern "C" EMSCRIPTEN_KEEPALIVE void rp3d_test_collision_body(RP3D_PhysicsWorld *world, RP3D_Body *body, TCollisionCallback *callback)
+{
+    if (!world)
+    {
+        std::cout << "Error: null world provided to test_collision_body" << std::endl;
+        return;
+    }
+
+    if (!body)
+    {
+        std::cout << "Error: null body provided to test_collision_body" << std::endl;
+        return;
+    }
+
+    if (!callback)
+    {
+        std::cout << "Error: null callback provided to test_collision_body" << std::endl;
+        return;
+    }
+
+    reactphysics3d::PhysicsWorld *rp3dWorld = reinterpret_cast<reactphysics3d::PhysicsWorld *>(world);
+    reactphysics3d::Body *rp3dBody = reinterpret_cast<reactphysics3d::Body *>(body);
+    reactphysics3d::CollisionCallback *rp3dCallback = reinterpret_cast<reactphysics3d::CollisionCallback *>(callback);
+
+    std::cout << "Testing collision for body " << body << " against all other bodies" << std::endl;
+    rp3dWorld->testCollision(rp3dBody, *rp3dCallback);
+    std::cout << "Body collision testing completed" << std::endl;
+}
+
+/**
+ * Test overlap for all trigger colliders in the world
+ */
+extern "C" EMSCRIPTEN_KEEPALIVE void rp3d_test_overlap_world(RP3D_PhysicsWorld *world, TCollisionCallback *callback)
+{
+    if (!world)
+    {
+        std::cout << "Error: null world provided to test_overlap_world" << std::endl;
+        return;
+    }
+
+    if (!callback)
+    {
+        std::cout << "Error: null callback provided to test_overlap_world" << std::endl;
+        return;
+    }
+
+    reactphysics3d::PhysicsWorld *rp3dWorld = reinterpret_cast<reactphysics3d::PhysicsWorld *>(world);
+
+    // Create a temporary overlap callback
+    SimpleOverlapCallback overlapCallback;
+
+    std::cout << "Testing overlap/triggers for all bodies in world" << std::endl;
+    rp3dWorld->testOverlap(overlapCallback);
+    std::cout << "World overlap testing completed" << std::endl;
+}
+
+// Note: EventListener functionality is provided by dart_sendport_listener.cpp.
+// The CollisionCallback class (used for testCollision/testOverlap) is
+// different from EventListener (used for automatic callbacks during update).
+
+// ==================== Event Listener Stubs ====================
+
+// These are simple stub functions for backward compatibility.
+// For actual EventListener functionality, use the SendPort event listener
+// functions from dart_sendport_listener.cpp.
+
+/**
+ * Stub for setting an event listener.
+ * This is a no-op for backward compatibility.
+ * Use rp3d_world_set_sendport_listener for actual event listener functionality.
+ */
+extern "C" EMSCRIPTEN_KEEPALIVE void rp3d_world_set_event_listener(
+    RP3D_PhysicsWorld *world,
+    TCollisionCallback *eventListener)
+{
+    if (!world)
+    {
+        std::cout << "Error: null world provided to set_event_listener" << std::endl;
+        return;
+    }
+
+    // This is a stub - the actual event listener functionality is provided
+    // by dart_sendport_listener.cpp
+    std::cout << "set_event_listener called (stub - use sendport_listener for actual functionality)" << std::endl;
+}
+
+/**
+ * Stub for removing an event listener.
+ * This is a no-op for backward compatibility.
+ */
+extern "C" EMSCRIPTEN_KEEPALIVE void rp3d_world_remove_event_listener(RP3D_PhysicsWorld *world)
+{
+    if (!world)
+    {
+        std::cout << "Error: null world provided to remove_event_listener" << std::endl;
+        return;
+    }
+
+    // This is a stub - the actual event listener functionality is provided
+    // by dart_sendport_listener.cpp
+    std::cout << "remove_event_listener called (stub)" << std::endl;
 }

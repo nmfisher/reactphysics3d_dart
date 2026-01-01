@@ -1140,6 +1140,93 @@ external void rp3d_test_collision_bodies_direct(
   ffi.Pointer<TCollisionCallback> callback,
 );
 
+/// Collision testing (manually query for collisions)
+@ffi.Native<
+    ffi.Void Function(ffi.Pointer<RP3D_PhysicsWorld>,
+        ffi.Pointer<TCollisionCallback>)>(isLeaf: true)
+external void rp3d_test_collision_world(
+  ffi.Pointer<RP3D_PhysicsWorld> world,
+  ffi.Pointer<TCollisionCallback> callback,
+);
+
+@ffi.Native<
+    ffi.Void Function(ffi.Pointer<RP3D_PhysicsWorld>, ffi.Pointer<RP3D_Body>,
+        ffi.Pointer<TCollisionCallback>)>(isLeaf: true)
+external void rp3d_test_collision_body(
+  ffi.Pointer<RP3D_PhysicsWorld> world,
+  ffi.Pointer<RP3D_Body> body,
+  ffi.Pointer<TCollisionCallback> callback,
+);
+
+/// Overlap/Trigger testing (query for trigger overlaps)
+@ffi.Native<
+    ffi.Void Function(ffi.Pointer<RP3D_PhysicsWorld>,
+        ffi.Pointer<TCollisionCallback>)>(isLeaf: true)
+external void rp3d_test_overlap_world(
+  ffi.Pointer<RP3D_PhysicsWorld> world,
+  ffi.Pointer<TCollisionCallback> callback,
+);
+
+/// Event listener registration (for automatic callbacks during world.update())
+@ffi.Native<
+    ffi.Void Function(ffi.Pointer<RP3D_PhysicsWorld>,
+        ffi.Pointer<TCollisionCallback>)>(isLeaf: true)
+external void rp3d_world_set_event_listener(
+  ffi.Pointer<RP3D_PhysicsWorld> world,
+  ffi.Pointer<TCollisionCallback> eventListener,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<RP3D_PhysicsWorld>)>(isLeaf: true)
+external void rp3d_world_remove_event_listener(
+  ffi.Pointer<RP3D_PhysicsWorld> world,
+);
+
+// ==================== SendPort Event Listener (Thread-Safe) ====================
+
+/// Create a SendPort-based event listener for thread-safe callbacks
+@ffi.Native<ffi.Uint64 Function(ffi.Uint64 sendPortId)>(isLeaf: true)
+external int rp3d_create_sendport_event_listener(int sendPortId);
+
+/// Set the SendPort event listener for a physics world
+@ffi.Native<ffi.Void Function(ffi.Pointer<RP3D_PhysicsWorld>, ffi.Uint64)>(
+    isLeaf: true)
+external void rp3d_world_set_sendport_listener(
+  ffi.Pointer<RP3D_PhysicsWorld> world,
+  int listenerId,
+);
+
+/// Destroy a SendPort event listener
+@ffi.Native<ffi.Void Function(ffi.Uint64)>(isLeaf: true)
+external void rp3d_destroy_sendport_event_listener(int listenerId);
+
+/// Send data to a Dart SendPort (helper function)
+@ffi.Native<
+    ffi.Int32 Function(ffi.Uint64 sendPortId, ffi.Pointer<ffi.Uint8> data,
+        ffi.Uint32 size)>(isLeaf: true)
+external int rp3d_send_to_dart_port(
+  int sendPortId,
+  ffi.Pointer<ffi.Uint8> data,
+  int size,
+);
+
+/// Check if there's a pending message from any listener
+@ffi.Native<ffi.Int32 Function()>(isLeaf: true)
+external int rp3d_has_pending_message();
+
+/// Get the latest message from a listener (for polling)
+@ffi.Native<
+    ffi.Uint32 Function(ffi.Uint64 listenerId, ffi.Pointer<ffi.Uint8> buffer,
+        ffi.Uint32 bufferSize)>(isLeaf: true)
+external int rp3d_get_listener_message(
+  int listenerId,
+  ffi.Pointer<ffi.Uint8> buffer,
+  int bufferSize,
+);
+
+/// Get message count for a listener
+@ffi.Native<ffi.Uint32 Function(ffi.Uint64)>(isLeaf: true)
+external int rp3d_get_listener_message_count(int listenerId);
+
 /// Destroy callbacks
 @ffi.Native<ffi.Void Function(ffi.Pointer<TCollisionCallback>)>(isLeaf: true)
 external void rp3d_destroy_collision_callback(
