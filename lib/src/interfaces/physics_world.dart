@@ -2,6 +2,7 @@
 import '../../reactphysics3d_dart.dart';
 import '../bindings/src/bindings.dart' as ffi;
 import '../bindings/src/bindings.dart';
+import 'event_listener.dart';
 
 /// Interface for physics simulation world
 abstract class PhysicsWorld
@@ -72,9 +73,6 @@ abstract class PhysicsWorld
   void testOverlap(CollisionCallback callback);
 
   /// Set an event listener to receive automatic collision callbacks during world.update().
-  /// The callback will be invoked automatically when collisions occur during simulation.
-  void setEventListener(CollisionCallback? listener);
-
-  /// Remove the current event listener from the world.
-  void removeEventListener();
+  /// Pass null to remove the current listener.
+  void setEventListener(EventListener? listener);
 }

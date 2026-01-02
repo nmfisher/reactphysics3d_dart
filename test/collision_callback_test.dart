@@ -140,34 +140,33 @@ void main() {
     });
 
     group('EventListener - Automatic callbacks during update', () {
-      test('setEventListener should register a callback', () {
+      test('setEventListener should register a SendPortEventListener', () {
         final callback = _TestCollisionCallback();
+        final listener = SendPortEventListener(callback);
 
         // Should not throw
-        world.setEventListener(callback);
+        world.setEventListener(listener);
 
         // Clean up
-        world.removeEventListener();
-      });
-
-      test('removeEventListener should remove the callback', () {
-        final callback = _TestCollisionCallback();
-
-        world.setEventListener(callback);
-        world.removeEventListener();
-
-        // Should not throw when removing again
-        world.removeEventListener();
+        world.setEventListener(null);
+        listener.dispose();
       });
 
       test('setEventListener with null should remove listener', () {
         final callback = _TestCollisionCallback();
+        final listener = SendPortEventListener(callback);
 
-        world.setEventListener(callback);
+        world.setEventListener(listener);
         world.setEventListener(null);
 
         // Listener should be removed
-        expect(true, isTrue); // Placeholder - actual verification requires native support
+        expect(true, isTrue);
+        listener.dispose();
+      });
+
+      test('setEventListener with null should work when no listener is set', () {
+        // Should not throw when no listener was previously set
+        world.setEventListener(null);
       });
     });
 
@@ -284,22 +283,21 @@ void main() {
         final callback = _TestCollisionCallback();
         final listener = SendPortEventListener(callback);
 
-        expect(listener.isActive, isFalse);
-        // The listener ID should be positive
-        expect(listener.nativeMessageCount, greaterThanOrEqualTo(0));
+        // The listener pointer should be non-null
+        expect(listener.pointer, isNotNull);
 
         listener.dispose();
       });
 
-      test('SendPortEventListener should attach and detach from world', () {
+      test('SendPortEventListener should attach to world via setEventListener', () {
         final callback = _TestCollisionCallback();
         final listener = SendPortEventListener(callback);
 
-        listener.attachTo(world);
-        expect(listener.isActive, isTrue);
+        // Attach via world.setEventListener
+        world.setEventListener(listener);
 
-        listener.detach();
-        expect(listener.isActive, isFalse);
+        // Remove via world.setEventListener(null)
+        world.setEventListener(null);
 
         listener.dispose();
       });
@@ -328,21 +326,8 @@ void main() {
         final callback = _TestCollisionCallback();
         final listener = SendPortEventListener(callback);
 
-        listener.attachTo(world);
-
         // Polling should not throw
         listener.poll();
-
-        listener.detach();
-        listener.dispose();
-      });
-
-      test('SendPortEventListener should track message count', () {
-        final callback = _TestCollisionCallback();
-        final listener = SendPortEventListener(callback);
-
-        final initialCount = listener.messageCount;
-        expect(initialCount, equals(0));
 
         listener.dispose();
       });

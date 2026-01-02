@@ -2,6 +2,7 @@ import 'package:reactphysics3d_dart/src/implementation/ffi_rigid_body.dart';
 import 'package:reactphysics3d_dart/src/implementation/ffi_debug_renderer.dart';
 import 'package:reactphysics3d_dart/src/implementation/ffi_collider.dart';
 import 'package:reactphysics3d_dart/src/implementation/ffi_collision_callback.dart';
+import 'package:reactphysics3d_dart/src/interfaces/event_listener.dart';
 import '../bindings/src/bindings.dart';
 import '../ffi_reactphysics3d.dart';
 import '../reactphysics3d.dart';
@@ -204,17 +205,11 @@ class FFIPhysicsWorld with CollisionCallbackMixin implements PhysicsWorld {
   }
 
   @override
-  void setEventListener(CollisionCallback? listener) {
+  void setEventListener(EventListener? listener) {
     if (listener == null) {
-      rp3d_world_set_event_listener(_ptr, nullptr.cast());
+      rp3d_world_set_event_listener(_ptr, nullptr);
     } else {
-      final nativeCallback = createNativeCallback(listener);
-      rp3d_world_set_event_listener(_ptr, nativeCallback);
+      rp3d_world_set_event_listener(_ptr, listener.pointer);
     }
-  }
-
-  @override
-  void removeEventListener() {
-    rp3d_world_remove_event_listener(_ptr);
   }
 }

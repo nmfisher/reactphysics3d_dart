@@ -49,6 +49,7 @@ typedef struct RP3D_HingeJoint RP3D_HingeJoint;
 typedef struct RP3D_SliderJoint RP3D_SliderJoint;
 typedef struct RP3D_FixedJoint RP3D_FixedJoint;
 typedef struct RP3D_DebugRenderer RP3D_DebugRenderer;
+typedef struct RP3D_EventListener RP3D_EventListener;
 typedef struct TCollisionCallback TCollisionCallback;
 
 // ==================== Enums ====================
@@ -475,21 +476,9 @@ EMSCRIPTEN_KEEPALIVE void rp3d_world_destroy_joint(RP3D_PhysicsWorld* world, voi
 
 // ==================== Collision Callbacks ====================
 
-// Create callbacks
+// Create a minimal collision callback for testCollision methods
 EMSCRIPTEN_KEEPALIVE TCollisionCallback* rp3d_create_logging_collision_callback(const char* prefix, uint8_t logContactPoints, uint8_t verbose);
-EMSCRIPTEN_KEEPALIVE TCollisionCallback* rp3d_create_contact_counter_callback();
-
-// Get callback properties
-EMSCRIPTEN_KEEPALIVE uint8_t rp3d_get_logging_callback_has_contact(TCollisionCallback* callback);
-
-// Get callback statistics
-EMSCRIPTEN_KEEPALIVE void rp3d_get_logging_callback_stats(TCollisionCallback* callback, uint32_t* callbackCount,
-                                                         uint32_t* totalContactPairs, uint32_t* totalContactPoints);
-EMSCRIPTEN_KEEPALIVE void rp3d_get_counter_callback_stats(TCollisionCallback* callback, uint32_t* callbackCount,
-                                                        uint32_t* totalContactPairs, uint32_t* totalContactPoints);
-
-// Reset callback statistics
-EMSCRIPTEN_KEEPALIVE void rp3d_reset_callback_stats(TCollisionCallback* callback);
+EMSCRIPTEN_KEEPALIVE void rp3d_destroy_collision_callback(TCollisionCallback* callback);
 
 // Collision testing with callbacks
 EMSCRIPTEN_KEEPALIVE void rp3d_test_collision_bodies_direct(RP3D_PhysicsWorld* world, RP3D_Body* body1, RP3D_Body* body2, TCollisionCallback* callback);
@@ -501,34 +490,24 @@ EMSCRIPTEN_KEEPALIVE void rp3d_test_collision_body(RP3D_PhysicsWorld* world, RP3
 // Overlap/Trigger testing (query for trigger overlaps)
 EMSCRIPTEN_KEEPALIVE void rp3d_test_overlap_world(RP3D_PhysicsWorld* world, TCollisionCallback* callback);
 
-// Event listener registration (for automatic callbacks during world.update())
-// Note: These are stub functions for backward compatibility.
-// For actual EventListener functionality, use rp3d_world_set_sendport_listener.
-EMSCRIPTEN_KEEPALIVE void rp3d_world_set_event_listener(RP3D_PhysicsWorld* world, TCollisionCallback* eventListener);
-EMSCRIPTEN_KEEPALIVE void rp3d_world_remove_event_listener(RP3D_PhysicsWorld* world);
+// ==================== Event Listener ====================
+// Event listener registration (matches ReactPhysics3D PhysicsWorld::setEventListener)
 
-// ==================== SendPort Event Listener (Thread-Safe) ====================
+// Create a SendPort-based event listener for thread-safe callbacks
+// Returns an EventListener* pointer that can be passed to rp3d_world_set_event_listener()
+EMSCRIPTEN_KEEPALIVE RP3D_EventListener* rp3d_create_sendport_event_listener(uint64_t sendPortId);
 
-/// Create a SendPort-based event listener for thread-safe callbacks
-/// [sendPortId] - The native port ID from Dart's SendPort.nativePort
-/// Returns a unique listener ID
-EMSCRIPTEN_KEEPALIVE uint64_t rp3d_create_sendport_event_listener(uint64_t sendPortId);
-
-/// Set the SendPort event listener for a physics world
-EMSCRIPTEN_KEEPALIVE void rp3d_world_set_sendport_listener(
+// Set the event listener for a physics world (matches ReactPhysics3D API)
+// Pass nullptr to remove the current listener
+EMSCRIPTEN_KEEPALIVE void rp3d_world_set_event_listener(
     RP3D_PhysicsWorld* world,
-    uint64_t listenerId
+    RP3D_EventListener* listener
 );
 
-/// Destroy a SendPort event listener
-EMSCRIPTEN_KEEPALIVE void rp3d_destroy_sendport_event_listener(uint64_t listenerId);
+// Destroy an event listener created by rp3d_create_sendport_event_listener
+EMSCRIPTEN_KEEPALIVE void rp3d_destroy_event_listener(RP3D_EventListener* listener);
 
-/// Send data to a Dart SendPort (helper function)
-EMSCRIPTEN_KEEPALIVE int rp3d_send_to_dart_port(
-    uint64_t sendPortId,
-    const uint8_t* data,
-    uint32_t size
-);
+// ==================== Message Polling (for SendPort Event Listeners) ====================
 
 /// Check if there's a pending message from any listener
 EMSCRIPTEN_KEEPALIVE int rp3d_has_pending_message();
@@ -536,13 +515,16 @@ EMSCRIPTEN_KEEPALIVE int rp3d_has_pending_message();
 /// Get the latest message from a listener (for polling)
 /// Returns the actual message size, or 0 if no message
 EMSCRIPTEN_KEEPALIVE uint32_t rp3d_get_listener_message(
-    uint64_t listenerId,
     uint8_t* buffer,
     uint32_t bufferSize
 );
 
-/// Get message count for a listener
-EMSCRIPTEN_KEEPALIVE uint32_t rp3d_get_listener_message_count(uint64_t listenerId);
+/// Send data to a Dart SendPort (internal helper function)
+EMSCRIPTEN_KEEPALIVE int rp3d_send_to_dart_port(
+    uint64_t sendPortId,
+    const uint8_t* data,
+    uint32_t size
+);
 
 // Destroy callbacks
 EMSCRIPTEN_KEEPALIVE void rp3d_destroy_collision_callback(TCollisionCallback* callback);

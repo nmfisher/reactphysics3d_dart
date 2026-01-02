@@ -1,8 +1,8 @@
 /*
- * Dart SendPort Event Listener Implementation
+ * SendPort Event Listener Implementation
  *
- * This file implements a thread-safe bridge between ReactPhysics3D's EventListener
- * and Dart using SendPort/ReceivePort for multi-threaded scenarios.
+ * This file implements a thread-safe EventListener that sends collision data
+ * to Dart via SendPort/ReceivePort for multi-threaded scenarios.
  */
 
 #include "c_api/rp3d_c_api.h"
@@ -16,7 +16,7 @@
 
 using namespace reactphysics3d;
 
-// ==================== Simple Message Buffer ====================
+// ==================== Message Buffer ====================
 
 /**
  * Simple buffer to serialize contact data for sending to Dart.
@@ -207,84 +207,68 @@ static std::atomic<uint32_t> g_sharedMessageSize(0);
 
 // ==================== C API ====================
 
-// Global registry for SendPort event listeners
-static std::unordered_map<uint64_t, SendPortEventListener*> g_sendPortListeners;
-static std::atomic<uint64_t> g_nextSendPortListenerId{1};
-
 /**
- * Create a SendPort-based event listener
- *
- * [sendPortId] - The native port ID of the Dart SendPort
- * Returns a unique listener ID
+ * Create a SendPort-based event listener.
+ * Returns an EventListener* pointer that can be passed to rp3d_world_set_event_listener().
  */
-extern "C" EMSCRIPTEN_KEEPALIVE uint64_t rp3d_create_sendport_event_listener(
+extern "C" EMSCRIPTEN_KEEPALIVE RP3D_EventListener* rp3d_create_sendport_event_listener(
     uint64_t sendPortId
 ) {
-    uint64_t listenerId = g_nextSendPortListenerId.fetch_add(1);
-
     SendPortEventListener* listener = new SendPortEventListener(sendPortId);
-    g_sendPortListeners[listenerId] = listener;
-
-    std::cout << "Created SendPort event listener with ID: " << listenerId
-              << " for SendPort ID: " << sendPortId << std::endl;
-
-    return listenerId;
+    return reinterpret_cast<RP3D_EventListener*>(listener);
 }
 
 /**
- * Set the SendPort event listener for a physics world
+ * Set the event listener for a physics world.
+ * Matches ReactPhysics3D's PhysicsWorld::setEventListener().
+ * Pass nullptr to remove the current listener.
  */
-extern "C" EMSCRIPTEN_KEEPALIVE void rp3d_world_set_sendport_listener(
+extern "C" EMSCRIPTEN_KEEPALIVE void rp3d_world_set_event_listener(
     RP3D_PhysicsWorld* world,
-    uint64_t listenerId
+    RP3D_EventListener* listener
 ) {
     if (!world) {
-        std::cout << "Error: null world in set_sendport_listener" << std::endl;
-        return;
-    }
-
-    auto it = g_sendPortListeners.find(listenerId);
-    if (it == g_sendPortListeners.end()) {
-        std::cout << "Error: invalid listener ID: " << listenerId << std::endl;
+        std::cout << "Error: null world in set_event_listener" << std::endl;
         return;
     }
 
     reactphysics3d::PhysicsWorld* rp3dWorld = reinterpret_cast<reactphysics3d::PhysicsWorld*>(world);
-    rp3dWorld->setEventListener(it->second);
+    reactphysics3d::EventListener* rp3dListener = reinterpret_cast<reactphysics3d::EventListener*>(listener);
 
-    std::cout << "Set SendPort event listener ID " << listenerId << " for world" << std::endl;
+    rp3dWorld->setEventListener(rp3dListener);
+
+    std::cout << "Set event listener for world (listener: " << listener << ")" << std::endl;
 }
 
 /**
- * Destroy a SendPort event listener
+ * Destroy an event listener created by rp3d_create_sendport_event_listener.
  */
-extern "C" EMSCRIPTEN_KEEPALIVE void rp3d_destroy_sendport_event_listener(uint64_t listenerId) {
-    auto it = g_sendPortListeners.find(listenerId);
-    if (it == g_sendPortListeners.end()) {
-        std::cout << "Warning: invalid listener ID: " << listenerId << std::endl;
+extern "C" EMSCRIPTEN_KEEPALIVE void rp3d_destroy_event_listener(RP3D_EventListener* listener) {
+    if (!listener) {
         return;
     }
 
-    delete it->second;
-    g_sendPortListeners.erase(it);
+    reactphysics3d::EventListener* rp3dListener = reinterpret_cast<reactphysics3d::EventListener*>(listener);
+    delete rp3dListener;
 
-    std::cout << "Destroyed SendPort event listener ID: " << listenerId << std::endl;
+    std::cout << "Destroyed event listener: " << listener << std::endl;
 }
 
 /**
- * Get the latest message from a listener (for polling)
- *
- * [listenerId] - The listener ID
- * [buffer] - Output buffer to copy the message to
- * [bufferSize] - Size of the output buffer
- * Returns the actual message size, or 0 if no message
+ * Check if there's a pending message from any listener.
+ */
+extern "C" EMSCRIPTEN_KEEPALIVE int rp3d_has_pending_message() {
+    return g_hasNewMessage.load() ? 1 : 0;
+}
+
+/**
+ * Get the latest message from a listener (for polling).
+ * Returns the actual message size, or 0 if no message.
  */
 extern "C" EMSCRIPTEN_KEEPALIVE uint32_t rp3d_get_listener_message(
-    uint64_t listenerId,
     uint8_t* buffer,
     uint32_t bufferSize
 ) {
-    // For polling approach: check if there's a new message in the global buffer
     if (!g_hasNewMessage.load()) {
         return 0;
     }
@@ -302,14 +286,8 @@ extern "C" EMSCRIPTEN_KEEPALIVE uint32_t rp3d_get_listener_message(
 }
 
 /**
- * Send a message to a Dart SendPort
- *
- * This is a helper function that can be called from C++ to send data to Dart.
- *
- * [sendPortId] - The native port ID
- * [data] - Pointer to the data to send
- * [size] - Size of the data
- * Returns true on success
+ * Send a message to a Dart SendPort.
+ * This is a helper function called from the event listener.
  */
 extern "C" EMSCRIPTEN_KEEPALIVE int rp3d_send_to_dart_port(
     uint64_t sendPortId,
@@ -325,22 +303,4 @@ extern "C" EMSCRIPTEN_KEEPALIVE int rp3d_send_to_dart_port(
     std::cout << "Sent " << size << " bytes to Dart port " << sendPortId << std::endl;
 
     return 1; // Success
-}
-
-/**
- * Check if there's a pending message from any listener
- */
-extern "C" EMSCRIPTEN_KEEPALIVE int rp3d_has_pending_message() {
-    return g_hasNewMessage.load() ? 1 : 0;
-}
-
-/**
- * Get message statistics for a listener
- */
-extern "C" EMSCRIPTEN_KEEPALIVE uint32_t rp3d_get_listener_message_count(uint64_t listenerId) {
-    auto it = g_sendPortListeners.find(listenerId);
-    if (it == g_sendPortListeners.end()) {
-        return 0;
-    }
-    return it->second->getMessageCount();
 }

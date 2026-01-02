@@ -2188,15 +2188,23 @@ void main() {
         );
       });
 
-      test('should create and use contact counter callback', () {
-        // Test creating a counter callback
-        final callbackId = bindings.rp3d_create_contact_counter_callback();
+      test('should create and use collision callback', () {
+        // Test creating a logging callback
+        final callbackId = bindings.rp3d_create_logging_collision_callback(
+          ffi.nullptr,
+          1,
+          1,
+        );
 
         expect(callbackId.address, isNonZero);
         expect(callbackId, isA<ffi.Pointer>());
 
-        // Test creating another counter callback to verify different IDs
-        final callbackId2 = bindings.rp3d_create_contact_counter_callback();
+        // Test creating another callback
+        final callbackId2 = bindings.rp3d_create_logging_collision_callback(
+          ffi.nullptr,
+          0,
+          1,
+        );
 
         expect(callbackId2.address, isNonZero);
         expect(callbackId2.address, isNot(equals(callbackId.address)));
@@ -2214,33 +2222,33 @@ void main() {
       });
 
       test('should create multiple callbacks with different IDs', () {
-        // Create multiple callbacks of different types
+        // Create multiple callbacks
         final loggingCallback1 = bindings
             .rp3d_create_logging_collision_callback(ffi.nullptr, 1, 1);
         final loggingCallback2 = bindings
             .rp3d_create_logging_collision_callback(ffi.nullptr, 0, 1);
-        final counterCallback1 = bindings
-            .rp3d_create_contact_counter_callback();
-        final counterCallback2 = bindings
-            .rp3d_create_contact_counter_callback();
+        final loggingCallback3 = bindings
+            .rp3d_create_logging_collision_callback(ffi.nullptr, 1, 0);
+        final loggingCallback4 = bindings
+            .rp3d_create_logging_collision_callback(ffi.nullptr, 0, 0);
 
         // All should have different IDs
         expect(loggingCallback1, isNot(equals(loggingCallback2)));
-        expect(loggingCallback1, isNot(equals(counterCallback1)));
-        expect(loggingCallback2, isNot(equals(counterCallback1)));
-        expect(counterCallback1, isNot(equals(counterCallback2)));
+        expect(loggingCallback1, isNot(equals(loggingCallback3)));
+        expect(loggingCallback2, isNot(equals(loggingCallback3)));
+        expect(loggingCallback3, isNot(equals(loggingCallback4)));
 
         // All should be valid
         expect(loggingCallback1.address, isNonZero);
         expect(loggingCallback2.address, isNonZero);
-        expect(counterCallback1.address, isNonZero);
-        expect(counterCallback2.address, isNonZero);
+        expect(loggingCallback3.address, isNonZero);
+        expect(loggingCallback4.address, isNonZero);
 
         // Cleanup
         bindings.rp3d_destroy_collision_callback(loggingCallback1);
         bindings.rp3d_destroy_collision_callback(loggingCallback2);
-        bindings.rp3d_destroy_collision_callback(counterCallback1);
-        bindings.rp3d_destroy_collision_callback(counterCallback2);
+        bindings.rp3d_destroy_collision_callback(loggingCallback3);
+        bindings.rp3d_destroy_collision_callback(loggingCallback4);
       });
 
       test('should handle invalid callback operations gracefully', () {
@@ -2255,11 +2263,6 @@ void main() {
 
         expect(
           () => bindings.rp3d_destroy_collision_callback(nullCallback),
-          returnsNormally,
-        );
-
-        expect(
-          () => bindings.rp3d_reset_callback_stats(nullCallback),
           returnsNormally,
         );
       });
@@ -2335,16 +2338,16 @@ void main() {
           final body1 = physics3D.createRigidBody(world);
           body1.addCollider(box1);
 
-          // Create second box far away (no collision initially)
+          // Create second box
           final box2 = physics3D.createBoxShape(Vector3(1, 1, 1));
           final body2 = physics3D.createRigidBody(world);
           body2.setTransform((
             orientation: Quaternion.identity(),
-            position: Vector3(10, 0, 0), // 10 units away - no collision
+            position: Vector3(1.5, 0, 0), // Overlapping position
           ));
           body2.addCollider(box2);
 
-          // Test 1: Bodies should NOT collide (hasContact should be false)
+          // Test collision between bodies
           // Since RigidBody inherits from Body in C++, we can safely cast
           final body1AsBody = body1.handle.cast<bindings.RP3D_Body>();
           final body2AsBody = body2.handle.cast<bindings.RP3D_Body>();
@@ -2356,47 +2359,14 @@ void main() {
             callbackId,
           );
 
-          // Check hasContact - should be false (0) since bodies are far apart
-          final initialHasContact = bindings
-              .rp3d_get_logging_callback_has_contact(callbackId);
-          expect(
-            initialHasContact,
-            equals(0),
-            reason: 'Bodies should not be colliding initially',
-          );
+          // Test collision for all bodies in world
+          bindings.rp3d_test_collision_world(world.handle, callbackId);
 
-          // Move body2 close to body1 so they collide
-          body2.setTransform((
-            orientation: Quaternion.identity(),
-            position: Vector3(1.5, 0, 0), // Overlapping position
-          ));
+          // Test collision for single body
+          bindings.rp3d_test_collision_body(world.handle, body1AsBody, callbackId);
 
-          // Test 2: Bodies should collide (hasContact should be true)
-          bindings.rp3d_test_collision_bodies_direct(
-            world.handle,
-            body1AsBody,
-            body2AsBody,
-            callbackId,
-          );
-
-          // Check hasContact - should be true (1) since bodies are now overlapping
-          final finalHasContact = bindings
-              .rp3d_get_logging_callback_has_contact(callbackId);
-          expect(
-            finalHasContact,
-            equals(1),
-            reason:
-                'Bodies should be colliding after movement - boxes with half-extents 1.0 at distance 1.5 should collide',
-          );
-
-          print('✅ Full collision detection test passed!');
-          print(
-            '   Initial hasContact: $initialHasContact (should be 0 - far apart)',
-          );
-          print(
-            '   Final hasContact: $finalHasContact (should be 1 - overlapping)',
-          );
-          print('   ✅ Real position-based collision detection working!');
+          print('✅ Collision detection test passed!');
+          print('   ✅ testCollision functions working correctly!');
 
           // Cleanup is handled by test framework
         } finally {

@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:vector_math/vector_math_64.dart';
 import '../bindings/src/bindings.dart';
 import '../interfaces/collision_callback.dart';
+import '../interfaces/event_listener.dart';
 import '../interfaces/physics_world.dart';
 import 'ffi_rigid_body.dart';
 import 'ffi_collider.dart';
@@ -33,21 +34,21 @@ import 'ffi_collider.dart';
 ///
 /// ```dart
 /// final listener = SendPortEventListener(MyCallback());
-/// listener.attachTo(world);
+/// world.setEventListener(listener);
 ///
 /// // Update can be called from any thread (including background threads)
 /// world.update(1/60);  // Callbacks will be processed on Dart's event loop
 ///
 /// // When done
-/// listener.detach();
+/// world.setEventListener(null);
+/// listener.dispose();
 /// ```
-class SendPortEventListener {
+class SendPortEventListener implements EventListener {
   final CollisionCallback _callback;
   late final ReceivePort _receivePort;
   late final SendPort _sendPort;
-  late final int _listenerId;
-  bool _isActive = false;
-  PhysicsWorld? _attachedWorld;
+  late final ffi.Pointer<RP3D_EventListener> _listenerPtr;
+  bool _isDisposed = false;
 
   // Buffer for reading messages from native
   final ffi.Pointer<ffi.Uint8> _messageBuffer;
@@ -63,47 +64,19 @@ class SendPortEventListener {
     _receivePort.listen(_handleMessage);
 
     // Create the native event listener with the SendPort ID
-    _listenerId = rp3d_create_sendport_event_listener(_sendPort.nativePort);
+    _listenerPtr = rp3d_create_sendport_event_listener(_sendPort.nativePort);
   }
 
-  /// Attach this listener to a physics world for automatic callbacks during update()
-  void attachTo(PhysicsWorld world) {
-    if (_isActive) return;
-
-    _attachedWorld = world;
-
-    // Set the listener on the world
-    rp3d_world_set_sendport_listener(world.handle.cast(), _listenerId);
-    _isActive = true;
-  }
-
-  /// Detach this listener from the physics world
-  void detach() {
-    if (!_isActive) return;
-
-    rp3d_destroy_sendport_event_listener(_listenerId);
-    _isActive = false;
-    _attachedWorld = null;
-  }
-
-  /// Check if this listener is currently active
-  bool get isActive => _isActive;
-
-  /// Get the number of messages received
-  int messageCount = 0;
+  /// Get the native EventListener pointer for passing to rp3d_world_set_event_listener()
+  ffi.Pointer<RP3D_EventListener> get pointer => _listenerPtr;
 
   /// Handle incoming message from native code
   void _handleMessage(dynamic message) {
-    messageCount++;
+    if (_isDisposed) return;
 
-    // The message from C++ will be a list of bytes (the serialized contact data)
-    // For now, we'll poll for the message since the actual SendPort.send()
-    // from C++ requires Dart VM integration
-
+    // Poll for messages from the global buffer
     try {
-      // Poll for messages from the listener
       final msgSize = rp3d_get_listener_message(
-        _listenerId,
         _messageBuffer,
         _maxMessageSize,
       );
@@ -224,21 +197,20 @@ class SendPortEventListener {
   /// Check for pending messages and process them
   ///
   /// This can be called periodically to poll for messages if needed.
-  /// Messages are also processed automatically when sent via SendPort.
   void poll() {
+    if (_isDisposed) return;
     while (rp3d_has_pending_message() != 0) {
       _handleMessage(null);
     }
   }
 
-  /// Get the number of messages processed by the native listener
-  int get nativeMessageCount {
-    return rp3d_get_listener_message_count(_listenerId);
-  }
-
+  /// Clean up resources
   void dispose() {
-    detach();
+    if (_isDisposed) return;
+    _isDisposed = true;
+
     _receivePort.close();
+    rp3d_destroy_event_listener(_listenerPtr);
     calloc.free(_messageBuffer);
   }
 }
