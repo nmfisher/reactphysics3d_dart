@@ -37,7 +37,6 @@ targetOS: $targetOS
     // Source files
     var sources = [
       path.join(pkgRootFilePath, "native/src/rp3d_c_api.cpp"),
-      path.join(pkgRootFilePath, "native/src/logging_collision_callback.cpp"),
       path.join(pkgRootFilePath, "native/src/dart_sendport_listener.cpp"),
     ];
 
