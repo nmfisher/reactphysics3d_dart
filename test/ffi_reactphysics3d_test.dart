@@ -2154,225 +2154,112 @@ void main() {
       });
     });
 
-    group('Collision Callbacks', () {
-      test('should create and use logging collision callback', () {
-        // Test creating a logging callback with null prefix (simple case)
-        final callbackId = bindings.rp3d_create_logging_collision_callback(
-          ffi.nullptr,
-          1, // logContactPoints = true
-          1, // verbose = true
-        );
-
-        expect(callbackId.address, isNonZero);
-        expect(callbackId, isA<ffi.Pointer>());
-
-        // Test creating another callback to verify different IDs
-        final callbackId2 = bindings.rp3d_create_logging_collision_callback(
-          ffi.nullptr,
-          0, // logContactPoints = false
-          0, // verbose = false
-        );
-
-        expect(callbackId2.address, isNonZero);
-        expect(callbackId2.address, isNot(equals(callbackId.address)));
-
-        // Test destroying callbacks (should not crash)
-        expect(
-          () => bindings.rp3d_destroy_collision_callback(callbackId),
-          returnsNormally,
-        );
-
-        expect(
-          () => bindings.rp3d_destroy_collision_callback(callbackId2),
-          returnsNormally,
-        );
-      });
-
-      test('should create and use collision callback', () {
-        // Test creating a logging callback
-        final callbackId = bindings.rp3d_create_logging_collision_callback(
-          ffi.nullptr,
-          1,
-          1,
-        );
-
-        expect(callbackId.address, isNonZero);
-        expect(callbackId, isA<ffi.Pointer>());
-
-        // Test creating another callback
-        final callbackId2 = bindings.rp3d_create_logging_collision_callback(
-          ffi.nullptr,
-          0,
-          1,
-        );
-
-        expect(callbackId2.address, isNonZero);
-        expect(callbackId2.address, isNot(equals(callbackId.address)));
-
-        // Test destroying callbacks (should not crash)
-        expect(
-          () => bindings.rp3d_destroy_collision_callback(callbackId),
-          returnsNormally,
-        );
-
-        expect(
-          () => bindings.rp3d_destroy_collision_callback(callbackId2),
-          returnsNormally,
-        );
-      });
-
-      test('should create multiple callbacks with different IDs', () {
-        // Create multiple callbacks
-        final loggingCallback1 = bindings
-            .rp3d_create_logging_collision_callback(ffi.nullptr, 1, 1);
-        final loggingCallback2 = bindings
-            .rp3d_create_logging_collision_callback(ffi.nullptr, 0, 1);
-        final loggingCallback3 = bindings
-            .rp3d_create_logging_collision_callback(ffi.nullptr, 1, 0);
-        final loggingCallback4 = bindings
-            .rp3d_create_logging_collision_callback(ffi.nullptr, 0, 0);
-
-        // All should have different IDs
-        expect(loggingCallback1, isNot(equals(loggingCallback2)));
-        expect(loggingCallback1, isNot(equals(loggingCallback3)));
-        expect(loggingCallback2, isNot(equals(loggingCallback3)));
-        expect(loggingCallback3, isNot(equals(loggingCallback4)));
-
-        // All should be valid
-        expect(loggingCallback1.address, isNonZero);
-        expect(loggingCallback2.address, isNonZero);
-        expect(loggingCallback3.address, isNonZero);
-        expect(loggingCallback4.address, isNonZero);
-
-        // Cleanup
-        bindings.rp3d_destroy_collision_callback(loggingCallback1);
-        bindings.rp3d_destroy_collision_callback(loggingCallback2);
-        bindings.rp3d_destroy_collision_callback(loggingCallback3);
-        bindings.rp3d_destroy_collision_callback(loggingCallback4);
-      });
-
-      test('should handle invalid callback operations gracefully', () {
-        // Test operations with null callback (should handle gracefully)
-        final nullCallback = ffi.nullptr;
-
-        // These should not crash even with null callback
-        expect(
-          () => bindings.rp3d_destroy_collision_callback(nullCallback),
-          returnsNormally,
-        );
-
-        expect(
-          () => bindings.rp3d_destroy_collision_callback(nullCallback),
-          returnsNormally,
-        );
-      });
-
-      test('should test collision callback functionality', () {
-        // This test verifies that the collision callback C++ implementation
-        // can be created and the basic functions work
-
+    group('Synchronous Collision Testing', () {
+      test('should test collision between two bodies synchronously', () {
+        // Create physics world and two box bodies
         final world = physics3D.createWorld();
 
-        // Create two rigid bodies
-        final body1 = physics3D.createRigidBody(
-          world,
-          transform: (
-            position: Vector3(0, 0, 0),
-            orientation: Quaternion.identity(),
-          ),
-          type: BodyType.STATIC,
+        // Create first box at origin
+        final box1 = physics3D.createBoxShape(Vector3(1, 1, 1));
+        final body1 = physics3D.createRigidBody(world);
+        body1.addCollider(box1);
+
+        // Create second box overlapping the first
+        final box2 = physics3D.createBoxShape(Vector3(1, 1, 1));
+        final body2 = physics3D.createRigidBody(world);
+        body2.setTransform((
+          orientation: Quaternion.identity(),
+          position: Vector3(1.5, 0, 0), // Overlapping position
+        ));
+        body2.addCollider(box2);
+
+        // Test collision between bodies synchronously
+        final body1AsBody = body1.handle.cast<bindings.RP3D_Body>();
+        final body2AsBody = body2.handle.cast<bindings.RP3D_Body>();
+
+        final resultPtr = bindings.rp3d_test_collision_two_bodies_sync(
+          world.handle,
+          body1AsBody,
+          body2AsBody,
         );
 
-        final body2 = physics3D.createRigidBody(
-          world,
-          transform: (
-            position: Vector3(0, 0, 0),
-            orientation: Quaternion.identity(),
-          ),
-          type: BodyType.DYNAMIC,
-        );
+        expect(resultPtr.address, isNonZero);
+        expect(resultPtr.ref.nbContactPairs, greaterThanOrEqualTo(0));
 
-        // Add shapes
-        final boxShape = physics3D.createBoxShape(Vector3.all(1.0));
-        final collider1 = body1.addCollider(boxShape);
-        final collider2 = body2.addCollider(boxShape);
-
-        expect(collider1, isNotNull);
-        expect(collider2, isNotNull);
-
-        // Create a callback
-        final callbackId = bindings.rp3d_create_logging_collision_callback(
-          ffi.nullptr,
-          1,
-          1,
-        );
-
-        expect(callbackId.address, isNonZero);
-
-        // Test that we can attempt collision testing (will log to console if collisions occur)
-        // Note: Since we can't easily access the internal pointers from Dart interfaces,
-        // we'll just verify the callback creation works and doesn't crash
-
-        // Cleanup the callback
-        bindings.rp3d_destroy_collision_callback(callbackId);
-
-        // Test completes without crashing - success!
+        // Free the result
+        bindings.rp3d_free_collision_callback_data(resultPtr);
       });
 
-      test('should test collision detection with moving bodies', () {
-        // Create a logging collision callback
-        final callbackId = bindings.rp3d_create_logging_collision_callback(
-          ffi.nullptr, // no custom prefix
-          1, // logContactPoints = true
-          1, // verbose = true
+      test('should test collision for single body synchronously', () {
+        final world = physics3D.createWorld();
+
+        // Create a box body
+        final box = physics3D.createBoxShape(Vector3(1, 1, 1));
+        final body = physics3D.createRigidBody(world);
+        body.addCollider(box);
+
+        final bodyAsBody = body.handle.cast<bindings.RP3D_Body>();
+
+        final resultPtr = bindings.rp3d_test_collision_body_sync(
+          world.handle,
+          bodyAsBody,
         );
 
-        expect(callbackId.address, isNonZero);
+        expect(resultPtr.address, isNonZero);
+        expect(resultPtr.ref.nbContactPairs, equals(0)); // No other bodies to collide with
 
-        try {
-          // Create physics world and two box bodies
-          final world = physics3D.createWorld();
+        bindings.rp3d_free_collision_callback_data(resultPtr);
+      });
 
-          // Create first box at origin
-          final box1 = physics3D.createBoxShape(Vector3(1, 1, 1));
-          final body1 = physics3D.createRigidBody(world);
-          body1.addCollider(box1);
+      test('should test collision for world synchronously', () {
+        final world = physics3D.createWorld();
 
-          // Create second box
-          final box2 = physics3D.createBoxShape(Vector3(1, 1, 1));
-          final body2 = physics3D.createRigidBody(world);
-          body2.setTransform((
-            orientation: Quaternion.identity(),
-            position: Vector3(1.5, 0, 0), // Overlapping position
-          ));
-          body2.addCollider(box2);
+        // Create two overlapping boxes
+        final box1 = physics3D.createBoxShape(Vector3(1, 1, 1));
+        final body1 = physics3D.createRigidBody(world);
+        body1.addCollider(box1);
 
-          // Test collision between bodies
-          // Since RigidBody inherits from Body in C++, we can safely cast
-          final body1AsBody = body1.handle.cast<bindings.RP3D_Body>();
-          final body2AsBody = body2.handle.cast<bindings.RP3D_Body>();
+        final box2 = physics3D.createBoxShape(Vector3(1, 1, 1));
+        final body2 = physics3D.createRigidBody(world);
+        body2.setTransform((
+          orientation: Quaternion.identity(),
+          position: Vector3(1.5, 0, 0),
+        ));
+        body2.addCollider(box2);
 
-          bindings.rp3d_test_collision_bodies_direct(
-            world.handle,
-            body1AsBody,
-            body2AsBody,
-            callbackId,
-          );
+        final resultPtr = bindings.rp3d_test_collision_world_sync(world.handle);
 
-          // Test collision for all bodies in world
-          bindings.rp3d_test_collision_world(world.handle, callbackId);
+        expect(resultPtr.address, isNonZero);
+        // Should detect collision between the two overlapping bodies
+        expect(resultPtr.ref.nbContactPairs, greaterThan(0));
 
-          // Test collision for single body
-          bindings.rp3d_test_collision_body(world.handle, body1AsBody, callbackId);
+        bindings.rp3d_free_collision_callback_data(resultPtr);
+      });
 
-          print('✅ Collision detection test passed!');
-          print('   ✅ testCollision functions working correctly!');
+      test('should test overlap synchronously', () {
+        final world = physics3D.createWorld();
 
-          // Cleanup is handled by test framework
-        } finally {
-          // Always cleanup the callback
-          bindings.rp3d_destroy_collision_callback(callbackId);
-        }
+        // Create a body with a collider
+        final box = physics3D.createBoxShape(Vector3(1, 1, 1));
+        final body = physics3D.createRigidBody(world);
+        body.addCollider(box);
+
+        final resultPtr = bindings.rp3d_test_overlap_world_sync(world.handle);
+
+        expect(resultPtr.address, isNonZero);
+        expect(resultPtr.ref.nbOverlapPairs, greaterThanOrEqualTo(0));
+
+        bindings.rp3d_free_overlap_callback_data(resultPtr);
+      });
+
+      test('should handle null world gracefully', () {
+        // Test with null world pointer - should return empty result
+        final resultPtr = bindings.rp3d_test_collision_world_sync(ffi.nullptr);
+
+        expect(resultPtr.address, isNonZero);
+        expect(resultPtr.ref.nbContactPairs, equals(0));
+
+        bindings.rp3d_free_collision_callback_data(resultPtr);
       });
     });
 

@@ -1,7 +1,6 @@
 
 import '../../reactphysics3d_dart.dart';
 import '../bindings/src/bindings.dart' as ffi;
-import '../bindings/src/bindings.dart';
 import 'event_listener.dart';
 
 /// Interface for physics simulation world
