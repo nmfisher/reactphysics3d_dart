@@ -21,6 +21,7 @@ export 'material.dart';
 
 // Collision callback interfaces
 export 'collision_callback.dart';
+export 'overlap_callback.dart';
 
 // Debug rendering interfaces
 export 'debug_renderer.dart';

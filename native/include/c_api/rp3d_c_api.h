@@ -49,7 +49,7 @@ typedef struct RP3D_HingeJoint RP3D_HingeJoint;
 typedef struct RP3D_SliderJoint RP3D_SliderJoint;
 typedef struct RP3D_FixedJoint RP3D_FixedJoint;
 typedef struct RP3D_DebugRenderer RP3D_DebugRenderer;
-typedef struct TCollisionCallback TCollisionCallback;
+typedef struct RP3D_EventListener RP3D_EventListener;
 
 // ==================== Enums ====================
 
@@ -473,29 +473,107 @@ EMSCRIPTEN_KEEPALIVE RP3D_FixedJoint* rp3d_world_create_fixed_joint(
 
 EMSCRIPTEN_KEEPALIVE void rp3d_world_destroy_joint(RP3D_PhysicsWorld* world, void* joint);
 
-// ==================== Collision Callbacks ====================
+// ==================== Collision Callback Data Structures ====================
 
-// Create callbacks
-EMSCRIPTEN_KEEPALIVE TCollisionCallback* rp3d_create_logging_collision_callback(const char* prefix, uint8_t logContactPoints, uint8_t verbose);
-EMSCRIPTEN_KEEPALIVE TCollisionCallback* rp3d_create_contact_counter_callback();
+// Contact point data for synchronous collision testing
+typedef struct RP3D_ContactPointData {
+    float penetrationDepth;
+    RP3D_Vector3 worldNormal;
+    RP3D_Vector3 localPointOnCollider1;
+    RP3D_Vector3 localPointOnCollider2;
+} RP3D_ContactPointData;
 
-// Get callback properties
-EMSCRIPTEN_KEEPALIVE uint8_t rp3d_get_logging_callback_has_contact(TCollisionCallback* callback);
+// Contact pair data for synchronous collision testing
+typedef struct RP3D_ContactPairData {
+    void* body1;
+    void* body2;
+    void* collider1;
+    void* collider2;
+    int32_t eventType;  // 0=ContactStart, 1=ContactStay, 2=ContactExit
+    uint32_t nbContactPoints;
+    RP3D_ContactPointData* contactPoints;  // Array of contact points
+} RP3D_ContactPairData;
 
-// Get callback statistics
-EMSCRIPTEN_KEEPALIVE void rp3d_get_logging_callback_stats(TCollisionCallback* callback, uint32_t* callbackCount,
-                                                         uint32_t* totalContactPairs, uint32_t* totalContactPoints);
-EMSCRIPTEN_KEEPALIVE void rp3d_get_counter_callback_stats(TCollisionCallback* callback, uint32_t* callbackCount,
-                                                        uint32_t* totalContactPairs, uint32_t* totalContactPoints);
+// Result container for synchronous collision testing
+typedef struct RP3D_CollisionCallbackData {
+    uint32_t nbContactPairs;
+    RP3D_ContactPairData* contactPairs;  // Array of contact pairs
+} RP3D_CollisionCallbackData;
 
-// Reset callback statistics
-EMSCRIPTEN_KEEPALIVE void rp3d_reset_callback_stats(TCollisionCallback* callback);
+// Overlap pair data for synchronous overlap testing
+typedef struct RP3D_OverlapPairData {
+    void* body1;
+    void* body2;
+    void* collider1;
+    void* collider2;
+    int32_t eventType;  // 0=OverlapStart, 1=OverlapStay, 2=OverlapExit
+} RP3D_OverlapPairData;
 
-// Collision testing with callbacks
-EMSCRIPTEN_KEEPALIVE void rp3d_test_collision_bodies_direct(RP3D_PhysicsWorld* world, RP3D_Body* body1, RP3D_Body* body2, TCollisionCallback* callback);
+// Result container for synchronous overlap testing
+typedef struct RP3D_OverlapCallbackData {
+    uint32_t nbOverlapPairs;
+    RP3D_OverlapPairData* overlapPairs;  // Array of overlap pairs
+} RP3D_OverlapCallbackData;
 
-// Destroy callbacks
-EMSCRIPTEN_KEEPALIVE void rp3d_destroy_collision_callback(TCollisionCallback* callback);
+// ==================== Synchronous Collision Testing ====================
+
+// Test collision between two bodies (synchronous, returns data directly)
+EMSCRIPTEN_KEEPALIVE RP3D_CollisionCallbackData* rp3d_test_collision_two_bodies_sync(
+    RP3D_PhysicsWorld* world, RP3D_Body* body1, RP3D_Body* body2);
+
+// Test collision for a body against all others (synchronous)
+EMSCRIPTEN_KEEPALIVE RP3D_CollisionCallbackData* rp3d_test_collision_body_sync(
+    RP3D_PhysicsWorld* world, RP3D_Body* body);
+
+// Test collision for all bodies in the world (synchronous)
+EMSCRIPTEN_KEEPALIVE RP3D_CollisionCallbackData* rp3d_test_collision_world_sync(
+    RP3D_PhysicsWorld* world);
+
+// Test overlap for all trigger colliders (synchronous)
+EMSCRIPTEN_KEEPALIVE RP3D_OverlapCallbackData* rp3d_test_overlap_world_sync(
+    RP3D_PhysicsWorld* world);
+
+// Free collision callback data allocated by sync functions
+EMSCRIPTEN_KEEPALIVE void rp3d_free_collision_callback_data(RP3D_CollisionCallbackData* data);
+
+// Free overlap callback data allocated by sync functions
+EMSCRIPTEN_KEEPALIVE void rp3d_free_overlap_callback_data(RP3D_OverlapCallbackData* data);
+
+// ==================== Event Listener ====================
+// Event listener registration (matches ReactPhysics3D PhysicsWorld::setEventListener)
+
+// Create a SendPort-based event listener for thread-safe callbacks
+// Returns an EventListener* pointer that can be passed to rp3d_world_set_event_listener()
+EMSCRIPTEN_KEEPALIVE RP3D_EventListener* rp3d_create_sendport_event_listener(uint64_t sendPortId);
+
+// Set the event listener for a physics world (matches ReactPhysics3D API)
+// Pass nullptr to remove the current listener
+EMSCRIPTEN_KEEPALIVE void rp3d_world_set_event_listener(
+    RP3D_PhysicsWorld* world,
+    RP3D_EventListener* listener
+);
+
+// Destroy an event listener created by rp3d_create_sendport_event_listener
+EMSCRIPTEN_KEEPALIVE void rp3d_destroy_event_listener(RP3D_EventListener* listener);
+
+// ==================== Message Polling (for SendPort Event Listeners) ====================
+
+/// Check if there's a pending message from any listener
+EMSCRIPTEN_KEEPALIVE int rp3d_has_pending_message();
+
+/// Get the latest message from a listener (for polling)
+/// Returns the actual message size, or 0 if no message
+EMSCRIPTEN_KEEPALIVE uint32_t rp3d_get_listener_message(
+    uint8_t* buffer,
+    uint32_t bufferSize
+);
+
+/// Send data to a Dart SendPort (internal helper function)
+EMSCRIPTEN_KEEPALIVE int rp3d_send_to_dart_port(
+    uint64_t sendPortId,
+    const uint8_t* data,
+    uint32_t size
+);
 
 #ifdef __cplusplus
 }

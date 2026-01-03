@@ -1,6 +1,7 @@
 import 'package:reactphysics3d_dart/src/implementation/ffi_rigid_body.dart';
 import 'package:reactphysics3d_dart/src/implementation/ffi_debug_renderer.dart';
 import 'package:reactphysics3d_dart/src/implementation/ffi_collider.dart';
+import 'package:reactphysics3d_dart/src/interfaces/event_listener.dart';
 import '../bindings/src/bindings.dart';
 import '../ffi_reactphysics3d.dart';
 import '../reactphysics3d.dart';
@@ -167,5 +168,181 @@ class FFIPhysicsWorld implements PhysicsWorld {
     ptr.y = v.y;
     ptr.z = v.z;
     return ptr;
+  }
+
+  /// Convert FFI collision callback data to Dart ContactCallbackData
+  ContactCallbackData _convertToContactCallbackData(
+      Pointer<RP3D_CollisionCallbackData> dataPtr) {
+    final data = dataPtr.ref;
+    final contactPairs = <ContactPair>[];
+
+    for (var i = 0; i < data.nbContactPairs; i++) {
+      final pairData = data.contactPairs[i];
+
+      // Skip pairs with invalid body/collider pointers
+      if (pairData.body1.address == 0 ||
+          pairData.body2.address == 0 ||
+          pairData.collider1.address == 0 ||
+          pairData.collider2.address == 0) {
+        continue;
+      }
+
+      // Convert contact points
+      final contactPoints = <ContactPoint>[];
+      for (var j = 0; j < pairData.nbContactPoints; j++) {
+        final pointData = pairData.contactPoints[j];
+        contactPoints.add(ContactPoint(
+          penetrationDepth: pointData.penetrationDepth,
+          worldNormal: Vector3(
+            pointData.worldNormal.x,
+            pointData.worldNormal.y,
+            pointData.worldNormal.z,
+          ),
+          localPointOnCollider1: Vector3(
+            pointData.localPointOnCollider1.x,
+            pointData.localPointOnCollider1.y,
+            pointData.localPointOnCollider1.z,
+          ),
+          localPointOnCollider2: Vector3(
+            pointData.localPointOnCollider2.x,
+            pointData.localPointOnCollider2.y,
+            pointData.localPointOnCollider2.z,
+          ),
+        ));
+      }
+
+      // Convert event type
+      final eventType = switch (pairData.eventType) {
+        0 => ContactEventType.contactStart,
+        1 => ContactEventType.contactStay,
+        2 => ContactEventType.contactExit,
+        _ => ContactEventType.contactStart,
+      };
+
+      // Create body/collider wrappers
+      final body1 = FFIRigidBody(pairData.body1.cast<RP3D_RigidBody>());
+      final body2 = FFIRigidBody(pairData.body2.cast<RP3D_RigidBody>());
+      final collider1 = FFICollider(pairData.collider1.cast<RP3D_Collider>());
+      final collider2 = FFICollider(pairData.collider2.cast<RP3D_Collider>());
+
+      contactPairs.add(ContactPair(
+        body1: body1,
+        body2: body2,
+        collider1: collider1,
+        collider2: collider2,
+        eventType: eventType,
+        contactPoints: contactPoints,
+      ));
+    }
+
+    return ContactCallbackData(contactPairs: contactPairs);
+  }
+
+  @override
+  void testCollisionTwoBodies(RigidBody body1, RigidBody body2, CollisionCallback callback) {
+    final resultPtr = rp3d_test_collision_two_bodies_sync(
+      _ptr,
+      body1.handle.cast<RP3D_Body>(),
+      body2.handle.cast<RP3D_Body>(),
+    );
+
+    try {
+      final callbackData = _convertToContactCallbackData(resultPtr);
+      callback.onContact(callbackData);
+    } finally {
+      rp3d_free_collision_callback_data(resultPtr);
+    }
+  }
+
+  @override
+  void testCollisionBody(RigidBody body, CollisionCallback callback) {
+    final resultPtr = rp3d_test_collision_body_sync(
+      _ptr,
+      body.handle.cast<RP3D_Body>(),
+    );
+
+    try {
+      final callbackData = _convertToContactCallbackData(resultPtr);
+      callback.onContact(callbackData);
+    } finally {
+      rp3d_free_collision_callback_data(resultPtr);
+    }
+  }
+
+  @override
+  void testCollision(CollisionCallback callback) {
+    final resultPtr = rp3d_test_collision_world_sync(_ptr);
+
+    try {
+      final callbackData = _convertToContactCallbackData(resultPtr);
+      callback.onContact(callbackData);
+    } finally {
+      rp3d_free_collision_callback_data(resultPtr);
+    }
+  }
+
+  @override
+  void testOverlap(CollisionCallback callback) {
+    final resultPtr = rp3d_test_overlap_world_sync(_ptr);
+
+    try {
+      // Convert overlap data to contact callback data (with empty contact points)
+      final data = resultPtr.ref;
+      final contactPairs = <ContactPair>[];
+
+      for (var i = 0; i < data.nbOverlapPairs; i++) {
+        final pairData = data.overlapPairs[i];
+
+        // Skip pairs with invalid body/collider pointers
+        if (pairData.body1.address == 0 ||
+            pairData.body2.address == 0 ||
+            pairData.collider1.address == 0 ||
+            pairData.collider2.address == 0) {
+          continue;
+        }
+
+        // Convert event type
+        final eventType = switch (pairData.eventType) {
+          0 => ContactEventType.contactStart,
+          1 => ContactEventType.contactStay,
+          2 => ContactEventType.contactExit,
+          _ => ContactEventType.contactStart,
+        };
+
+        // Create body/collider wrappers
+        final body1 = FFIRigidBody(pairData.body1.cast<RP3D_RigidBody>());
+        final body2 = FFIRigidBody(pairData.body2.cast<RP3D_RigidBody>());
+        final collider1 = FFICollider(pairData.collider1.cast<RP3D_Collider>());
+        final collider2 = FFICollider(pairData.collider2.cast<RP3D_Collider>());
+
+        contactPairs.add(ContactPair(
+          body1: body1,
+          body2: body2,
+          collider1: collider1,
+          collider2: collider2,
+          eventType: eventType,
+          contactPoints: [], // Overlaps don't have contact points
+        ));
+      }
+
+      final callbackData = ContactCallbackData(contactPairs: contactPairs);
+      callback.onContact(callbackData);
+    } finally {
+      rp3d_free_overlap_callback_data(resultPtr);
+    }
+  }
+
+  @override
+  void setEventListener(EventListener? listener) {
+    if (listener == null) {
+      rp3d_world_set_event_listener(_ptr, nullptr);
+    } else {
+      rp3d_world_set_event_listener(_ptr, listener.pointer);
+    }
+  }
+
+  /// Dispose of this physics world and clean up resources.
+  void dispose() {
+    // No callback cleanup needed with synchronous approach
   }
 }
