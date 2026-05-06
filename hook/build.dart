@@ -44,9 +44,11 @@ targetOS: $targetOS
     final includeDirs = [path.join(pkgRootFilePath, "native/include")];
 
     // Library directories
-    final libDirs = [
-      path.join(pkgRootFilePath, "native/macos"),
-      path.join(pkgRootFilePath, "native/wasm"),
+    final libDirs = <String>[
+      if (targetOS == OS.macOS)
+        path.join(pkgRootFilePath, "native/macos"),
+      if (targetOS == OS.linux)
+        path.join(pkgRootFilePath, "native/linux"),
     ];
 
     // Libraries to link against
