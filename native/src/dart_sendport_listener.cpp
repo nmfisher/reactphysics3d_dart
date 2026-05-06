@@ -6,13 +6,13 @@
  */
 
 #include "c_api/rp3d_c_api.h"
+#include <cstring>
+#include <vector>
+#include <atomic>
+#include <iostream>
 #include <reactphysics3d/reactphysics3d.h>
 #include <reactphysics3d/engine/EventListener.h>
 #include <reactphysics3d/collision/OverlapCallback.h>
-#include <iostream>
-#include <vector>
-#include <cstring>
-#include <atomic>
 
 using namespace reactphysics3d;
 

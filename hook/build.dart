@@ -43,12 +43,14 @@ targetOS: $targetOS
     // Include directories - need both our C API headers and ReactPhysics3D headers
     final includeDirs = [path.join(pkgRootFilePath, "native/include")];
 
+    final targetArchitecture = config.code.targetArchitecture;
+
     // Library directories
     final libDirs = <String>[
       if (targetOS == OS.macOS)
         path.join(pkgRootFilePath, "native/macos"),
       if (targetOS == OS.linux)
-        path.join(pkgRootFilePath, "native/linux"),
+        path.join(pkgRootFilePath, "native/linux", targetArchitecture.name),
     ];
 
     // Libraries to link against
@@ -117,7 +119,12 @@ targetOS: $targetOS
           ...flags,
           ...frameworks,
           if (targetOS != OS.windows) ...[
-            ...libs.map((lib) => "-l$lib"),
+            if (targetOS == OS.linux) ...[
+              '-Wl,--whole-archive',
+              ...libs.map((lib) => "-l$lib"),
+              '-Wl,--no-whole-archive',
+            ] else
+              ...libs.map((lib) => "-l$lib"),
             "-lstdc++",
           ],
         ],

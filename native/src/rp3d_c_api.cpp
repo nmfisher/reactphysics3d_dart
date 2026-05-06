@@ -6,6 +6,8 @@
  */
 
 #include "c_api/rp3d_c_api.h"
+#include <cstring>
+#include <vector>
 #include <reactphysics3d/reactphysics3d.h>
 #include <reactphysics3d/collision/shapes/ConcaveShape.h>
 #include <reactphysics3d/collision/shapes/ConvexMeshShape.h>
@@ -17,8 +19,6 @@
 #include <reactphysics3d/collision/VertexArray.h>
 #include <reactphysics3d/collision/CollisionCallback.h>
 #include <reactphysics3d/collision/OverlapCallback.h>
-#include <cstring>
-#include <vector>
 #include <unordered_map>
 
 using namespace reactphysics3d;
