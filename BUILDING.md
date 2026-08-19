@@ -9,6 +9,21 @@ The Dart bindings require a precompiled static library (`libreactphysics3d.a`) f
 
 The ReactPhysics3D source is included at `native/include/reactphysics3d/`. The C API wrapper lives at `native/src/rp3d_c_api.cpp`.
 
+## Regenerating the Dart bindings
+
+Both binding sets are generated from `native/include/c_api/rp3d_c_api.h`:
+
+```bash
+dart run ffigen --config ffigen/native.yaml     # lib/src/bindings/src/rp3d_ffi.g.dart
+dart run ffigen_js --config ffigen/web.yaml     # lib/src/bindings/src/rp3d_js_interop.g.dart
+```
+
+`ffigen_js` additionally needs libclang on the machine (same requirement as `ffigen`).
+
+The web bindings are checked in CI by compiling `tool/web_bindings_smoke.dart`
+with `dart compile js`, because they only load through the conditional export
+in `lib/src/bindings/src/bindings.dart` and are excluded from `dart analyze`.
+
 ## macOS (arm64)
 
 ```bash
