@@ -9,7 +9,7 @@ jobs:
   analyze:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: stable
@@ -22,7 +22,7 @@ jobs:
   web-bindings:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: stable
@@ -32,7 +32,7 @@ jobs:
         # pulls in the whole package and forces dart2js to type check the
         # generated bindings against the ffigen_js runtime.
       - run: dart compile js -o web_bindings_smoke.js tool/web_bindings_smoke.dart
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: web-bindings-smoke
           path: web_bindings_smoke.js
@@ -41,7 +41,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: stable
