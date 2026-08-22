@@ -23,6 +23,10 @@ set_property(TARGET reactphysics3d PROPERTY
 # Create a static library for ReactPhysics3D C API wrapper
 add_library(reactphysics3d_dart_static STATIC ${RP3D_DART_SOURCES})
 
+# Archive name consumers expect (libreactphysics3d_dart.a)
+set_target_properties(reactphysics3d_dart_static PROPERTIES
+  OUTPUT_NAME "reactphysics3d_dart")
+
 # Set include directories for the library
 target_include_directories(reactphysics3d_dart_static PUBLIC ${RP3D_DART_INCLUDE_DIRS})
 
