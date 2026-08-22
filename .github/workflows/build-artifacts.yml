@@ -189,6 +189,18 @@ jobs:
         shell: bash
         run: |
           mkdir -p dist
+          # windows runners have no zip(1); 7-Zip is preinstalled there.
+          make_zip() {
+            local archive="$1"; shift
+            if command -v zip >/dev/null; then
+              zip -q "$archive" "$@"
+            elif command -v 7z >/dev/null; then
+              7z a "$archive" "$@" >/dev/null
+            else
+              powershell -NoProfile -Command \
+                "Compress-Archive -Path ($args -join ',') -DestinationPath '$archive'" "$@"
+            fi
+          }
           package_native() {
             local lib="$1" platform="$2"
             mkdir -p "dist/${platform}"
@@ -203,7 +215,7 @@ jobs:
           the repository; consumers that build through the Dart hook only
           need this file (the C API wrapper is compiled from source).
           EOF
-            (cd "dist/${platform}" && zip -q "../reactphysics3d_dart-${VERSION}-${platform}.zip" \
+            (cd "dist/${platform}" && make_zip "../reactphysics3d_dart-${VERSION}-${platform}.zip" \
                 "$(basename "${lib}")" README.txt)
           }
           # MSVC (multi-config) names the archive reactphysics3d.lib under
