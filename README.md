@@ -21,7 +21,22 @@ dependencies:
   reactphysics3d_dart: ^0.1.0
 ```
 
-## TODO - build/link instructions for reactphysics3d
+## Prebuilt libraries
+
+The ReactPhysics3D C++ engine itself is not published to a package registry:
+the Dart package compiles the C API wrapper (`native/src/rp3d_c_api.cpp`) from
+source and links it against a prebuilt `libreactphysics3d.a` per platform.
+Those libraries are built and published by the
+[Build artifacts workflow](.github/workflows/build-artifacts.yml):
+
+```
+https://github.com/nmfisher/reactphysics3d_dart/releases/download/<tag>/reactphysics3d_dart-<version>-<platform>.zip
+```
+
+with `platform` one of `web-emscripten`, `web-module`, `linux-x86_64`,
+`linux-aarch64`, `macos-arm64`, `macos-x86_64`, `windows-x64`. See
+[BUILDING.md](BUILDING.md#release-artifacts) for the contents of each zip and
+how to build them locally.
 
 ## Quick Start
 
