@@ -1,0 +1,258 @@
+name: Build artifacts
+
+# Builds the prebuilt libraries that consumers download instead of compiling
+# ReactPhysics3D themselves (see BUILDING.md, "Release artifacts"):
+#
+#   web-emscripten  libreactphysics3d.a + libreactphysics3d_dart.a (wasm32),
+#                   the artifact a downstream wasm link (e.g. thermion)
+#                   consumes through native/web/reactphysics3d_dart.cmake
+#   web-module      the standalone modularized module the generated JS interop
+#                   bindings load (EXPORT_NAME reactphysics3d_dart)
+#   native          libreactphysics3d.a per desktop platform, matching the
+#                   libraries committed under native/<os>/<arch>/
+#
+# Tag pushes (v*) publish all zips to a GitHub Release. Pull requests and
+# manual runs build and verify everything but stop short of publishing.
+
+on:
+  pull_request:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  RP3D_ENGINE_REF: v0.10.2
+  EMSDK_VERSION: 6.0.4
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Compute version
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION="0.0.0-dev.${GITHUB_SHA::7}"
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Cache emsdk
+        uses: actions/cache@v4
+        with:
+          path: ~/emsdk
+          key: emsdk-${{ env.EMSDK_VERSION }}
+
+      - name: Set up Emscripten
+        run: |
+          if [ ! -d "$HOME/emsdk" ]; then
+            git clone --depth 1 https://github.com/emscripten-core/emsdk.git "$HOME/emsdk"
+          fi
+          "$HOME/emsdk/emsdk" install "${EMSDK_VERSION}"
+          "$HOME/emsdk/emsdk" activate "${EMSDK_VERSION}"
+          echo "EMSDK=$HOME/emsdk" >> "$GITHUB_ENV"
+
+      # Builds the engine + wrapper static libraries and the standalone
+      # module, and verifies header/engine agreement, the 143 rp3d_* exports
+      # and that the module actually simulates (see the script itself).
+      - run: scripts/build_web_artifacts.sh
+
+      - name: Package
+        run: |
+          mkdir -p dist dist-module
+          cat > dist/README.txt <<EOF
+          reactphysics3d_dart ${VERSION} - web (Emscripten/wasm32)
+          ReactPhysics3D engine: ${RP3D_ENGINE_REF}
+          Emscripten: ${EMSDK_VERSION}
+
+          libreactphysics3d.a       engine static library (wasm32)
+          libreactphysics3d_dart.a  C API wrapper static library
+
+          Both are compiled with -pthread -matomics -mbulk-memory; link them
+          with the same or newer Emscripten. To use them with this package's
+          CMake hook, extract into native/web/ next to
+          reactphysics3d_dart.cmake.
+          EOF
+          cp native/web/libreactphysics3d.a build/web/libreactphysics3d_dart.a dist/
+          (cd dist && zip -q "reactphysics3d_dart-${VERSION}-web-emscripten.zip" \
+              libreactphysics3d.a libreactphysics3d_dart.a README.txt)
+
+          cp build/web/build/out/reactphysics3d_dart.{js,wasm} dist-module/
+          cat > dist-module/README.txt <<EOF
+          reactphysics3d_dart ${VERSION} - standalone web module
+          ReactPhysics3D engine: ${RP3D_ENGINE_REF}
+          Emscripten: ${EMSDK_VERSION}
+
+          reactphysics3d_dart.js   modularized loader (EXPORT_NAME
+                                   reactphysics3d_dart, -sMODULARIZE)
+          reactphysics3d_dart.wasm the wasm binary the loader fetches
+
+          Built with -sUSE_PTHREADS: the page must be cross-origin isolated
+          (COOP/COEP headers) and keep the two files side by side.
+          EOF
+          (cd dist-module && zip -q "../dist/reactphysics3d_dart-${VERSION}-web-module.zip" \
+              reactphysics3d_dart.js reactphysics3d_dart.wasm README.txt)
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: artifacts-web
+          path: dist/*.zip
+          retention-days: 7
+          if-no-files-found: error
+
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux-x86_64
+            # Extra targets compiled in the same job via the steps below.
+            extra: linux-aarch64
+          - os: macos-latest
+            platform: macos-arm64
+            extra: macos-x86_64
+          - os: windows-latest
+            platform: windows-x64
+            extra: ''
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Compute version
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION="0.0.0-dev.${GITHUB_SHA::7}"
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Install aarch64 cross-compiler
+        if: matrix.extra == 'linux-aarch64'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq g++-aarch64-linux-gnu
+
+      - name: Build engine static library
+        shell: bash
+        run: |
+          EXTRA_ARGS=()
+          if [[ "${RUNNER_OS}" == "Windows" ]]; then
+            # ReactPhysics3D v0.10.2's DefaultLogger.h uses std::chrono
+            # without including <chrono>; libc++/libstdc++ pull the header
+            # in transitively, MSVC does not. Force-include it rather than
+            # patching the pinned engine tree.
+            EXTRA_ARGS=(-DCMAKE_CXX_FLAGS="/FIchrono")
+          fi
+          scripts/fetch_engine.sh
+          if [[ "${RUNNER_OS}" == "Windows" ]]; then
+            # Git Bash rewrites leading-slash arguments such as /FIchrono
+            # into Windows paths (C:/Program Files/Git/FIchrono); opt out
+            # for the cmake calls only — after fetch_engine.sh, which needs
+            # the conversion for the paths it hands to git.
+            export MSYS_NO_PATHCONV=1
+          fi
+          cmake -S build/third_party/reactphysics3d -B build/engine \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DRP3D_COMPILE_TESTS=OFF \
+              -DRP3D_COMPILE_TESTBED=OFF \
+              "${EXTRA_ARGS[@]}"
+          cmake --build build/engine --config Release
+
+      - name: Cross-build engine for ${{ matrix.extra }}
+        if: matrix.extra != ''
+        shell: bash
+        run: |
+          EXTRA_ARGS=()
+          if [[ "${{ matrix.extra }}" == linux-aarch64 ]]; then
+            EXTRA_ARGS=(-DCMAKE_SYSTEM_NAME=Linux -DCMAKE_SYSTEM_PROCESSOR=aarch64
+                        -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc
+                        -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++)
+          elif [[ "${{ matrix.extra }}" == macos-x86_64 ]]; then
+            EXTRA_ARGS=(-DCMAKE_OSX_ARCHITECTURES=x86_64)
+          fi
+          cmake -S build/third_party/reactphysics3d -B "build/engine-${{ matrix.extra }}" \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DRP3D_COMPILE_TESTS=OFF \
+              -DRP3D_COMPILE_TESTBED=OFF \
+              "${EXTRA_ARGS[@]}"
+          cmake --build "build/engine-${{ matrix.extra }}" --config Release
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p dist
+          # windows runners have no zip(1); 7-Zip is preinstalled there.
+          make_zip() {
+            local archive="$1"; shift
+            if command -v zip >/dev/null; then
+              zip -q "$archive" "$@"
+            elif command -v 7z >/dev/null; then
+              7z a "$archive" "$@" >/dev/null
+            else
+              powershell -NoProfile -Command \
+                "Compress-Archive -Path ($args -join ',') -DestinationPath '$archive'" "$@"
+            fi
+          }
+          package_native() {
+            local lib="$1" platform="$2"
+            mkdir -p "dist/${platform}"
+            cp "${lib}" "dist/${platform}/"
+            cat > "dist/${platform}/README.txt" <<EOF
+          reactphysics3d_dart ${VERSION} - ${platform}
+          ReactPhysics3D engine: ${RP3D_ENGINE_REF}
+
+          $(basename "${lib}")  engine static library
+
+          Equivalent to the libraries committed under native/<os>/<arch>/ in
+          the repository; consumers that build through the Dart hook only
+          need this file (the C API wrapper is compiled from source).
+          EOF
+            (cd "dist/${platform}" && make_zip "../reactphysics3d_dart-${VERSION}-${platform}.zip" \
+                "$(basename "${lib}")" README.txt)
+          }
+          # MSVC (multi-config) names the archive reactphysics3d.lib under
+          # Release/; Makefile/Ninja generators name it libreactphysics3d.a.
+          find_lib() {
+            find "$1" \( -name 'libreactphysics3d.a' -o -name 'reactphysics3d.lib' \) | head -1
+          }
+          package_native "$(find_lib build/engine)" "${{ matrix.platform }}"
+          if [[ -n "${{ matrix.extra }}" ]]; then
+            package_native "$(find_lib "build/engine-${{ matrix.extra }}")" "${{ matrix.extra }}"
+          fi
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: artifacts-${{ matrix.platform }}
+          path: dist/*.zip
+          retention-days: 7
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [web, native]
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v6
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls dist/*.zip
+          gh release create "${GITHUB_REF_NAME}" \
+              --title "reactphysics3d_dart ${GITHUB_REF_NAME#v}" \
+              --generate-notes \
+              dist/*.zip

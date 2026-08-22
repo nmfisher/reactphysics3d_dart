@@ -1,7 +1,6 @@
 import 'package:test/test.dart';
 import 'package:reactphysics3d_dart/reactphysics3d_dart.dart';
 import 'package:reactphysics3d_dart/src/implementation/sendport_event_listener.dart';
-import 'package:vector_math/vector_math_64.dart';
 import 'dart:ffi' as ffi;
 import 'package:reactphysics3d_dart/src/bindings/src/bindings.dart' as ffi_bindings;
 
@@ -393,4 +392,15 @@ class _TestMessageReader {
     _offset += 8;
     return value;
   }
+}
+
+/// Builds a message buffer with the layout the event listener messages use:
+/// a uint32 message type, a uint32 pair count, then the pair addresses.
+ffi.Pointer<ffi.Uint8> createTestMessageBuffer() {
+  final buffer = ffi_bindings.calloc<ffi.Uint8>(24);
+  buffer.cast<ffi.Uint32>()[0] = 0; // message type: contact data
+  buffer.cast<ffi.Uint32>()[1] = 1; // number of pairs
+  buffer.cast<ffi.Uint64>()[1] = 0x1000; // body 1 address
+  buffer.cast<ffi.Uint64>()[2] = 0x2000; // body 2 address
+  return buffer;
 }

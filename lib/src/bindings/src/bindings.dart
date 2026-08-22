@@ -6,7 +6,9 @@
 /// - Unsupported platforms: Uses stub implementation
 
 // Export factory function from appropriate implementation
+export 'dart:typed_data';
+
 export 'ffi.dart'
     if (dart.library.ffi) 'ffi.dart'
-    if (dart.library.js_interop) 'rp3d_js_interop.g.dart';
+    if (dart.library.js_interop) 'js_interop.dart';
 

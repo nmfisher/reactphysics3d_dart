@@ -21,7 +21,7 @@ add_link_options(
     -sINITIAL_MEMORY=512mb
     -sMODULARIZE
     -sERROR_ON_UNDEFINED_SYMBOLS=0
-    -sEXPORTED_RUNTIME_METHODS=wasmExports,wasmTable,addFunction,removeFunction,ccall,cwrap,allocate,intArrayFromString,intArrayToString,getValue,setValue,UTF8ToString,stringToUTF8,writeArrayToMemory,lengthBytesUTF8,HEAPU8,HEAPF32
+    -sEXPORTED_RUNTIME_METHODS=wasmExports,wasmTable,addFunction,removeFunction,ccall,cwrap,intArrayFromString,intArrayToString,getValue,setValue,UTF8ToString,stringToUTF8,writeArrayToMemory,lengthBytesUTF8,HEAPU8,HEAPF32
     -sEXPORTED_FUNCTIONS=_malloc,stackAlloc,_free,stackSave,stackRestore
     -sPTHREAD_POOL_SIZE=1
     -sALLOW_BLOCKING_ON_MAIN_THREAD=1
@@ -53,13 +53,20 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY build/out)
 # Include the ReactPhysics3D Dart plugin configuration
 include("${CMAKE_CURRENT_SOURCE_DIR}/reactphysics3d_dart.cmake")
 
-# Create WebAssembly module executable from the static library
+# Create WebAssembly module executable from the static libraries.
+#
+# --whole-archive keeps every EMSCRIPTEN_KEEPALIVE entry point in
+# rp3d_c_api.cpp alive: nothing in module_init.cpp references them, so
+# without it the linker would strip the entire C API from the module.
 add_executable(${MODULE_NAME} module_init.cpp)
 
 set_target_properties(${MODULE_NAME} PROPERTIES
   CXX_VISIBILITY_PRESET hidden)
 
 target_link_libraries(${MODULE_NAME}
-    ${RP3D_DART_LIBRARY}
+    -Wl,--whole-archive
+    reactphysics3d_dart_static
+    reactphysics3d
+    -Wl,--no-whole-archive
 )
 

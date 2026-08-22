@@ -45,12 +45,18 @@ targetOS: $targetOS
 
     final targetArchitecture = config.code.targetArchitecture;
 
+    // The prebuilt libraries are laid out by compiler triple name, where Dart's
+    // x64 architecture is called x86_64.
+    final archDirName = targetArchitecture.name == "x64"
+        ? "x86_64"
+        : targetArchitecture.name;
+
     // Library directories
     final libDirs = <String>[
       if (targetOS == OS.macOS)
         path.join(pkgRootFilePath, "native/macos"),
       if (targetOS == OS.linux)
-        path.join(pkgRootFilePath, "native/linux", targetArchitecture.name),
+        path.join(pkgRootFilePath, "native/linux", archDirName),
     ];
 
     // Libraries to link against

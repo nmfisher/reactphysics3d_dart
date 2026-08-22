@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+        # The generated bindings are excluded from analysis (see
+        # analysis_options.yaml) and sit behind a conditional export, so they
+        # are type checked by the web-bindings job below instead.
+      - run: dart analyze --no-fatal-warnings
+
+  web-bindings:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+        # bindings.dart only exports the JS interop bindings on the web, so a
+        # VM analyze pass never sees them. Compiling the smoke entry point
+        # pulls in the whole package and forces dart2js to type check the
+        # generated bindings against the ffigen_js runtime.
+      - run: dart compile js -o web_bindings_smoke.js tool/web_bindings_smoke.dart
+      - uses: actions/upload-artifact@v5
+        with:
+          name: web-bindings-smoke
+          path: web_bindings_smoke.js
+          retention-days: 3
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+        # Compiles native/src against the prebuilt static library and runs the
+        # FFI test suites through the build hook.
+      - run: dart test
