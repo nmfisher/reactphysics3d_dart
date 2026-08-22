@@ -150,6 +150,9 @@ jobs:
             # in transitively, MSVC does not. Force-include it rather than
             # patching the pinned engine tree.
             EXTRA_ARGS=(-DCMAKE_CXX_FLAGS="/FIchrono")
+            # Git Bash rewrites leading-slash arguments such as /FIchrono
+            # into Windows paths (C:/Program Files/Git/FIchrono); opt out.
+            export MSYS_NO_PATHCONV=1
           fi
           scripts/fetch_engine.sh
           cmake -S build/third_party/reactphysics3d -B build/engine \
