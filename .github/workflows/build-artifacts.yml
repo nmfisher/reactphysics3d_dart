@@ -143,11 +143,20 @@ jobs:
       - name: Build engine static library
         shell: bash
         run: |
+          EXTRA_ARGS=()
+          if [[ "${RUNNER_OS}" == "Windows" ]]; then
+            # ReactPhysics3D v0.10.2's DefaultLogger.h uses std::chrono
+            # without including <chrono>; libc++/libstdc++ pull the header
+            # in transitively, MSVC does not. Force-include it rather than
+            # patching the pinned engine tree.
+            EXTRA_ARGS=(-DCMAKE_CXX_FLAGS="/FIchrono")
+          fi
           scripts/fetch_engine.sh
           cmake -S build/third_party/reactphysics3d -B build/engine \
               -DCMAKE_BUILD_TYPE=Release \
               -DRP3D_COMPILE_TESTS=OFF \
-              -DRP3D_COMPILE_TESTBED=OFF
+              -DRP3D_COMPILE_TESTBED=OFF \
+              "${EXTRA_ARGS[@]}"
           cmake --build build/engine --config Release
 
       - name: Cross-build engine for ${{ matrix.extra }}

@@ -103,11 +103,15 @@ docker run --rm --platform linux/amd64 -v "$(pwd)":/src -w /src ubuntu:22.04 \
 With Visual Studio 2022:
 
 ```bash
-cmake -B build-windows -G "Visual Studio 17 2022"
+cmake -B build-windows -G "Visual Studio 17 2022" -DCMAKE_CXX_FLAGS="/FIchrono"
 cmake --build build-windows --config Release
 ```
 
 Output: `build-windows/Release/reactphysics3d.lib`
+
+`/FIchrono` force-includes `<chrono>`: ReactPhysics3D v0.10.2 uses
+`std::chrono` in `DefaultLogger.h` without including it, which the libc++ and
+libstdc++ headers happen to tolerate and MSVC does not.
 
 ## WebAssembly
 
