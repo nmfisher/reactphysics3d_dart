@@ -91,7 +91,7 @@ extension type GeneratedBindings(NativeLibrary _) implements JSObject {
     Pointer<RP3D_HeightFieldShape> heightFieldShape,
   );
 
-  /// TriangleVertexArray creation/destruction
+  /// TriangleVertexArray creation/destruction. Input buffers are copied into native ownership.
   external Pointer<RP3D_TriangleVertexArray> _rp3d_triangle_vertex_array_create(
     int nbVertices,
     Pointer<Float32> verticesStart,
@@ -123,7 +123,7 @@ extension type GeneratedBindings(NativeLibrary _) implements JSObject {
     Pointer<Uint32> out,
   );
 
-  /// PolygonVertexArray creation/destruction
+  /// PolygonVertexArray creation/destruction. Buffers are copied; nbFaces is the descriptor count.
   external Pointer<RP3D_PolygonVertexArray> _rp3d_polygon_vertex_array_create(
     int nbVertices,
     Pointer<Float32> verticesStart,
@@ -133,6 +133,7 @@ extension type GeneratedBindings(NativeLibrary _) implements JSObject {
     int indicesStride,
     Pointer<Uint32> polygonIndicesStart,
     int polygonIndicesStride,
+    int nbFaces,
   );
   external void _rp3d_polygon_vertex_array_destroy(
     Pointer<RP3D_PolygonVertexArray> polygonVertexArray,
@@ -449,6 +450,14 @@ extension type GeneratedBindings(NativeLibrary _) implements JSObject {
   );
 
   /// ==================== Collider ====================
+  external void _rp3d_collider_get_local_transform(
+    Pointer<RP3D_Collider> collider,
+    Pointer<RP3D_Transform> out,
+  );
+  external void _rp3d_collider_set_local_transform(
+    Pointer<RP3D_Collider> collider,
+    Pointer<RP3D_Transform> value,
+  );
   external Pointer<RP3D_Material> _rp3d_collider_get_material(
     Pointer<RP3D_Collider> collider,
   );
@@ -661,21 +670,18 @@ extension type GeneratedBindings(NativeLibrary _) implements JSObject {
     Pointer<RP3D_EventListener> listener,
   );
 
-  /// Check if there's a pending message from any listener
-  external int _rp3d_has_pending_message();
-
-  /// Get the latest message from a listener (for polling)
-  /// Returns the actual message size, or 0 if no message
-  external int _rp3d_get_listener_message(
-    Pointer<Uint8> buffer,
-    int bufferSize,
+  /// Each listener owns its queue. Read size first, then allocate enough space.
+  external int _rp3d_initialize_dart_api(Pointer<Void> data);
+  external int _rp3d_listener_message_size(
+    Pointer<RP3D_EventListener> listener,
   );
-
-  /// Send data to a Dart SendPort (internal helper function)
-  external int _rp3d_send_to_dart_port(
-    JSBigInt sendPortId,
+  external int _rp3d_listener_read_message(
+    Pointer<RP3D_EventListener> listener,
     Pointer<Uint8> data,
-    int size,
+    int capacity,
+  );
+  external void _rp3d_listener_clear_messages(
+    Pointer<RP3D_EventListener> listener,
   );
 }
 
@@ -829,7 +835,7 @@ void rp3d_physics_common_destroy_height_field_shape(
   return result;
 }
 
-/// TriangleVertexArray creation/destruction
+/// TriangleVertexArray creation/destruction. Input buffers are copied into native ownership.
 Pointer<RP3D_TriangleVertexArray> rp3d_triangle_vertex_array_create(
   int nbVertices,
   Pointer<Float32> verticesStart,
@@ -909,7 +915,7 @@ void rp3d_triangle_vertex_array_get_triangle_vertices_indices(
   return result;
 }
 
-/// PolygonVertexArray creation/destruction
+/// PolygonVertexArray creation/destruction. Buffers are copied; nbFaces is the descriptor count.
 Pointer<RP3D_PolygonVertexArray> rp3d_polygon_vertex_array_create(
   int nbVertices,
   Pointer<Float32> verticesStart,
@@ -919,6 +925,7 @@ Pointer<RP3D_PolygonVertexArray> rp3d_polygon_vertex_array_create(
   int indicesStride,
   Pointer<Uint32> polygonIndicesStart,
   int polygonIndicesStride,
+  int nbFaces,
 ) {
   final result = GeneratedBindings.instance._rp3d_polygon_vertex_array_create(
     nbVertices,
@@ -929,6 +936,7 @@ Pointer<RP3D_PolygonVertexArray> rp3d_polygon_vertex_array_create(
     indicesStride,
     polygonIndicesStart,
     polygonIndicesStride,
+    nbFaces,
   );
   return Pointer<RP3D_PolygonVertexArray>(result);
 }
@@ -1713,6 +1721,28 @@ void rp3d_collider_set_material(
 }
 
 /// ==================== Collider ====================
+void rp3d_collider_get_local_transform(
+  Pointer<RP3D_Collider> collider,
+  Pointer<RP3D_Transform> out,
+) {
+  final result = GeneratedBindings.instance._rp3d_collider_get_local_transform(
+    collider.cast(),
+    out.cast(),
+  );
+  return result;
+}
+
+void rp3d_collider_set_local_transform(
+  Pointer<RP3D_Collider> collider,
+  Pointer<RP3D_Transform> value,
+) {
+  final result = GeneratedBindings.instance._rp3d_collider_set_local_transform(
+    collider.cast(),
+    value.cast(),
+  );
+  return result;
+}
+
 Pointer<RP3D_Material> rp3d_collider_get_material(
   Pointer<RP3D_Collider> collider,
 ) {
@@ -2213,28 +2243,35 @@ void rp3d_destroy_event_listener(Pointer<RP3D_EventListener> listener) {
   return result;
 }
 
-/// Check if there's a pending message from any listener
-int rp3d_has_pending_message() {
-  final result = GeneratedBindings.instance._rp3d_has_pending_message();
+/// Each listener owns its queue. Read size first, then allocate enough space.
+int rp3d_initialize_dart_api(Pointer<Void> data) {
+  final result = GeneratedBindings.instance._rp3d_initialize_dart_api(data);
   return result;
 }
 
-/// Get the latest message from a listener (for polling)
-/// Returns the actual message size, or 0 if no message
-int rp3d_get_listener_message(Pointer<Uint8> buffer, int bufferSize) {
-  final result = GeneratedBindings.instance._rp3d_get_listener_message(
-    buffer,
-    bufferSize,
+int rp3d_listener_message_size(Pointer<RP3D_EventListener> listener) {
+  final result = GeneratedBindings.instance._rp3d_listener_message_size(
+    listener.cast(),
   );
   return result;
 }
 
-/// Send data to a Dart SendPort (internal helper function)
-int rp3d_send_to_dart_port(BigInt sendPortId, Pointer<Uint8> data, int size) {
-  final result = GeneratedBindings.instance._rp3d_send_to_dart_port(
-    sendPortId.toJSBigInt,
+int rp3d_listener_read_message(
+  Pointer<RP3D_EventListener> listener,
+  Pointer<Uint8> data,
+  int capacity,
+) {
+  final result = GeneratedBindings.instance._rp3d_listener_read_message(
+    listener.cast(),
     data,
-    size,
+    capacity,
+  );
+  return result;
+}
+
+void rp3d_listener_clear_messages(Pointer<RP3D_EventListener> listener) {
+  final result = GeneratedBindings.instance._rp3d_listener_clear_messages(
+    listener.cast(),
   );
   return result;
 }

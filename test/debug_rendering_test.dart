@@ -12,7 +12,7 @@ void main() {
     });
 
     tearDown(() {
-      // Cleanup is handled by the physics engine
+      physics3D.dispose();
     });
 
     group('PhysicsWorld Debug Rendering', () {
@@ -54,16 +54,19 @@ void main() {
         expect(body.getIsDebugEnabled(), isFalse);
       });
 
-      test('should independently control debug rendering for multiple bodies', () {
-        final body1 = world.createRigidBody();
-        final body2 = world.createRigidBody();
+      test(
+        'should independently control debug rendering for multiple bodies',
+        () {
+          final body1 = world.createRigidBody();
+          final body2 = world.createRigidBody();
 
-        body1.setIsDebugEnabled(true);
-        body2.setIsDebugEnabled(false);
+          body1.setIsDebugEnabled(true);
+          body2.setIsDebugEnabled(false);
 
-        expect(body1.getIsDebugEnabled(), isTrue);
-        expect(body2.getIsDebugEnabled(), isFalse);
-      });
+          expect(body1.getIsDebugEnabled(), isTrue);
+          expect(body2.getIsDebugEnabled(), isFalse);
+        },
+      );
     });
 
     group('DebugRenderer Configuration', () {
@@ -220,17 +223,19 @@ void main() {
         }
       });
 
-      test('should generate debug geometry when collision shapes are visible',
-          () {
-        debugRenderer.setIsDebugItemDisplayed(DebugItem.collisionShape, true);
-        world.update(1.0 / 60.0);
+      test(
+        'should generate debug geometry when collision shapes are visible',
+        () {
+          debugRenderer.setIsDebugItemDisplayed(DebugItem.collisionShape, true);
+          world.update(1.0 / 60.0);
 
-        final nbLines = debugRenderer.getNbLines();
-        final nbTriangles = debugRenderer.getNbTriangles();
+          final nbLines = debugRenderer.getNbLines();
+          final nbTriangles = debugRenderer.getNbTriangles();
 
-        // With collision shapes enabled and bodies present, we should have some geometry
-        expect(nbLines + nbTriangles, greaterThan(0));
-      });
+          // With collision shapes enabled and bodies present, we should have some geometry
+          expect(nbLines + nbTriangles, greaterThan(0));
+        },
+      );
 
       test('should generate contact debug geometry when bodies collide', () {
         // Enable gravity and wait for collision
@@ -316,8 +321,10 @@ void main() {
         expect(triangles, isA<List<DebugTriangle>>());
 
         // We should have some debug geometry from the collision shapes
-        expect(debugRenderer.getNbLines() + debugRenderer.getNbTriangles(),
-            greaterThan(0));
+        expect(
+          debugRenderer.getNbLines() + debugRenderer.getNbTriangles(),
+          greaterThan(0),
+        );
       });
     });
   });

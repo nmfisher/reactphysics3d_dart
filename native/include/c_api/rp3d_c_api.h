@@ -192,7 +192,7 @@ EMSCRIPTEN_KEEPALIVE void rp3d_physics_common_destroy_height_field(RP3D_PhysicsC
 EMSCRIPTEN_KEEPALIVE RP3D_HeightFieldShape* rp3d_physics_common_create_height_field_shape(RP3D_PhysicsCommon* common, RP3D_HeightField* heightField, RP3D_Vector3* scaling);
 EMSCRIPTEN_KEEPALIVE void rp3d_physics_common_destroy_height_field_shape(RP3D_PhysicsCommon* common, RP3D_HeightFieldShape* heightFieldShape);
 
-// TriangleVertexArray creation/destruction
+// TriangleVertexArray creation/destruction. Input buffers are copied into native ownership.
 EMSCRIPTEN_KEEPALIVE RP3D_TriangleVertexArray* rp3d_triangle_vertex_array_create(
     uint32_t nbVertices,
     const float* verticesStart,
@@ -214,7 +214,7 @@ EMSCRIPTEN_KEEPALIVE void rp3d_triangle_vertex_array_get_triangle_vertices_indic
     uint32_t* out
 );
 
-// PolygonVertexArray creation/destruction
+// PolygonVertexArray creation/destruction. Buffers are copied; nbFaces is the descriptor count.
 EMSCRIPTEN_KEEPALIVE RP3D_PolygonVertexArray* rp3d_polygon_vertex_array_create(
     uint32_t nbVertices,
     const float* verticesStart,
@@ -223,7 +223,8 @@ EMSCRIPTEN_KEEPALIVE RP3D_PolygonVertexArray* rp3d_polygon_vertex_array_create(
     const uint32_t* indicesStart,
     uint32_t indicesStride,
     const uint32_t* polygonIndicesStart,
-    uint32_t polygonIndicesStride
+    uint32_t polygonIndicesStride,
+    uint32_t nbFaces
 );
 EMSCRIPTEN_KEEPALIVE void rp3d_polygon_vertex_array_destroy(RP3D_PolygonVertexArray* polygonVertexArray);
 EMSCRIPTEN_KEEPALIVE uint32_t rp3d_polygon_vertex_array_get_nb_vertices(RP3D_PolygonVertexArray* polygonVertexArray);
@@ -379,6 +380,9 @@ EMSCRIPTEN_KEEPALIVE void rp3d_body_remove_collider(RP3D_RigidBody* body, RP3D_C
 EMSCRIPTEN_KEEPALIVE void rp3d_collider_set_material(RP3D_Collider* collider, const RP3D_Material* material);
 
 // ==================== Collider ====================
+EMSCRIPTEN_KEEPALIVE void rp3d_collider_get_local_transform(const RP3D_Collider* collider, RP3D_Transform* out);
+EMSCRIPTEN_KEEPALIVE void rp3d_collider_set_local_transform(RP3D_Collider* collider, const RP3D_Transform* value);
+
 
 EMSCRIPTEN_KEEPALIVE RP3D_Material* rp3d_collider_get_material(RP3D_Collider* collider);
 EMSCRIPTEN_KEEPALIVE void rp3d_collider_get_local_bounds(const RP3D_Collider* collider, RP3D_AABB* outAABB);
@@ -556,24 +560,11 @@ EMSCRIPTEN_KEEPALIVE void rp3d_world_set_event_listener(
 // Destroy an event listener created by rp3d_create_sendport_event_listener
 EMSCRIPTEN_KEEPALIVE void rp3d_destroy_event_listener(RP3D_EventListener* listener);
 
-// ==================== Message Polling (for SendPort Event Listeners) ====================
-
-/// Check if there's a pending message from any listener
-EMSCRIPTEN_KEEPALIVE int rp3d_has_pending_message();
-
-/// Get the latest message from a listener (for polling)
-/// Returns the actual message size, or 0 if no message
-EMSCRIPTEN_KEEPALIVE uint32_t rp3d_get_listener_message(
-    uint8_t* buffer,
-    uint32_t bufferSize
-);
-
-/// Send data to a Dart SendPort (internal helper function)
-EMSCRIPTEN_KEEPALIVE int rp3d_send_to_dart_port(
-    uint64_t sendPortId,
-    const uint8_t* data,
-    uint32_t size
-);
+// Each listener owns its queue. Read size first, then allocate enough space.
+EMSCRIPTEN_KEEPALIVE int rp3d_initialize_dart_api(void* data);
+EMSCRIPTEN_KEEPALIVE uint32_t rp3d_listener_message_size(RP3D_EventListener* listener);
+EMSCRIPTEN_KEEPALIVE uint32_t rp3d_listener_read_message(RP3D_EventListener* listener, uint8_t* data, uint32_t capacity);
+EMSCRIPTEN_KEEPALIVE void rp3d_listener_clear_messages(RP3D_EventListener* listener);
 
 #ifdef __cplusplus
 }

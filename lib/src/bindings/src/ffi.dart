@@ -225,3 +225,10 @@ extension Float32ListExtension on Float32List {
 void resizeWebCanvas(int width, int height) {
   throw UnsupportedError("Not supported on non-web platforms");
 }
+
+// Native temporaries are managed by Dart; web uses explicit stack scopes.
+int saveNativeStack() => 0;
+void restoreNativeStack(int marker) {}
+void initializeWebBindings(String moduleName) {
+  throw UnsupportedError('Web initialization is only available in a browser');
+}

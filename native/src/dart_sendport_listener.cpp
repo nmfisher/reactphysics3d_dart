@@ -1,3 +1,12 @@
+#include <deque>
+#include <mutex>
+#ifndef __EMSCRIPTEN__
+#include "dart_api_dl.h"
+#include "dart_version.h"
+#include "internal/dart_api_dl_impl.h"
+// Resolve only the thread-safe posting API; no Dart VM linkage is required.
+static Dart_PostCObject_Type postDartMessage = nullptr;
+#endif
 /*
  * SendPort Event Listener Implementation
  *
@@ -75,14 +84,29 @@ class SendPortEventListener : public reactphysics3d::EventListener {
 private:
     uint64_t _sendPortId;
     std::atomic<uint32_t> _messageCount;
-    MessageBuffer _buffer;
+    std::mutex _mutex;
+    std::deque<std::vector<uint8_t>> _messages;
+
+    void enqueue(const MessageBuffer& buffer) {
+        {
+            std::lock_guard<std::mutex> lock(_mutex);
+            _messages.emplace_back(buffer.data(), buffer.data() + buffer.size());
+        }
+#ifndef __EMSCRIPTEN__
+        if (postDartMessage && _sendPortId) {
+            Dart_CObject notification;
+            notification.type = Dart_CObject_kInt32;
+            notification.value.as_int32 = 1;
+            postDartMessage(static_cast<Dart_Port_DL>(_sendPortId), &notification);
+        }
+#endif
+    }
 
 public:
     SendPortEventListener(uint64_t sendPortId)
         : _sendPortId(sendPortId)
         , _messageCount(0)
     {
-        std::cout << "Created SendPortEventListener with port ID: " << sendPortId << std::endl;
     }
 
     ~SendPortEventListener() override = default;
@@ -90,7 +114,7 @@ public:
     /// Called when contacts occur during collision
     virtual void onContact(const CollisionCallback::CallbackData& callbackData) override {
         _messageCount++;
-        _buffer.clear();
+        MessageBuffer _buffer;
 
         // Write message header
         _buffer.writeUint32(0); // Message type: 0 = contact data
@@ -148,13 +172,13 @@ public:
         }
 
         // Send the message to Dart via helper function
-        rp3d_send_to_dart_port(_sendPortId, _buffer.data(), _buffer.size());
+        enqueue(_buffer);
     }
 
     /// Called when trigger overlaps occur
     virtual void onTrigger(const OverlapCallback::CallbackData& callbackData) override {
         _messageCount++;
-        _buffer.clear();
+        MessageBuffer _buffer;
 
         // Write message header
         _buffer.writeUint32(1); // Message type: 1 = overlap data
@@ -192,18 +216,27 @@ public:
         }
 
         // Send the message to Dart
-        rp3d_send_to_dart_port(_sendPortId, _buffer.data(), _buffer.size());
+        enqueue(_buffer);
     }
 
-    uint32_t getMessageCount() const { return _messageCount.load(); }
+    uint32_t messageSize() {
+        std::lock_guard<std::mutex> lock(_mutex);
+        return _messages.empty() ? 0 : static_cast<uint32_t>(_messages.front().size());
+    }
+    uint32_t read(uint8_t* data, uint32_t capacity) {
+        std::lock_guard<std::mutex> lock(_mutex);
+        if (_messages.empty()) return 0;
+        uint32_t size = static_cast<uint32_t>(_messages.front().size());
+        if (capacity < size || !data) return 0;
+        std::memcpy(data, _messages.front().data(), size);
+        _messages.pop_front();
+        return size;
+    }
+    void clear() {
+        std::lock_guard<std::mutex> lock(_mutex);
+        _messages.clear();
+    }
 };
-
-// ==================== Shared Message Buffer for Polling ====================
-
-// Global buffer for the most recent message (for polling approach)
-static std::vector<uint8_t> g_sharedMessageBuffer;
-static std::atomic<bool> g_hasNewMessage(false);
-static std::atomic<uint32_t> g_sharedMessageSize(0);
 
 // ==================== C API ====================
 
@@ -228,7 +261,6 @@ extern "C" EMSCRIPTEN_KEEPALIVE void rp3d_world_set_event_listener(
     RP3D_EventListener* listener
 ) {
     if (!world) {
-        std::cout << "Error: null world in set_event_listener" << std::endl;
         return;
     }
 
@@ -237,7 +269,6 @@ extern "C" EMSCRIPTEN_KEEPALIVE void rp3d_world_set_event_listener(
 
     rp3dWorld->setEventListener(rp3dListener);
 
-    std::cout << "Set event listener for world (listener: " << listener << ")" << std::endl;
 }
 
 /**
@@ -251,56 +282,33 @@ extern "C" EMSCRIPTEN_KEEPALIVE void rp3d_destroy_event_listener(RP3D_EventListe
     reactphysics3d::EventListener* rp3dListener = reinterpret_cast<reactphysics3d::EventListener*>(listener);
     delete rp3dListener;
 
-    std::cout << "Destroyed event listener: " << listener << std::endl;
 }
 
-/**
- * Check if there's a pending message from any listener.
- */
-extern "C" EMSCRIPTEN_KEEPALIVE int rp3d_has_pending_message() {
-    return g_hasNewMessage.load() ? 1 : 0;
-}
 
-/**
- * Get the latest message from a listener (for polling).
- * Returns the actual message size, or 0 if no message.
- */
-extern "C" EMSCRIPTEN_KEEPALIVE uint32_t rp3d_get_listener_message(
-    uint8_t* buffer,
-    uint32_t bufferSize
-) {
-    if (!g_hasNewMessage.load()) {
-        return 0;
+extern "C" EMSCRIPTEN_KEEPALIVE int rp3d_initialize_dart_api(void* data) {
+#ifndef __EMSCRIPTEN__
+    static std::mutex mutex;
+    std::lock_guard<std::mutex> lock(mutex);
+    if (postDartMessage) return 0;
+    const DartApi* api = static_cast<const DartApi*>(data);
+    if (!api || api->major != DART_API_DL_MAJOR_VERSION) return -1;
+    for (const DartApiEntry* entry = api->functions; entry->name; ++entry) {
+        if (std::strcmp(entry->name, "Dart_PostCObject") == 0) {
+            postDartMessage = reinterpret_cast<Dart_PostCObject_Type>(entry->function);
+            break;
+        }
     }
-
-    uint32_t msgSize = g_sharedMessageSize.load();
-    if (msgSize > bufferSize) {
-        std::cout << "Warning: buffer too small for message" << std::endl;
-        return 0;
-    }
-
-    std::memcpy(buffer, g_sharedMessageBuffer.data(), msgSize);
-    g_hasNewMessage.store(false);
-
-    return msgSize;
+    return postDartMessage ? 0 : -1;
+#else
+    return 0;
+#endif
 }
-
-/**
- * Send a message to a Dart SendPort.
- * This is a helper function called from the event listener.
- */
-extern "C" EMSCRIPTEN_KEEPALIVE int rp3d_send_to_dart_port(
-    uint64_t sendPortId,
-    const uint8_t* data,
-    uint32_t size
-) {
-    // Copy to shared buffer for polling
-    g_sharedMessageBuffer.resize(size);
-    std::memcpy(g_sharedMessageBuffer.data(), data, size);
-    g_sharedMessageSize.store(size);
-    g_hasNewMessage.store(true);
-
-    std::cout << "Sent " << size << " bytes to Dart port " << sendPortId << std::endl;
-
-    return 1; // Success
+extern "C" EMSCRIPTEN_KEEPALIVE uint32_t rp3d_listener_message_size(RP3D_EventListener* listener) {
+    return reinterpret_cast<SendPortEventListener*>(listener)->messageSize();
+}
+extern "C" EMSCRIPTEN_KEEPALIVE uint32_t rp3d_listener_read_message(RP3D_EventListener* listener, uint8_t* data, uint32_t capacity) {
+    return reinterpret_cast<SendPortEventListener*>(listener)->read(data, capacity);
+}
+extern "C" EMSCRIPTEN_KEEPALIVE void rp3d_listener_clear_messages(RP3D_EventListener* listener) {
+    reinterpret_cast<SendPortEventListener*>(listener)->clear();
 }

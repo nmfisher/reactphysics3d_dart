@@ -1,240 +1,189 @@
-import 'dart:ffi' as ffi;
-import 'dart:isolate';
-import 'package:vector_math/vector_math_64.dart';
+import 'dart:typed_data';
 import '../bindings/src/bindings.dart';
 import '../interfaces/collision_callback.dart';
 import '../interfaces/event_listener.dart';
-import 'ffi_rigid_body.dart';
-import 'ffi_collider.dart';
+import 'ffi_physics_world.dart';
+import 'event_port.dart';
+import 'package:vector_math/vector_math_64.dart';
 
-/// A thread-safe event listener that uses ReceivePort/SendPort for callbacks
+/// Receives contacts and trigger overlaps asynchronously after [PhysicsWorld.update].
 ///
-/// This implementation is safe for multi-threaded scenarios because:
-/// 1. C++ can post messages to Dart's SendPort from any thread
-/// 2. Dart processes messages on its main event loop
-/// 3. No isolate-local restrictions with `isolateLocal` callbacks
+/// Attach to one world at a time. The native queue belongs to this listener;
+/// [poll] drains it synchronously when immediate delivery is needed. Trigger
+/// pairs have no contact points. Disposal detaches the listener and drops queued
+/// events. World/body/collider destruction also discards pending events.
 ///
-/// ## Architecture
-///
-/// ```
-/// C++ Thread Pool          Dart Isolate
-///     │                         │
-///     ├─► SendPort ─────────────▶ ReceivePort
-///     │                         │
-///     │   (any thread)           │  (main event loop)
-///     │                         │
-///     ▼                         ▼
-/// Collision              ContactCallbackData
-/// Detection              .onContact()
-/// ```
-///
-/// ## Usage
-///
-/// ```dart
-/// final listener = SendPortEventListener(MyCallback());
-/// world.setEventListener(listener);
-///
-/// // Update can be called from any thread (including background threads)
-/// world.update(1/60);  // Callbacks will be processed on Dart's event loop
-///
-/// // When done
-/// world.setEventListener(null);
-/// listener.dispose();
-/// ```
+/// The transport is thread-safe. Physics operations on a world must still be
+/// serialized; do not update or destroy the same world concurrently.
 class SendPortEventListener implements EventListener {
   final CollisionCallback _callback;
-  late final ReceivePort _receivePort;
-  late final SendPort _sendPort;
-  late final ffi.Pointer<RP3D_EventListener> _listenerPtr;
-  bool _isDisposed = false;
+  late final EventPort _port;
+  late final Pointer<RP3D_EventListener> _pointer;
+  FFIPhysicsWorld? _world;
+  bool _disposed = false;
+  bool _polling = false;
+  int _generation = 0;
 
-  // Buffer for reading messages from native
-  final ffi.Pointer<ffi.Uint8> _messageBuffer;
-  static const int _maxMessageSize = 65536; // 64KB buffer
-
-  SendPortEventListener(this._callback)
-      : _messageBuffer = calloc.allocate<ffi.Uint8>(_maxMessageSize) {
-    // Create a ReceivePort to receive messages from native code
-    _receivePort = ReceivePort();
-    _sendPort = _receivePort.sendPort;
-
-    // Listen for messages from native code
-    _receivePort.listen(_handleMessage);
-
-    // Create the native event listener with the SendPort ID
-    _listenerPtr = rp3d_create_sendport_event_listener(_sendPort.nativePort);
-  }
-
-  /// Get the native EventListener pointer for passing to rp3d_world_set_event_listener()
-  ffi.Pointer<RP3D_EventListener> get pointer => _listenerPtr;
-
-  /// Handle incoming message from native code
-  void _handleMessage(dynamic message) {
-    if (_isDisposed) return;
-
-    // Poll for messages from the global buffer
+  SendPortEventListener(this._callback) {
+    _port = EventPort(poll);
     try {
-      final msgSize = rp3d_get_listener_message(
-        _messageBuffer,
-        _maxMessageSize,
-      );
-
-      if (msgSize > 0) {
-        _processMessage(_messageBuffer, msgSize);
-      }
-    } catch (e) {
-      print('Error processing collision message: $e');
+      _pointer = rp3d_create_sendport_event_listener(_port.id.toBigInt);
+      if (_pointer == nullptr)
+        throw StateError('Failed to create event listener');
+    } catch (_) {
+      _port.close();
+      rethrow;
     }
   }
 
-  /// Process a binary message from native code
-  void _processMessage(ffi.Pointer<ffi.Uint8> data, int size) {
-    final bytes = data.asTypedList(size);
-    final byteData = ByteData.view(bytes.buffer);
+  @override
+  Pointer<RP3D_EventListener> get pointer {
+    if (_disposed) throw StateError('Event listener has been disposed');
+    return _pointer;
+  }
 
-    // Read message type
-    int offset = 0;
-    final messageType = byteData.getUint32(offset, Endian.little);
-    offset += 4;
-
-    if (messageType == 0) {
-      // Contact data
-      _processContactData(byteData, offset);
-    } else if (messageType == 1) {
-      // Overlap data
-      _processOverlapData(byteData, offset);
+  void checkCanAttach(FFIPhysicsWorld world) {
+    pointer;
+    if (_world != null && !identical(_world, world)) {
+      throw StateError('An event listener can only belong to one world');
     }
   }
 
-  /// Process contact data from the message
-  void _processContactData(ByteData byteData, int initialOffset) {
-    int offset = initialOffset;
-    final nbPairs = byteData.getUint32(offset, Endian.little);
-    offset += 4;
-    final contactPairs = <ContactPair>[];
-
-    for (int i = 0; i < nbPairs; i++) {
-      // Read body/collider addresses
-      final body1Addr = byteData.getUint64(offset, Endian.little);
-      offset += 8;
-      final body2Addr = byteData.getUint64(offset, Endian.little);
-      offset += 8;
-      final collider1Addr = byteData.getUint64(offset, Endian.little);
-      offset += 8;
-      final collider2Addr = byteData.getUint64(offset, Endian.little);
-      offset += 8;
-
-      // Read event type
-      final eventTypeInt = byteData.getInt32(offset, Endian.little);
-      offset += 4;
-      final ContactEventType eventType;
-      if (eventTypeInt == 0) {
-        eventType = ContactEventType.contactStart;
-      } else if (eventTypeInt == 1) {
-        eventType = ContactEventType.contactStay;
-      } else {
-        eventType = ContactEventType.contactExit;
-      }
-
-      // Read contact points
-      final nbPoints = byteData.getUint32(offset, Endian.little);
-      offset += 4;
-      final contactPoints = <ContactPoint>[];
-
-      for (int j = 0; j < nbPoints; j++) {
-        final penetrationDepth = byteData.getFloat32(offset, Endian.little);
-        offset += 4;
-        final normalX = byteData.getFloat32(offset, Endian.little);
-        offset += 4;
-        final normalY = byteData.getFloat32(offset, Endian.little);
-        offset += 4;
-        final normalZ = byteData.getFloat32(offset, Endian.little);
-        offset += 4;
-        final point1X = byteData.getFloat32(offset, Endian.little);
-        offset += 4;
-        final point1Y = byteData.getFloat32(offset, Endian.little);
-        offset += 4;
-        final point1Z = byteData.getFloat32(offset, Endian.little);
-        offset += 4;
-        final point2X = byteData.getFloat32(offset, Endian.little);
-        offset += 4;
-        final point2Y = byteData.getFloat32(offset, Endian.little);
-        offset += 4;
-        final point2Z = byteData.getFloat32(offset, Endian.little);
-        offset += 4;
-
-        contactPoints.add(ContactPoint(
-          penetrationDepth: penetrationDepth,
-          worldNormal: Vector3(normalX, normalY, normalZ),
-          localPointOnCollider1: Vector3(point1X, point1Y, point1Z),
-          localPointOnCollider2: Vector3(point2X, point2Y, point2Z),
-        ));
-      }
-
-      // Create wrappers for bodies and colliders
-      final body1Ptr = ffi.Pointer<RP3D_RigidBody>.fromAddress(body1Addr);
-      final body2Ptr = ffi.Pointer<RP3D_RigidBody>.fromAddress(body2Addr);
-      final collider1Ptr = ffi.Pointer<RP3D_Collider>.fromAddress(collider1Addr);
-      final collider2Ptr = ffi.Pointer<RP3D_Collider>.fromAddress(collider2Addr);
-
-      contactPairs.add(ContactPair(
-        contactPoints: contactPoints,
-        body1: FFIRigidBody(body1Ptr),
-        body2: FFIRigidBody(body2Ptr),
-        collider1: FFICollider(collider1Ptr),
-        collider2: FFICollider(collider2Ptr),
-        eventType: eventType,
-      ));
-    }
-
-    // Call the Dart callback with the marshaled data
-    final callbackData = ContactCallbackData(contactPairs: contactPairs);
-    _callback.onContact(callbackData);
+  void attachToWorld(FFIPhysicsWorld world) {
+    _world = world;
   }
 
-  /// Process overlap data from the message
-  void _processOverlapData(ByteData byteData, int initialOffset) {
-    int offset = initialOffset;
-    final nbPairs = byteData.getUint32(offset, Endian.little);
-    offset += 4;
-
-    // For now, overlaps are reported as contact pairs with no points
-    // In a full implementation, you might want a separate callback for overlaps
-    print('Received $nbPairs overlap events');
-
-    for (int i = 0; i < nbPairs; i++) {
-      final body1Addr = byteData.getUint64(offset, Endian.little);
-      offset += 8;
-      final body2Addr = byteData.getUint64(offset, Endian.little);
-      offset += 8;
-      final eventTypeInt = byteData.getInt32(offset, Endian.little);
-      offset += 4;
-
-      // Skip points (overlaps have none)
-      offset += 4;
-
-      print('  Overlap between bodies at $body1Addr and $body2Addr: '
-            '${eventTypeInt == 0 ? "Start" : eventTypeInt == 1 ? "Stay" : "Exit"}');
+  void detachFromWorld(FFIPhysicsWorld world) {
+    if (identical(_world, world)) {
+      discardPendingEvents();
+      _world = null;
     }
   }
 
-  /// Check for pending messages and process them
-  ///
-  /// This can be called periodically to poll for messages if needed.
+  void discardPendingEvents() {
+    _generation++;
+    if (!_disposed) rp3d_listener_clear_messages(_pointer);
+  }
+
+  /// Deliver queued events now. Also called automatically by Dart notifications.
   void poll() {
-    if (_isDisposed) return;
-    while (rp3d_has_pending_message() != 0) {
-      _handleMessage(null);
+    if (_disposed || _polling) return;
+    _polling = true;
+    final stack = saveNativeStack();
+    try {
+      // Snapshot packets before calling user code, which can mutate the world.
+      final packets = <Uint8List>[];
+      while (true) {
+        final size = rp3d_listener_message_size(_pointer);
+        if (size == 0) break;
+        final bytes = makeUint8List(size);
+        try {
+          final read = rp3d_listener_read_message(
+            _pointer,
+            bytes.address,
+            size,
+          );
+          if (read == 0) throw StateError('Failed to drain event queue');
+          packets.add(Uint8List.fromList(bytes));
+        } finally {
+          bytes.free();
+        }
+      }
+      final generation = _generation;
+      final world = _world;
+      if (world == null) return;
+      for (final packet in packets) {
+        if (_disposed ||
+            generation != _generation ||
+            !identical(world, _world) ||
+            world.lifetime.isDisposed)
+          break;
+        final data = _decode(packet, world);
+        if (data.contactPairs.isNotEmpty) _callback.onContact(data);
+      }
+    } finally {
+      _polling = false;
+      restoreNativeStack(stack);
     }
   }
 
-  /// Clean up resources
-  void dispose() {
-    if (_isDisposed) return;
-    _isDisposed = true;
-
-    _receivePort.close();
-    rp3d_destroy_event_listener(_listenerPtr);
-    calloc.free(_messageBuffer);
+  ContactCallbackData _decode(Uint8List bytes, FFIPhysicsWorld world) {
+    final reader = _EventReader(ByteData.sublistView(bytes));
+    final type = reader.uint32();
+    if (type != 0 && type != 1)
+      throw FormatException('Unknown physics event type: $type');
+    final count = reader.uint32();
+    final pairs = <ContactPair>[];
+    for (var i = 0; i < count; i++) {
+      final body1 = reader.uint64();
+      final body2 = reader.uint64();
+      final collider1 = reader.uint64();
+      final collider2 = reader.uint64();
+      final event = reader.uint32();
+      if (event > 2) throw const FormatException('Invalid physics event');
+      final pointCount = reader.uint32();
+      final points = <ContactPoint>[];
+      for (var j = 0; j < pointCount; j++) {
+        points.add(
+          ContactPoint(
+            penetrationDepth: reader.float32(),
+            worldNormal: reader.vector(),
+            localPointOnCollider1: reader.vector(),
+            localPointOnCollider2: reader.vector(),
+          ),
+        );
+      }
+      // Earlier callbacks may have destroyed objects referenced by later packets.
+      final b1 = world.bodies[body1];
+      final b2 = world.bodies[body2];
+      final c1 = world.colliders[collider1];
+      final c2 = world.colliders[collider2];
+      if (b1 == null || b2 == null || c1 == null || c2 == null) continue;
+      pairs.add(
+        ContactPair(
+          body1: b1,
+          body2: b2,
+          collider1: c1,
+          collider2: c2,
+          eventType: ContactEventType.values[event],
+          contactPoints: points,
+        ),
+      );
+    }
+    return ContactCallbackData(contactPairs: pairs);
   }
+
+  @override
+  void dispose() {
+    if (_disposed) return;
+    _world?.setEventListener(null);
+    _disposed = true;
+    _port.close();
+    rp3d_destroy_event_listener(_pointer);
+  }
+}
+
+class _EventReader {
+  final ByteData data;
+  int offset = 0;
+  _EventReader(this.data);
+  int uint32() {
+    final v = data.getUint32(offset, Endian.little);
+    offset += 4;
+    return v;
+  }
+
+  int uint64() {
+    final low = uint32();
+    final high = uint32();
+    return low + high * 0x100000000;
+  }
+
+  double float32() {
+    final v = data.getFloat32(offset, Endian.little);
+    offset += 4;
+    return v;
+  }
+
+  Vector3 vector() => Vector3(float32(), float32(), float32());
 }

@@ -1,8 +1,10 @@
+import 'helpers/message_test_helpers.dart';
 import 'package:test/test.dart';
 import 'package:reactphysics3d_dart/reactphysics3d_dart.dart';
 import 'package:reactphysics3d_dart/src/implementation/sendport_event_listener.dart';
 import 'dart:ffi' as ffi;
-import 'package:reactphysics3d_dart/src/bindings/src/bindings.dart' as ffi_bindings;
+import 'package:reactphysics3d_dart/src/bindings/src/bindings.dart'
+    as ffi_bindings;
 
 void main() {
   group('Collision Callback Tests', () {
@@ -14,38 +16,43 @@ void main() {
       world = physics3D.createWorld();
     });
 
-    tearDown(() {});
+    tearDown(() {
+      physics3D.dispose();
+    });
 
     group('testCollision - Manual collision queries', () {
-      test('testCollisionTwoBodies should detect collision between two bodies', () {
-        // Create two box shapes
-        final boxShape = physics3D.createBoxShape(Vector3(1.0, 1.0, 1.0));
+      test(
+        'testCollisionTwoBodies should detect collision between two bodies',
+        () {
+          // Create two box shapes
+          final boxShape = physics3D.createBoxShape(Vector3(1.0, 1.0, 1.0));
 
-        // Create two rigid bodies at the same position (should collide)
-        final body1 = world.createRigidBody(
-          transform: (
-            position: Vector3(0, 0, 0),
-            orientation: Quaternion.identity(),
-          ),
-        );
-        body1.addCollider(boxShape);
+          // Create two rigid bodies at the same position (should collide)
+          final body1 = world.createRigidBody(
+            transform: (
+              position: Vector3(0, 0, 0),
+              orientation: Quaternion.identity(),
+            ),
+          );
+          body1.addCollider(boxShape);
 
-        final body2 = world.createRigidBody(
-          transform: (
-            position: Vector3(0, 0, 0),
-            orientation: Quaternion.identity(),
-          ),
-        );
-        body2.addCollider(boxShape);
+          final body2 = world.createRigidBody(
+            transform: (
+              position: Vector3(0, 0, 0),
+              orientation: Quaternion.identity(),
+            ),
+          );
+          body2.addCollider(boxShape);
 
-        // Create a simple callback
-        final callback = _TestCollisionCallback();
-        world.testCollisionTwoBodies(body1, body2, callback);
+          // Create a simple callback
+          final callback = _TestCollisionCallback();
+          world.testCollisionTwoBodies(body1, body2, callback);
 
-        // The callback should have been invoked
-        // (actual collision detection depends on native implementation)
-        expect(callback.wasCalled, isTrue);
-      });
+          // The callback should have been invoked
+          // (actual collision detection depends on native implementation)
+          expect(callback.wasCalled, isTrue);
+        },
+      );
 
       test('testCollision should query all collisions in world', () {
         final boxShape = physics3D.createBoxShape(Vector3(1.0, 1.0, 1.0));
@@ -163,10 +170,13 @@ void main() {
         listener.dispose();
       });
 
-      test('setEventListener with null should work when no listener is set', () {
-        // Should not throw when no listener was previously set
-        world.setEventListener(null);
-      });
+      test(
+        'setEventListener with null should work when no listener is set',
+        () {
+          // Should not throw when no listener was previously set
+          world.setEventListener(null);
+        },
+      );
     });
 
     group('CollisionCallback data structures', () {
@@ -288,18 +298,21 @@ void main() {
         listener.dispose();
       });
 
-      test('SendPortEventListener should attach to world via setEventListener', () {
-        final callback = _TestCollisionCallback();
-        final listener = SendPortEventListener(callback);
+      test(
+        'SendPortEventListener should attach to world via setEventListener',
+        () {
+          final callback = _TestCollisionCallback();
+          final listener = SendPortEventListener(callback);
 
-        // Attach via world.setEventListener
-        world.setEventListener(listener);
+          // Attach via world.setEventListener
+          world.setEventListener(listener);
 
-        // Remove via world.setEventListener(null)
-        world.setEventListener(null);
+          // Remove via world.setEventListener(null)
+          world.setEventListener(null);
 
-        listener.dispose();
-      });
+          listener.dispose();
+        },
+      );
 
       test('SendPortEventListener should handle message buffer reading', () {
         // Test the message reader with a known structure
@@ -392,15 +405,4 @@ class _TestMessageReader {
     _offset += 8;
     return value;
   }
-}
-
-/// Builds a message buffer with the layout the event listener messages use:
-/// a uint32 message type, a uint32 pair count, then the pair addresses.
-ffi.Pointer<ffi.Uint8> createTestMessageBuffer() {
-  final buffer = ffi_bindings.calloc<ffi.Uint8>(24);
-  buffer.cast<ffi.Uint32>()[0] = 0; // message type: contact data
-  buffer.cast<ffi.Uint32>()[1] = 1; // number of pairs
-  buffer.cast<ffi.Uint64>()[1] = 0x1000; // body 1 address
-  buffer.cast<ffi.Uint64>()[2] = 0x2000; // body 2 address
-  return buffer;
 }

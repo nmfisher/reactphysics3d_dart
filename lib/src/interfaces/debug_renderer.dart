@@ -1,7 +1,6 @@
 import '../bindings/src/bindings.dart' as ffi;
 
 import '../../reactphysics3d_dart.dart';
-import '../bindings/src/bindings.dart' as ffi;
 
 /// Interface for the debug renderer
 abstract class DebugRenderer

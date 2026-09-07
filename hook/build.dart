@@ -5,10 +5,7 @@ import 'package:native_toolchain_c/native_toolchain_c.dart';
 import 'package:path/path.dart' as path;
 import 'log.dart';
 
-
-
 void main(List<String> args) async {
-
   await build(args, (BuildInput input, BuildOutputBuilder output) async {
     final packageRoot = input.packageRoot;
     var pkgRootFilePath = packageRoot.toFilePath(windows: Platform.isWindows);
@@ -33,7 +30,6 @@ outputDirectory: ${outputDirectory.path}
 targetOS: $targetOS
 """);
 
-
     // Source files
     var sources = [
       path.join(pkgRootFilePath, "native/src/rp3d_c_api.cpp"),
@@ -41,7 +37,14 @@ targetOS: $targetOS
     ];
 
     // Include directories - need both our C API headers and ReactPhysics3D headers
-    final includeDirs = [path.join(pkgRootFilePath, "native/include")];
+    final sdkInclude = path.join(
+      path.dirname(path.dirname(Platform.resolvedExecutable)),
+      'include',
+    );
+    final includeDirs = [
+      path.join(pkgRootFilePath, "native/include"),
+      sdkInclude,
+    ];
 
     final targetArchitecture = config.code.targetArchitecture;
 
@@ -53,8 +56,7 @@ targetOS: $targetOS
 
     // Library directories
     final libDirs = <String>[
-      if (targetOS == OS.macOS)
-        path.join(pkgRootFilePath, "native/macos"),
+      if (targetOS == OS.macOS) path.join(pkgRootFilePath, "native/macos"),
       if (targetOS == OS.linux)
         path.join(pkgRootFilePath, "native/linux", archDirName),
     ];
@@ -65,7 +67,10 @@ targetOS: $targetOS
     ];
 
     final defines = <String, String?>{};
-    final flags = <String>["-std=c++11"];
+    final flags = <String>[
+      "-std=c++11",
+      if (targetOS == OS.linux) "-pthread",
+    ];
 
     flags.addAll(libDirs.map((dir) => "-L$dir"));
 

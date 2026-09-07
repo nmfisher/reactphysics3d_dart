@@ -1,6 +1,5 @@
 import '../bindings/src/bindings.dart' as ffi;
 import '../../reactphysics3d_dart.dart';
-import '../bindings/src/bindings.dart' as ffi;
 
 /// Interface for colliders
 abstract class Collider extends BaseRP3DType<ffi.Pointer<ffi.RP3D_Collider>> {
@@ -19,10 +18,10 @@ abstract class Collider extends BaseRP3DType<ffi.Pointer<ffi.RP3D_Collider>> {
   /// Set the local position
   set localPosition(Vector3 value);
 
-  /// Get the local orientation
+  /// Get the full local-to-body transform (the name is historical).
   Transform get localOrientation;
 
-  /// Set the local orientation
+  /// Set the full local-to-body transform. Recompute body mass properties as needed.
   set localOrientation(Transform value);
 
   /// Set this collider as a trigger

@@ -14,7 +14,9 @@ void main() {
       physics3D = createReactPhysics3D();
     });
 
-    tearDown(() {});
+    tearDown(() {
+      physics3D.dispose();
+    });
 
     group('createWorld', () {
       test('should create a PhysicsWorld instance', () {
@@ -479,10 +481,10 @@ void main() {
         () {
           const rows = 2;
           const columns = 2;
-          final heights = Int32List.fromList([1, 2, 3, 4]); 
+          final heights = Int32List.fromList([1, 2, 3, 4]);
           const minHeight = 0.0;
           const maxHeight = 3.0;
-          const integerHeightScale = 1.0; 
+          const integerHeightScale = 1.0;
 
           final heightField = physics3D.createHeightFieldInt(
             rows: rows,
@@ -504,10 +506,10 @@ void main() {
           expect(heightFieldShape, isNotNull);
           expect(heightFieldShape, isA<HeightFieldShape>());
 
-          final vertex00 = heightFieldShape.getVertexAt(0, 0); 
-          final vertex01 = heightFieldShape.getVertexAt(1, 0); 
-          final vertex10 = heightFieldShape.getVertexAt(0, 1); 
-          final vertex11 = heightFieldShape.getVertexAt(1, 1); 
+          final vertex00 = heightFieldShape.getVertexAt(0, 0);
+          final vertex01 = heightFieldShape.getVertexAt(0, 1);
+          final vertex10 = heightFieldShape.getVertexAt(1, 0);
+          final vertex11 = heightFieldShape.getVertexAt(1, 1);
 
           print("${vertex00.y} ${vertex01.y} ${vertex10.y} ${vertex11.y}");
 
@@ -1367,6 +1369,7 @@ void main() {
             expect(collider, isNotNull);
 
             // Clean up
+            rigidBody.removeCollider(collider);
             convexShape.dispose();
             convexMesh.dispose();
           } finally {
@@ -1645,6 +1648,7 @@ void main() {
               expect(collider, isNotNull);
 
               // Clean up
+              rigidBody.removeCollider(collider);
               convexShape.dispose();
               convexMesh.dispose();
             } finally {
@@ -1696,6 +1700,7 @@ void main() {
                 expect(rigidBody.type, equals(BodyType.STATIC));
 
                 // Clean up
+                rigidBody.removeCollider(collider);
                 concaveShape.dispose();
               } finally {
                 triangleMesh.dispose();
@@ -2206,7 +2211,10 @@ void main() {
         );
 
         expect(resultPtr.address, isNonZero);
-        expect(resultPtr.ref.nbContactPairs, equals(0)); // No other bodies to collide with
+        expect(
+          resultPtr.ref.nbContactPairs,
+          equals(0),
+        ); // No other bodies to collide with
 
         bindings.rp3d_free_collision_callback_data(resultPtr);
       });
@@ -2310,7 +2318,11 @@ void main() {
         final raycastInfo = world.raycast(ray);
 
         // Should hit the heightfield
-        expect(raycastInfo, isNotNull, reason: 'Ray should hit the heightfield');
+        expect(
+          raycastInfo,
+          isNotNull,
+          reason: 'Ray should hit the heightfield',
+        );
         expect(raycastInfo!.body, isNotNull);
         expect(raycastInfo.collider, isNotNull);
 
@@ -2367,10 +2379,7 @@ void main() {
         final heightFieldShape = physics3D.createHeightFieldShape(heightField);
 
         final world = physics3D.createWorld();
-        final body = physics3D.createRigidBody(
-          world,
-          type: BodyType.STATIC,
-        );
+        final body = physics3D.createRigidBody(world, type: BodyType.STATIC);
         body.addCollider(heightFieldShape);
 
         // Cast a ray far away from the heightfield (should miss)
@@ -2409,21 +2418,19 @@ void main() {
         final heightFieldShape = physics3D.createHeightFieldShape(heightField);
 
         final world = physics3D.createWorld();
-        final body = physics3D.createRigidBody(
-          world,
-          type: BodyType.STATIC,
-        );
+        final body = physics3D.createRigidBody(world, type: BodyType.STATIC);
         body.addCollider(heightFieldShape);
 
         // Cast a ray at the center where height should be ~2.0
-        final ray = Ray(
-          Vector3(0, 5, 0),
-          Vector3(0, -1, 0),
-        );
+        final ray = Ray(Vector3(0, 5, 0), Vector3(0, -1, 0));
 
         final raycastInfo = world.raycast(ray);
 
-        expect(raycastInfo, isNotNull, reason: 'Ray should hit the heightfield');
+        expect(
+          raycastInfo,
+          isNotNull,
+          reason: 'Ray should hit the heightfield',
+        );
 
         // The hit should be somewhere reasonable (heightfield has varying heights)
         // Heights range from 1.0 to 2.0, so hit should be in that range or close

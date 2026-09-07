@@ -5,6 +5,9 @@ import '../bindings/src/bindings.dart';
 /// Implementations must provide a native EventListener pointer to pass to ReactPhysics3D.
 /// The primary implementation is [SendPortEventListener] for thread-safe callbacks.
 abstract interface class EventListener {
+  /// Detach and release this listener. Safe to call again.
+  void dispose();
+
   /// The native EventListener pointer for passing to rp3d_world_set_event_listener()
   Pointer<RP3D_EventListener> get pointer;
 }

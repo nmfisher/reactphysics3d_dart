@@ -134,7 +134,7 @@ external void rp3d_physics_common_destroy_height_field_shape(
   ffi.Pointer<RP3D_HeightFieldShape> heightFieldShape,
 );
 
-/// TriangleVertexArray creation/destruction
+/// TriangleVertexArray creation/destruction. Input buffers are copied into native ownership.
 @ffi.Native<
     ffi.Pointer<RP3D_TriangleVertexArray> Function(
         ffi.Uint32,
@@ -195,7 +195,7 @@ external void rp3d_triangle_vertex_array_get_triangle_vertices_indices(
   ffi.Pointer<ffi.Uint32> out,
 );
 
-/// PolygonVertexArray creation/destruction
+/// PolygonVertexArray creation/destruction. Buffers are copied; nbFaces is the descriptor count.
 @ffi.Native<
     ffi.Pointer<RP3D_PolygonVertexArray> Function(
         ffi.Uint32,
@@ -205,6 +205,7 @@ external void rp3d_triangle_vertex_array_get_triangle_vertices_indices(
         ffi.Pointer<ffi.Uint32>,
         ffi.Uint32,
         ffi.Pointer<ffi.Uint32>,
+        ffi.Uint32,
         ffi.Uint32)>(isLeaf: true)
 external ffi.Pointer<RP3D_PolygonVertexArray> rp3d_polygon_vertex_array_create(
   int nbVertices,
@@ -215,6 +216,7 @@ external ffi.Pointer<RP3D_PolygonVertexArray> rp3d_polygon_vertex_array_create(
   int indicesStride,
   ffi.Pointer<ffi.Uint32> polygonIndicesStart,
   int polygonIndicesStride,
+  int nbFaces,
 );
 
 @ffi.Native<ffi.Void Function(ffi.Pointer<RP3D_PolygonVertexArray>)>(
@@ -785,6 +787,22 @@ external void rp3d_collider_set_material(
 );
 
 /// ==================== Collider ====================
+@ffi.Native<
+    ffi.Void Function(
+        ffi.Pointer<RP3D_Collider>, ffi.Pointer<RP3D_Transform>)>(isLeaf: true)
+external void rp3d_collider_get_local_transform(
+  ffi.Pointer<RP3D_Collider> collider,
+  ffi.Pointer<RP3D_Transform> out,
+);
+
+@ffi.Native<
+    ffi.Void Function(
+        ffi.Pointer<RP3D_Collider>, ffi.Pointer<RP3D_Transform>)>(isLeaf: true)
+external void rp3d_collider_set_local_transform(
+  ffi.Pointer<RP3D_Collider> collider,
+  ffi.Pointer<RP3D_Transform> value,
+);
+
 @ffi.Native<ffi.Pointer<RP3D_Material> Function(ffi.Pointer<RP3D_Collider>)>(
     isLeaf: true)
 external ffi.Pointer<RP3D_Material> rp3d_collider_get_material(
@@ -1083,7 +1101,7 @@ external void rp3d_world_destroy_joint(
   ffi.Pointer<ffi.Void> joint,
 );
 
-/// Synchronous collision testing - test collision between two bodies
+/// Test collision between two bodies (synchronous, returns data directly)
 @ffi.Native<
     ffi.Pointer<RP3D_CollisionCallbackData> Function(
         ffi.Pointer<RP3D_PhysicsWorld>,
@@ -1096,7 +1114,7 @@ external ffi.Pointer<RP3D_CollisionCallbackData>
   ffi.Pointer<RP3D_Body> body2,
 );
 
-/// Synchronous collision testing - test collision for a body against all others
+/// Test collision for a body against all others (synchronous)
 @ffi.Native<
     ffi.Pointer<RP3D_CollisionCallbackData> Function(
         ffi.Pointer<RP3D_PhysicsWorld>, ffi.Pointer<RP3D_Body>)>(isLeaf: true)
@@ -1105,7 +1123,7 @@ external ffi.Pointer<RP3D_CollisionCallbackData> rp3d_test_collision_body_sync(
   ffi.Pointer<RP3D_Body> body,
 );
 
-/// Synchronous collision testing - test collision for all bodies in world
+/// Test collision for all bodies in the world (synchronous)
 @ffi.Native<
     ffi.Pointer<RP3D_CollisionCallbackData> Function(
         ffi.Pointer<RP3D_PhysicsWorld>)>(isLeaf: true)
@@ -1113,7 +1131,7 @@ external ffi.Pointer<RP3D_CollisionCallbackData> rp3d_test_collision_world_sync(
   ffi.Pointer<RP3D_PhysicsWorld> world,
 );
 
-/// Synchronous overlap testing - test overlap for all trigger colliders
+/// Test overlap for all trigger colliders (synchronous)
 @ffi.Native<
     ffi.Pointer<RP3D_OverlapCallbackData> Function(
         ffi.Pointer<RP3D_PhysicsWorld>)>(isLeaf: true)
@@ -1121,34 +1139,32 @@ external ffi.Pointer<RP3D_OverlapCallbackData> rp3d_test_overlap_world_sync(
   ffi.Pointer<RP3D_PhysicsWorld> world,
 );
 
-/// Free collision callback data
+/// Free collision callback data allocated by sync functions
 @ffi.Native<ffi.Void Function(ffi.Pointer<RP3D_CollisionCallbackData>)>(
     isLeaf: true)
 external void rp3d_free_collision_callback_data(
   ffi.Pointer<RP3D_CollisionCallbackData> data,
 );
 
-/// Free overlap callback data
+/// Free overlap callback data allocated by sync functions
 @ffi.Native<ffi.Void Function(ffi.Pointer<RP3D_OverlapCallbackData>)>(
     isLeaf: true)
 external void rp3d_free_overlap_callback_data(
   ffi.Pointer<RP3D_OverlapCallbackData> data,
 );
 
-// ==================== Event Listener ====================
-
 /// Create a SendPort-based event listener for thread-safe callbacks
-@ffi.Native<ffi.Pointer<RP3D_EventListener> Function(ffi.Uint64 sendPortId)>(
-    isLeaf: true)
+/// Returns an EventListener* pointer that can be passed to rp3d_world_set_event_listener()
+@ffi.Native<ffi.Pointer<RP3D_EventListener> Function(ffi.Uint64)>(isLeaf: true)
 external ffi.Pointer<RP3D_EventListener> rp3d_create_sendport_event_listener(
-    int sendPortId,
+  int sendPortId,
 );
 
 /// Set the event listener for a physics world (matches ReactPhysics3D API)
 /// Pass nullptr to remove the current listener
 @ffi.Native<
-    ffi.Void Function(ffi.Pointer<RP3D_PhysicsWorld>, ffi.Pointer<RP3D_EventListener>)>(
-        isLeaf: true)
+    ffi.Void Function(ffi.Pointer<RP3D_PhysicsWorld>,
+        ffi.Pointer<RP3D_EventListener>)>(isLeaf: true)
 external void rp3d_world_set_event_listener(
   ffi.Pointer<RP3D_PhysicsWorld> world,
   ffi.Pointer<RP3D_EventListener> listener,
@@ -1160,28 +1176,29 @@ external void rp3d_destroy_event_listener(
   ffi.Pointer<RP3D_EventListener> listener,
 );
 
-/// Check if there's a pending message from any listener
-@ffi.Native<ffi.Int32 Function()>(isLeaf: true)
-external int rp3d_has_pending_message();
-
-/// Get the latest message from a listener (for polling)
-/// Returns the actual message size, or 0 if no message
-@ffi.Native<
-    ffi.Uint32 Function(ffi.Pointer<ffi.Uint8> buffer, ffi.Uint32 bufferSize)>(
-        isLeaf: true)
-external int rp3d_get_listener_message(
-  ffi.Pointer<ffi.Uint8> buffer,
-  int bufferSize,
+/// Each listener owns its queue. Read size first, then allocate enough space.
+@ffi.Native<ffi.Int Function(ffi.Pointer<ffi.Void>)>(isLeaf: true)
+external int rp3d_initialize_dart_api(
+  ffi.Pointer<ffi.Void> data,
 );
 
-/// Send data to a Dart SendPort (internal helper function)
+@ffi.Native<ffi.Uint32 Function(ffi.Pointer<RP3D_EventListener>)>(isLeaf: true)
+external int rp3d_listener_message_size(
+  ffi.Pointer<RP3D_EventListener> listener,
+);
+
 @ffi.Native<
-    ffi.Int32 Function(ffi.Uint64 sendPortId, ffi.Pointer<ffi.Uint8> data,
-        ffi.Uint32 size)>(isLeaf: true)
-external int rp3d_send_to_dart_port(
-  int sendPortId,
+    ffi.Uint32 Function(ffi.Pointer<RP3D_EventListener>, ffi.Pointer<ffi.Uint8>,
+        ffi.Uint32)>(isLeaf: true)
+external int rp3d_listener_read_message(
+  ffi.Pointer<RP3D_EventListener> listener,
   ffi.Pointer<ffi.Uint8> data,
-  int size,
+  int capacity,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<RP3D_EventListener>)>(isLeaf: true)
+external void rp3d_listener_clear_messages(
+  ffi.Pointer<RP3D_EventListener> listener,
 );
 
 final class RP3D_PhysicsCommon extends ffi.Opaque {}
@@ -1233,69 +1250,6 @@ final class RP3D_FixedJoint extends ffi.Opaque {}
 final class RP3D_DebugRenderer extends ffi.Opaque {}
 
 final class RP3D_EventListener extends ffi.Opaque {}
-
-/// ==================== Collision Callback Data Structures ====================
-
-/// Contact point data for synchronous collision testing
-final class RP3D_ContactPointData extends ffi.Struct {
-  @ffi.Float()
-  external double penetrationDepth;
-
-  external RP3D_Vector3 worldNormal;
-
-  external RP3D_Vector3 localPointOnCollider1;
-
-  external RP3D_Vector3 localPointOnCollider2;
-}
-
-/// Contact pair data for synchronous collision testing
-final class RP3D_ContactPairData extends ffi.Struct {
-  external ffi.Pointer<ffi.Void> body1;
-
-  external ffi.Pointer<ffi.Void> body2;
-
-  external ffi.Pointer<ffi.Void> collider1;
-
-  external ffi.Pointer<ffi.Void> collider2;
-
-  @ffi.Int32()
-  external int eventType;
-
-  @ffi.Uint32()
-  external int nbContactPoints;
-
-  external ffi.Pointer<RP3D_ContactPointData> contactPoints;
-}
-
-/// Result container for synchronous collision testing
-final class RP3D_CollisionCallbackData extends ffi.Struct {
-  @ffi.Uint32()
-  external int nbContactPairs;
-
-  external ffi.Pointer<RP3D_ContactPairData> contactPairs;
-}
-
-/// Overlap pair data for synchronous overlap testing
-final class RP3D_OverlapPairData extends ffi.Struct {
-  external ffi.Pointer<ffi.Void> body1;
-
-  external ffi.Pointer<ffi.Void> body2;
-
-  external ffi.Pointer<ffi.Void> collider1;
-
-  external ffi.Pointer<ffi.Void> collider2;
-
-  @ffi.Int32()
-  external int eventType;
-}
-
-/// Result container for synchronous overlap testing
-final class RP3D_OverlapCallbackData extends ffi.Struct {
-  @ffi.Uint32()
-  external int nbOverlapPairs;
-
-  external ffi.Pointer<RP3D_OverlapPairData> overlapPairs;
-}
 
 /// ==================== Enums ====================
 sealed class RP3D_BodyType {
@@ -1455,4 +1409,70 @@ final class RP3D_FixedJointInfo extends ffi.Struct {
 
   @ffi.Uint8()
   external int isCollisionEnabled;
+}
+
+/// Contact point data for synchronous collision testing
+final class RP3D_ContactPointData extends ffi.Struct {
+  @ffi.Float()
+  external double penetrationDepth;
+
+  external RP3D_Vector3 worldNormal;
+
+  external RP3D_Vector3 localPointOnCollider1;
+
+  external RP3D_Vector3 localPointOnCollider2;
+}
+
+/// Contact pair data for synchronous collision testing
+final class RP3D_ContactPairData extends ffi.Struct {
+  external ffi.Pointer<ffi.Void> body1;
+
+  external ffi.Pointer<ffi.Void> body2;
+
+  external ffi.Pointer<ffi.Void> collider1;
+
+  external ffi.Pointer<ffi.Void> collider2;
+
+  /// 0=ContactStart, 1=ContactStay, 2=ContactExit
+  @ffi.Int32()
+  external int eventType;
+
+  @ffi.Uint32()
+  external int nbContactPoints;
+
+  /// Array of contact points
+  external ffi.Pointer<RP3D_ContactPointData> contactPoints;
+}
+
+/// Result container for synchronous collision testing
+final class RP3D_CollisionCallbackData extends ffi.Struct {
+  @ffi.Uint32()
+  external int nbContactPairs;
+
+  /// Array of contact pairs
+  external ffi.Pointer<RP3D_ContactPairData> contactPairs;
+}
+
+/// Overlap pair data for synchronous overlap testing
+final class RP3D_OverlapPairData extends ffi.Struct {
+  external ffi.Pointer<ffi.Void> body1;
+
+  external ffi.Pointer<ffi.Void> body2;
+
+  external ffi.Pointer<ffi.Void> collider1;
+
+  external ffi.Pointer<ffi.Void> collider2;
+
+  /// 0=OverlapStart, 1=OverlapStay, 2=OverlapExit
+  @ffi.Int32()
+  external int eventType;
+}
+
+/// Result container for synchronous overlap testing
+final class RP3D_OverlapCallbackData extends ffi.Struct {
+  @ffi.Uint32()
+  external int nbOverlapPairs;
+
+  /// Array of overlap pairs
+  external ffi.Pointer<RP3D_OverlapPairData> overlapPairs;
 }

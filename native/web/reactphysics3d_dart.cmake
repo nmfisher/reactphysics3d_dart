@@ -7,6 +7,7 @@ message(STATUS "Building ReactPhysics3D static library")
 # ReactPhysics3D source files
 set(RP3D_DART_SOURCES
   "${CMAKE_CURRENT_LIST_DIR}/../src/rp3d_c_api.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/../src/dart_sendport_listener.cpp"
 )
 
 # ReactPhysics3D include directories
@@ -41,6 +42,8 @@ target_compile_options(reactphysics3d_dart_static PRIVATE
   "-std=c++17"
   "-Wno-invalid-specialization"
   "-DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=1"
+  "-pthread"
+  "-fexceptions"
   "-matomics"
   "-mbulk-memory"
 )

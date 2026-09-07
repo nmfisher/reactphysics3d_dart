@@ -45,7 +45,8 @@ class ContactPoint {
   }
 }
 
-/// Represents contact between two colliders, containing multiple contact points
+/// Contact snapshot. Point values are copied; body/collider references remain
+/// borrowed live objects and expire on destruction. Trigger pairs have no points.
 class ContactPair {
   /// Contact points between the two colliders
   final List<ContactPoint> contactPoints;
@@ -80,7 +81,9 @@ class ContactPair {
   /// Get a specific contact point by index
   ContactPoint getContactPoint(int index) {
     if (index < 0 || index >= contactPoints.length) {
-      throw RangeError('Contact point index $index out of range (0-${contactPoints.length - 1})');
+      throw RangeError(
+        'Contact point index $index out of range (0-${contactPoints.length - 1})',
+      );
     }
     return contactPoints[index];
   }
@@ -110,7 +113,9 @@ class ContactCallbackData {
   /// Get a specific contact pair by index
   ContactPair getContactPair(int index) {
     if (index < 0 || index >= contactPairs.length) {
-      throw RangeError('Contact pair index $index out of range (0-${contactPairs.length - 1})');
+      throw RangeError(
+        'Contact pair index $index out of range (0-${contactPairs.length - 1})',
+      );
     }
     return contactPairs[index];
   }
@@ -133,4 +138,3 @@ abstract class CollisionCallback {
   /// [callbackData] contains data about all the contacts that occurred
   void onContact(ContactCallbackData callbackData);
 }
-

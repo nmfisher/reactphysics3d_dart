@@ -1,153 +1,77 @@
-# Building ReactPhysics3D Libraries
+# Building and validating
 
-The Dart bindings require a precompiled static library (`libreactphysics3d.a`) for each target platform. This covers building the core ReactPhysics3D C++ library from source.
+The repository contains ReactPhysics3D **0.10.2 headers**, its C bridge, and
+precompiled native archives. It does not contain the upstream C++ implementation
+or a root CMake project. Rebuilding the core requires a matching upstream source
+tree. Keep its precision/build configuration consistent with the bundled headers;
+do not enable double precision with the current wrapper build.
 
-## Prerequisites
+## Native
 
-- CMake 3.10+
-- A C++17 compiler for your target platform
+With a compatible Dart SDK (`dart:ffi` typed-data address support and native build
+hooks), run:
 
-The ReactPhysics3D source is included at `native/include/reactphysics3d/`. The C API wrapper lives at `native/src/rp3d_c_api.cpp`.
-
-## Regenerating the Dart bindings
-
-Both binding sets are generated from `native/include/c_api/rp3d_c_api.h`:
-
-```bash
-dart run ffigen --config ffigen/native.yaml     # lib/src/bindings/src/rp3d_ffi.g.dart
-dart run ffigen_js --config ffigen/web.yaml     # lib/src/bindings/src/rp3d_js_interop.g.dart
+```sh
+dart pub get
+dart run example/quick_start.dart
+dart test
 ```
 
-`ffigen_js` additionally needs libclang on the machine (same requirement as `ffigen`).
+The build hook compiles `native/src/rp3d_c_api.cpp` and
+`native/src/dart_sendport_listener.cpp`, using the running Dart SDK's API headers
+for port notifications. It links the appropriate archive:
 
-The web bindings are checked in CI by compiling `tool/web_bindings_smoke.dart`
-with `dart compile js`, because they only load through the conditional export
-in `lib/src/bindings/src/bindings.dart` and are excluded from `dart analyze`.
+| Target | Archive |
+| --- | --- |
+| macOS arm64 | `native/macos/libreactphysics3d.a` |
+| Linux arm64 | `native/linux/arm64/libreactphysics3d.a` |
+| Linux x86_64 | `native/linux/x86_64/libreactphysics3d.a` |
 
-## macOS (arm64)
+The macOS archive was built for macOS 15; rebuild it for an older deployment target
+if required. iOS, Android, Windows, and macOS x86_64 require compatible archives and
+additional library-path/toolchain configuration in `hook/build.dart`; this
+repository does not currently provide a complete build setup for those targets.
 
-```bash
-cmake -B build-macos
-cmake --build build-macos
+To rebuild a core archive from a matching upstream source checkout:
+
+```sh
+cmake -S /path/to/reactphysics3d -B /tmp/rp3d-core \
+  -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+  -DRP3D_DOUBLE_PRECISION_ENABLED=OFF -DRP3D_COMPILE_TESTS=OFF
+cmake --build /tmp/rp3d-core --parallel
 ```
 
-Output: `build-macos/libreactphysics3d.a`
-
-## iOS (arm64)
-
-Requires Xcode.
-
-```bash
-cmake -B build-ios -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
-cmake --build build-ios
-```
-
-Output: `build-ios/libreactphysics3d.a`
-
-For the iOS simulator, add `-DCMAKE_OSX_SYSROOT=iphonesimulator`.
-
-## Android (arm64-v8a)
-
-Requires the [Android NDK](https://developer.android.com/ndk).
-
-```bash
-cmake -B build-android \
-  -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK/build/cmake/android.toolchain.cmake \
-  -DANDROID_ABI=arm64-v8a \
-  -DANDROID_PLATFORM=android-21
-cmake --build build-android
-```
-
-Set `ANDROID_NDK` to your NDK path (e.g. `~/Library/Android/sdk/ndk/28.2.13676358`).
-
-Other ABIs: replace `arm64-v8a` with `armeabi-v7a`, `x86`, or `x86_64` and repeat.
-
-## Linux (arm64)
-
-On an arm64 Linux machine, or via Docker on Apple Silicon:
-
-```bash
-cmake -B build-linux
-cmake --build build-linux
-```
-
-### Cross-compiling from macOS (arm64)
-
-```bash
-docker run --rm -v "$(pwd)":/src -w /src ubuntu:22.04 \
-  bash -c "apt-get update -qq && apt-get install -y -qq g++ cmake &&
-           cmake -B build-linux && cmake --build build-linux"
-```
-
-This produces an arm64 Linux library (matches the Docker host architecture).
-
-### Linux (x86_64)
-
-On an x86_64 Linux machine:
-
-```bash
-cmake -B build-linux
-cmake --build build-linux
-```
-
-Cross-compiling x86_64 from macOS requires Docker with Rosetta emulation enabled (Docker Desktop > General > "Use Rosetta for x86_64/amd64 emulation"). Without it, QEMU emulation hits file descriptor limits:
-
-```bash
-docker run --rm --platform linux/amd64 -v "$(pwd)":/src -w /src ubuntu:22.04 \
-  bash -c "apt-get update -qq && apt-get install -y -qq g++ cmake &&
-           cmake -B build-linux-x86_64 && cmake --build build-linux-x86_64"
-```
-
-## Windows
-
-With Visual Studio 2022:
-
-```bash
-cmake -B build-windows -G "Visual Studio 17 2022" -DCMAKE_CXX_FLAGS="/FIchrono"
-cmake --build build-windows --config Release
-```
-
-Output: `build-windows/Release/reactphysics3d.lib`
-
-`/FIchrono` force-includes `<chrono>`: ReactPhysics3D v0.10.2 uses
-`std::chrono` in `DefaultLogger.h` without including it, which the libc++ and
-libstdc++ headers happen to tolerate and MSVC does not.
+Copy the resulting `libreactphysics3d.a` to the corresponding path above. For
+cross-compilation, supply the target's CMake toolchain and architecture settings.
 
 ## WebAssembly
 
-Requires [Emscripten](https://emscripten.org/) (the artifacts are built with
-emsdk 6.0.4; use the same or newer).
+Run `scripts/build_web_artifacts.sh` with `EMSDK` set to build and verify the
+engine archive, C API wrapper archive, and standalone module. It checks the
+engine headers against the vendored headers.
 
-The one-command build clones the engine at the pinned tag, verifies it matches
-the vendored headers, builds the engine and C API wrapper static libraries and
-links the standalone module:
+For a manual build, activate Emscripten and provide a matching wasm32 core archive at
+`native/web/libreactphysics3d.a` (not included in source control). Build that archive
+from the upstream source using `emcmake cmake`, with `-pthread` and matching
+single-precision settings, then build this bridge:
 
-```bash
-scripts/build_web_artifacts.sh        # needs EMSDK=<path> or emcmake on PATH
+```sh
+emcmake cmake -S native/web -B /tmp/rp3d-web -DCMAKE_BUILD_TYPE=Release
+cmake --build /tmp/rp3d-web --parallel
 ```
 
-It also verifies the result: the ~143 `rp3d_*` entry points must be present in
-the wrapper archive and in the linked module, and the module must actually
-simulate under node (a body dropped from y=10 must fall).
+Serve `/tmp/rp3d-web/build/out/reactphysics3d_dart.js` and its `.wasm` alongside your app.
+The default module factory is `reactphysics3d_dart`. See README for initialization.
+The build uses fixed 128 MiB shared memory and requires these response headers:
 
-Equivalently, by hand (after putting an Emscripten `libreactphysics3d.a` into
-`native/web/`, which is what the script does):
-
-```bash
-emcmake cmake -B build-wasm -S native/web
-cmake --build build-wasm
+```text
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Embedder-Policy: require-corp
 ```
 
-Outputs:
-
-- `native/web/libreactphysics3d.a` — engine static library (wasm32); this is
-  the file `native/web/reactphysics3d_dart.cmake` imports, i.e. what a
-  downstream wasm link (thermion's `EXTERNAL_PROJECTS` hook) needs.
-- `build-wasm/libreactphysics3d_dart.a` — C API wrapper static library.
-- `build-wasm/build/out/reactphysics3d_dart.js` and `reactphysics3d_dart.wasm`
-  — the standalone modularized module (`EXPORT_NAME=reactphysics3d_dart`) the
-  generated JS interop bindings load. Built with `-sUSE_PTHREADS`, so the page
-  must be cross-origin isolated (COOP/COEP headers).
+The C++ bridge owns persistent geometry copies. The Dart web adapter frees
+per-call temporary heap buffers and restores the Emscripten stack. Native pointer
+results and borrowed views must obey the same lifecycle rules as FFI.
 
 ## Release artifacts
 
@@ -172,17 +96,33 @@ engine headers at that tag differ from `native/include/reactphysics3d/` — the
 Dart bindings are generated from the vendored headers, so they must stay in
 sync.
 
-## Build Options
+## Regenerate bindings
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `RP3D_DOUBLE_PRECISION_ENABLED` | OFF | Use double precision floating point |
-| `RP3D_PROFILING_ENABLED` | OFF | Enable performance profiling |
-| `RP3D_COMPILE_TESTS` | OFF | Build unit tests |
+After changing the C header, regenerate both backends:
 
-Example with double precision:
-
-```bash
-cmake -B build -DRP3D_DOUBLE_PRECISION_ENABLED=ON
-cmake --build build
+```sh
+dart run ffigen --config ffigen/native.yaml
+EMSDK=/path/to/emsdk dart run tool/generate_web_bindings.dart
 ```
+
+Web generation must use wasm32 layouts, not the host ABI. The script supplies the
+Emscripten sysroot and disables automatic macOS includes. Collision masks use `uint16_t` in the C header so ffigen_js emits their bindings.
+
+The polygon factory now takes an explicit face count. The old global event-buffer
+functions have been replaced with per-listener queue functions. Rebuild existing
+native/WASM bridge binaries when upgrading; old bridge binaries are incompatible.
+
+## Checks
+
+```sh
+dart analyze lib test example tool
+dart test
+dart compile js tool/web_smoke.dart -o /tmp/rp3d-web/build/out/smoke.js
+node tool/run_web_smoke.cjs /tmp/rp3d-web/build/out
+```
+
+`tool/web_smoke.dart` exercises the real WASM module and expects an instantiated
+module on `globalThis.rp3d`. It covers simulation, queries, events, polygon data,
+large terrain input, and repeated transform reads. It can run in a cross-origin
+isolated browser or with Node after instantiating the module and setting
+`globalThis.self = globalThis`.

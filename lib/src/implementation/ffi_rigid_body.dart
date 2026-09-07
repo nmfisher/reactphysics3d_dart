@@ -1,5 +1,7 @@
 import '../bindings/src/bindings.dart';
-import 'package:vector_math/vector_math.dart' hide Vector3;
+import 'ffi_physics_world.dart';
+import 'ffi_collision_shape.dart';
+import 'native_lifetime.dart';
 import '../../reactphysics3d_dart.dart';
 import '../ffi_reactphysics3d.dart';
 
@@ -7,9 +9,24 @@ import 'ffi_collider.dart';
 
 /// FFI implementation of RigidBody
 class FFIRigidBody implements RigidBody {
-  final Pointer<RP3D_RigidBody> _ptr;
+  final Pointer<RP3D_RigidBody> _raw;
+  final FFIPhysicsWorld world;
+  late final lifetime = NativeLifetime(world.lifetime);
+  final colliders = <FFICollider>{};
+  FFIRigidBody(this._raw, this.world);
+  Pointer<RP3D_RigidBody> get _ptr {
+    lifetime.check();
+    return _raw;
+  }
 
-  FFIRigidBody(this._ptr);
+  void invalidate() {
+    for (final collider in colliders) {
+      world.colliders.remove(collider.rawHandle.address);
+      collider.invalidate();
+    }
+    colliders.clear();
+    lifetime.invalidate();
+  }
 
   @override
   Pointer<RP3D_RigidBody> get handle => _ptr;
@@ -48,9 +65,14 @@ class FFIRigidBody implements RigidBody {
 
   @override
   Transform get transform {
-    final out = StructAllocator.create<RP3D_Transform>();
-    rp3d_body_get_transform(_ptr, out.address);
-    return out.toDart();
+    final stack = saveNativeStack();
+    try {
+      final out = StructAllocator.create<RP3D_Transform>();
+      rp3d_body_get_transform(_ptr, out.address);
+      return out.toDart();
+    } finally {
+      restoreNativeStack(stack);
+    }
   }
 
   @override
@@ -80,67 +102,143 @@ class FFIRigidBody implements RigidBody {
 
   @override
   Vector3 get linearVelocity {
-    final outPtr = StructAllocator.create<RP3D_Vector3>();
-    rp3d_body_get_linear_velocity(_ptr, outPtr.address);
-    return Vector3(outPtr.x, outPtr.y, outPtr.z);
+    final stack = saveNativeStack();
+    try {
+      final outPtr = StructAllocator.create<RP3D_Vector3>();
+      rp3d_body_get_linear_velocity(_ptr, outPtr.address);
+      return Vector3(outPtr.x, outPtr.y, outPtr.z);
+    } finally {
+      restoreNativeStack(stack);
+    }
   }
 
   @override
   set linearVelocity(Vector3 value) {
-    final velocityPtr = _toFFIVector3(value);
+    final stack = saveNativeStack();
+    try {
+      final velocityPtr = _toFFIVector3(value);
 
-    rp3d_body_set_linear_velocity(_ptr, velocityPtr.address);
+      rp3d_body_set_linear_velocity(_ptr, velocityPtr.address);
+    } finally {
+      restoreNativeStack(stack);
+    }
   }
 
   @override
-  Vector3 get angularVelocity => Vector3.zero(); // Not implemented yet
+  Vector3 get angularVelocity {
+    final stack = saveNativeStack();
+    try {
+      final out = StructAllocator.create<RP3D_Vector3>();
+      rp3d_body_get_angular_velocity(_ptr, out.address);
+      return Vector3(out.x, out.y, out.z);
+    } finally {
+      restoreNativeStack(stack);
+    }
+  }
 
   @override
   set angularVelocity(Vector3 value) {
-    // Not implemented yet
+    final stack = saveNativeStack();
+    try {
+      final v = _toFFIVector3(value);
+      rp3d_body_set_angular_velocity(_ptr, v.address);
+    } finally {
+      restoreNativeStack(stack);
+    }
   }
 
   @override
   void applyForce(Vector3 force, [Vector3? point]) {
-    final forcePtr = _toFFIVector3(force);
-    rp3d_body_apply_force(_ptr, forcePtr.address);
+    final stack = saveNativeStack();
+    try {
+      final forcePtr = _toFFIVector3(force);
+      if (point == null) {
+        rp3d_body_apply_force(_ptr, forcePtr.address);
+      } else {
+        final position = _toFFIVector3(point);
+        rp3d_body_apply_force_at_position(
+          _ptr,
+          forcePtr.address,
+          position.address,
+        );
+      }
+    } finally {
+      restoreNativeStack(stack);
+    }
   }
 
   @override
   void applyTorque(Vector3 torque) {
-    // Not implemented yet
+    final stack = saveNativeStack();
+    try {
+      final v = _toFFIVector3(torque);
+      rp3d_body_apply_torque(_ptr, v.address);
+    } finally {
+      restoreNativeStack(stack);
+    }
   }
 
   @override
   void applyImpulse(Vector3 impulse, [Vector3? point]) {
-    // Not implemented yet
+    lifetime.check();
+    throw UnsupportedError(
+      'ReactPhysics3D does not expose impulses; use velocity or forces',
+    );
   }
 
   @override
+  void updateMassPropertiesFromColliders() =>
+      rp3d_body_update_mass_properties_from_colliders(_ptr);
+
+  @override
   Collider addCollider(CollisionShape shape, {Transform? transform}) {
-    // Default transform if not provided
-    final colliderTransform = transform ?? TransformIdentity.identity();
+    final stack = saveNativeStack();
+    try {
+      lifetime.check();
+      if (shape is! FFICollisionShape)
+        throw ArgumentError('Unsupported collision shape');
+      shape.requireSameCommon(world.common);
+      // Default transform if not provided
+      final colliderTransform = transform ?? TransformIdentity.identity();
 
-    // Add collider to the rigid body
-    final transformStruct = colliderTransform.toStruct();
-    final colliderPtr = rp3d_body_add_collider(
-      _ptr,
-      shape.handle,
-      transformStruct.address,
-    );
+      // Add collider to the rigid body
+      final transformStruct = colliderTransform.toStruct();
+      final colliderPtr = rp3d_body_add_collider(
+        _ptr,
+        shape.handle,
+        transformStruct.address,
+      );
 
-    final collider = FFICollider(colliderPtr);
+      if (colliderPtr == nullptr) throw StateError('Failed to create collider');
+      final collider = FFICollider(colliderPtr, this, shape);
+      colliders.add(collider);
+      shape.users.add(collider);
+      world.colliders[colliderPtr.address] = collider;
 
-    return collider;
+      return collider;
+    } finally {
+      restoreNativeStack(stack);
+    }
   }
 
   @override
   void removeCollider(Collider collider) {
-    if (collider is! FFICollider) {
-      throw ArgumentError('Collider must be an FFICollider instance');
-    }
+    final stack = saveNativeStack();
+    try {
+      lifetime.check();
+      if (collider is! FFICollider || !identical(collider.body, this)) {
+        throw ArgumentError('Collider must be an FFICollider instance');
+      }
 
-    rp3d_body_remove_collider(_ptr, collider.handle);
+      if (collider.lifetime.isDisposed) return;
+      world.discardPendingEvents();
+      rp3d_body_remove_collider(_ptr, collider.handle);
+      world.colliders.remove(collider.rawHandle.address);
+      colliders.remove(collider);
+      collider.invalidate();
+    } finally {
+      restoreNativeStack(stack);
+    }
   }
 
   @override

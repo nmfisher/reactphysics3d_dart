@@ -3,10 +3,12 @@ import '../bindings/src/bindings.dart' as ffi;
 import 'package:vector_math/vector_math_64.dart';
 import 'base_rp3d_type.dart';
 
-/// Interface for collision shapes
+/// A factory-owned shape, shareable by colliders from the same factory.
+/// Remove all attached colliders before disposing the shape. The factory also
+/// disposes it during shutdown. Access after disposal throws StateError.
 abstract class CollisionShape
     extends BaseRP3DType<Pointer<RP3D_CollisionShape>> {
-  /// Dispose of the collision shape
+  /// Release this shape. Idempotent; throws StateError while colliders use it.
   void dispose();
 }
 
@@ -22,13 +24,13 @@ abstract class CapsuleShape extends CollisionShape {}
 /// Interface for height field data
 abstract class HeightField
     extends BaseRP3DType<ffi.Pointer<ffi.RP3D_HeightField>> {
-  /// Dispose of the height field
+  /// Release this data after disposing its shapes. Idempotent.
   void dispose();
 }
 
 /// Interface for height field collision shapes
 abstract class HeightFieldShape extends CollisionShape {
-  /// Get the vertex at a specific grid position
+  /// Get a local vertex: row is along Z, column along X; both are zero-based.
   Vector3 getVertexAt(int row, int column);
 
   /// Set the scale of the collision shape
@@ -105,7 +107,7 @@ abstract class PolygonVertexArray
 /// Interface for triangle mesh data
 abstract class TriangleMesh
     extends BaseRP3DType<ffi.Pointer<ffi.RP3D_TriangleMesh>> {
-  /// Dispose of the triangle mesh
+  /// Release this mesh after disposing its shapes. Idempotent.
   void dispose();
 
   /// Get the number of vertices in the mesh
@@ -124,7 +126,7 @@ abstract class TriangleMesh
 /// Interface for convex mesh data
 abstract class ConvexMesh
     extends BaseRP3DType<ffi.Pointer<ffi.RP3D_ConvexMesh>> {
-  /// Dispose of the convex mesh
+  /// Release this mesh after disposing its shapes. Idempotent.
   void dispose();
 }
 

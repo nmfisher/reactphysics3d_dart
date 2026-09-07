@@ -1,103 +1,157 @@
-/// Web (JS interop) bindings for ReactPhysics3D.
-///
-/// Counterpart of [ffi.dart] for the wasm build: re-exports the generated
-/// bindings and provides the same helper surface (typed data allocation,
-/// pointer element access) so the hand-written implementation files compile
-/// unchanged against either platform.
-library;
-
-import 'dart:js_interop';
 import 'dart:typed_data';
-
-import 'rp3d_js_interop.g.dart';
-
+import 'dart:js_interop';
+import 'rp3d_js_interop.g.dart'
+    hide
+        makeUint8List,
+        makeInt32List,
+        makeUint32List,
+        makeFloat32List,
+        Uint8ListExtension,
+        Int32ListExtension,
+        UInt32ListExtension,
+        Float32ListExtension;
 export 'dart:typed_data';
-export 'rp3d_js_interop.g.dart';
+export 'rp3d_js_interop.g.dart'
+    hide
+        makeUint8List,
+        makeInt32List,
+        makeUint32List,
+        makeFloat32List,
+        Uint8ListExtension,
+        Int32ListExtension,
+        UInt32ListExtension,
+        Float32ListExtension;
 
-/// The Emscripten heap that backs the wasm module.
-JSArrayBuffer get _heapBuffer =>
-    NativeLibrary.instance.HEAPU8.buffer as JSArrayBuffer;
-
-/// Wraps Emscripten heap memory at [address] in a typed list view.
-///
-/// Views created here read and write the wasm heap directly, so buffers
-/// passed to the native module as out-parameters are readable afterwards,
-/// matching `make*List` on the FFI side.
-Uint8List _view8(int address, int length) =>
-    JSUint8Array(_heapBuffer, address, length).toDart;
-
-Int16List _view16(int address, int length) =>
-    JSInt16Array(_heapBuffer, address, length).toDart;
-
-Int32List _view32(int address, int length) =>
-    JSInt32Array(_heapBuffer, address, length).toDart;
-
-Uint32List _viewU32(int address, int length) =>
-    JSUint32Array(_heapBuffer, address, length).toDart;
-
-Float32List _viewF32(int address, int length) =>
-    JSFloat32Array(_heapBuffer, address, length).toDart;
-
-Uint8List makeUint8List(int length) =>
-    _view8(malloc<Uint8>(length).address, length);
-
-Int16List makeInt16List(int length) =>
-    _view16(malloc<Uint16>(length * 2).address, length);
-
-Int32List makeInt32List(int length) =>
-    _view32(malloc<Int32>(length * 4).address, length);
-
-Uint32List makeUint32List(int length) =>
-    _viewU32(malloc<Uint32>(length * 4).address, length);
-
-Float32List makeFloat32List(int length) =>
-    _viewF32(malloc<Float32>(length * 4).address, length);
-
-/// Reads a 32-bit unsigned value at [index], mirroring `Pointer<Uint32>[i]`
-/// from `dart:ffi`.
-extension Uint32PointerElement on Pointer<Uint32> {
-  int operator [](int index) =>
-      NativeLibrary.instance
-          .getValue(Pointer<Uint32>(address + index * 4), 'i32')
-          .toDartInt &
-      0xFFFFFFFF;
+// Temporary typed buffers use a scoped heap arena, so large terrain/mesh input
+// cannot exhaust the Emscripten stack. Generated small structs use the stack.
+final _buffers = <int>[];
+typedef _Scope = ({int stack, int buffers});
+_Scope saveNativeStack() => (
+  stack: NativeLibrary.instance.stackSave().address,
+  buffers: _buffers.length,
+);
+void restoreNativeStack(_Scope scope) {
+  final memory = _Memory(NativeLibrary.instance);
+  while (_buffers.length > scope.buffers) {
+    memory._free(_buffers.removeLast());
+  }
+  NativeLibrary.instance.stackRestore(Pointer<Void>(scope.stack));
 }
 
-/// Byte sizes of the structs that shared code indexes into, matching the
-/// `stackAlloc` sizes emitted in rp3d_js_interop.g.dart (which in turn follow
-/// the layouts in rp3d_c_api.h). Update both together if the C structs change.
-const _structSizes = <Type, int>{
-  RP3D_ContactPairData: 28,
-  RP3D_ContactPointData: 40,
-  RP3D_OverlapPairData: 20,
-};
-
-Pointer<T> _structAt<T extends Struct>(Pointer<T> pointer, int index) =>
-    Pointer<T>(pointer.address + index * (_structSizes[T] ?? 0));
-
-/// Mirrors `Pointer<T>[i]` from `dart:ffi` for the struct arrays returned by
-/// the synchronous collision and overlap tests.
-extension ContactPairDataPointerElement on Pointer<RP3D_ContactPairData> {
-  RP3D_ContactPairData operator [](int index) =>
-      RP3D_ContactPairData(_structAt(this, index));
+extension type _Memory(NativeLibrary _) implements JSObject {
+  external int _malloc(int size);
+  external void _free(int address);
+}
+Uint8List _allocate(int bytes) {
+  final address = _Memory(
+    NativeLibrary.instance,
+  )._malloc(bytes == 0 ? 1 : bytes);
+  if (address == 0) throw StateError('WebAssembly allocation failed');
+  _buffers.add(address);
+  return NativeLibrary.instance.HEAPU8.toDart.buffer.asUint8List(
+    address,
+    bytes,
+  );
 }
 
-extension ContactPointDataPointerElement on Pointer<RP3D_ContactPointData> {
-  RP3D_ContactPointData operator [](int index) =>
-      RP3D_ContactPointData(_structAt(this, index));
+Uint8List makeUint8List(int length) => _allocate(length);
+Int32List makeInt32List(int length) {
+  final bytes = _allocate(length * 4);
+  return bytes.buffer.asInt32List(bytes.offsetInBytes, length);
 }
 
-extension OverlapPairDataPointerElement on Pointer<RP3D_OverlapPairData> {
-  RP3D_OverlapPairData operator [](int index) =>
-      RP3D_OverlapPairData(_structAt(this, index));
+Uint32List makeUint32List(int length) {
+  final bytes = _allocate(length * 4);
+  return bytes.buffer.asUint32List(bytes.offsetInBytes, length);
 }
 
-/// Mirrors `Pointer<T>.ref` from `dart:ffi` for the structs the synchronous
-/// collision and overlap tests return.
-extension CollisionCallbackDataRef on Pointer<RP3D_CollisionCallbackData> {
+Float32List makeFloat32List(int length) {
+  final bytes = _allocate(length * 4);
+  return bytes.buffer.asFloat32List(bytes.offsetInBytes, length);
+}
+
+int _address(TypedData data) {
+  final JSObject array = switch (data) {
+    Uint8List value => value.toJS,
+    Int32List value => value.toJS,
+    Uint32List value => value.toJS,
+    Float32List value => value.toJS,
+    _ => throw UnsupportedError('Unsupported typed buffer'),
+  };
+  // Keep SharedArrayBuffer as a JSObject; it is not a JSArrayBuffer.
+  final view = _TypedArray(array);
+  if (_sameObject(
+    view.buffer,
+    _TypedArray(NativeLibrary.instance.HEAPU8).buffer,
+  )) {
+    return view.byteOffset;
+  }
+  final copy = _allocate(data.lengthInBytes);
+  copy.setAll(
+    0,
+    data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
+  );
+  return copy.offsetInBytes;
+}
+
+extension Uint8Address on Uint8List {
+  Pointer<Uint8> get address => Pointer<Uint8>(_address(this));
+}
+
+extension Int32Address on Int32List {
+  Pointer<Int32> get address => Pointer<Int32>(_address(this));
+}
+
+extension Uint32Address on Uint32List {
+  Pointer<Uint32> get address => Pointer<Uint32>(_address(this));
+}
+
+extension Float32Address on Float32List {
+  Pointer<Float> get address => Pointer<Float>(_address(this));
+}
+
+void initializeWebBindings(String moduleName) =>
+    GeneratedBindings.initBindings(moduleName);
+
+extension DartBigIntExtension on int {
+  BigInt get toBigInt => BigInt.from(this);
+}
+
+// Layouts are wasm32 C structs, matching the generated field offsets.
+extension CollisionDataRef on Pointer<RP3D_CollisionCallbackData> {
   RP3D_CollisionCallbackData get ref => RP3D_CollisionCallbackData(this);
 }
 
-extension OverlapCallbackDataRef on Pointer<RP3D_OverlapCallbackData> {
+extension OverlapDataRef on Pointer<RP3D_OverlapCallbackData> {
   RP3D_OverlapCallbackData get ref => RP3D_OverlapCallbackData(this);
 }
+
+extension ContactPairIndex on Pointer<RP3D_ContactPairData> {
+  RP3D_ContactPairData operator [](int i) =>
+      RP3D_ContactPairData(Pointer<RP3D_ContactPairData>(address + i * 28));
+}
+
+extension ContactPointIndex on Pointer<RP3D_ContactPointData> {
+  RP3D_ContactPointData operator [](int i) =>
+      RP3D_ContactPointData(Pointer<RP3D_ContactPointData>(address + i * 40));
+}
+
+extension OverlapPairIndex on Pointer<RP3D_OverlapPairData> {
+  RP3D_OverlapPairData operator [](int i) =>
+      RP3D_OverlapPairData(Pointer<RP3D_OverlapPairData>(address + i * 20));
+}
+
+extension Uint32PointerIndex on Pointer<Uint32> {
+  int operator [](int i) =>
+      NativeLibrary.instance
+          .getValue(Pointer<Uint32>(address + i * 4), 'i32')
+          .toDartInt &
+      0xffffffff;
+}
+
+extension type _TypedArray(JSObject _) implements JSObject {
+  external JSObject get buffer;
+  external int get byteOffset;
+}
+@JS('Object.is')
+external bool _sameObject(JSAny? a, JSAny? b);

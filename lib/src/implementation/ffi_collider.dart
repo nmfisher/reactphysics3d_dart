@@ -1,20 +1,35 @@
+import 'ffi_rigid_body.dart';
+import 'ffi_collision_shape.dart';
+import 'native_lifetime.dart';
+import '../ffi_reactphysics3d.dart';
 import '../bindings/src/bindings.dart' as ffi;
 import 'ffi_material.dart';
 import '../../reactphysics3d_dart.dart';
 
 /// FFI implementation of Collider
 class FFICollider implements Collider {
-  final ffi.Pointer<ffi.RP3D_Collider> _ptr;
+  final ffi.Pointer<ffi.RP3D_Collider> rawHandle;
+  final FFIRigidBody body;
+  final FFICollisionShape collisionShape;
+  late final lifetime = NativeLifetime(body.lifetime);
+  FFICollider(this.rawHandle, this.body, this.collisionShape);
+  ffi.Pointer<ffi.RP3D_Collider> get _ptr {
+    lifetime.check();
+    return rawHandle;
+  }
 
-  FFICollider(this._ptr);
+  void invalidate() {
+    collisionShape.users.remove(this);
+    lifetime.invalidate();
+  }
 
   @override
   ffi.Pointer<ffi.RP3D_Collider> get handle => _ptr;
 
   @override
   Material get material {
-    final materialPtr = ffi.rp3d_collider_get_material(_ptr);
-    return FFIMaterial(materialPtr);
+    lifetime.check();
+    return FFIMaterial(() => ffi.rp3d_collider_get_material(_ptr), lifetime);
   }
 
   @override
@@ -24,32 +39,41 @@ class FFICollider implements Collider {
 
   @override
   CollisionShape get shape {
-    // TODO: Implement shape getter
-    throw UnimplementedError('Collider shape getter not yet implemented');
+    lifetime.check();
+    return collisionShape;
   }
 
   @override
-  Vector3 get localPosition {
-    // TODO: Implement localPosition getter
-    throw UnimplementedError('Collider localPosition getter not yet implemented');
-  }
-
+  Vector3 get localPosition => localOrientation.position;
   @override
   set localPosition(Vector3 value) {
-    // TODO: Implement localPosition setter
-    throw UnimplementedError('Collider localPosition setter not yet implemented');
+    localOrientation = (
+      position: value,
+      orientation: localOrientation.orientation,
+    );
   }
 
   @override
   Transform get localOrientation {
-    // TODO: Implement localOrientation getter
-    throw UnimplementedError('Collider localOrientation getter not yet implemented');
+    final stack = ffi.saveNativeStack();
+    try {
+      final out = ffi.StructAllocator.create<ffi.RP3D_Transform>();
+      ffi.rp3d_collider_get_local_transform(_ptr, out.address);
+      return out.toDart();
+    } finally {
+      ffi.restoreNativeStack(stack);
+    }
   }
 
   @override
   set localOrientation(Transform value) {
-    // TODO: Implement localOrientation setter
-    throw UnimplementedError('Collider localOrientation setter not yet implemented');
+    final stack = ffi.saveNativeStack();
+    try {
+      final input = value.toStruct();
+      ffi.rp3d_collider_set_local_transform(_ptr, input.address);
+    } finally {
+      ffi.restoreNativeStack(stack);
+    }
   }
 
   @override
@@ -64,7 +88,10 @@ class FFICollider implements Collider {
 
   @override
   void setIsWorldQueryCollider(bool isWorldQueryCollider) {
-    ffi.rp3d_collider_set_is_world_query_collider(_ptr, isWorldQueryCollider ? 1 : 0);
+    ffi.rp3d_collider_set_is_world_query_collider(
+      _ptr,
+      isWorldQueryCollider ? 1 : 0,
+    );
   }
 
   @override

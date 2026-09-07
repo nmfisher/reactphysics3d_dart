@@ -95,8 +95,11 @@ class FFIReactPhysics3D implements ReactPhysics3D {
   }
 
   @override
-  HeightFieldShape createHeightFieldShape(HeightField heightField, { Vector3? scaling}) {
-    return _physicsCommon.createHeightFieldShape(heightField, scaling:scaling);
+  HeightFieldShape createHeightFieldShape(
+    HeightField heightField, {
+    Vector3? scaling,
+  }) {
+    return _physicsCommon.createHeightFieldShape(heightField, scaling: scaling);
   }
 
   @override
@@ -158,7 +161,10 @@ class FFIReactPhysics3D implements ReactPhysics3D {
   }
 
   @override
-  ConvexMeshShape createConvexMeshShape(ConvexMesh convexMesh, {Vector3? scaling}) {
+  ConvexMeshShape createConvexMeshShape(
+    ConvexMesh convexMesh, {
+    Vector3? scaling,
+  }) {
     return _physicsCommon.createConvexMeshShape(convexMesh, scaling: scaling);
   }
 

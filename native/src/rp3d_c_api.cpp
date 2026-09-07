@@ -1,3 +1,5 @@
+#include <stdexcept>
+#include <cstring>
 /*
  * ReactPhysics3D C API Implementation
  *
@@ -1413,9 +1415,73 @@ void rp3d_height_field_shape_get_vertex_at(
     RP3D_Vector3* outVertex
 ) {
     const HeightFieldShape* hfs = reinterpret_cast<const HeightFieldShape*>(heightFieldShape);
-    Vector3 vertex = hfs->getVertexAt(row, column);
+    Vector3 vertex = hfs->getVertexAt(column, row);
     from_rp3d_vector3(vertex, outVertex);
 }
+
+// The descriptor classes retain pointers. Keep native copies in a storage base,
+// constructed before the descriptor base and destroyed after it.
+struct OwnedVertices {
+    std::vector<float> vertices;
+    OwnedVertices(uint32_t count, const float* input, uint32_t stride) : vertices(size_t(count) * 3) {
+        if (!input || stride < 3 * sizeof(float)) throw std::invalid_argument("Invalid vertices");
+        for (uint32_t i = 0; i < count; ++i) {
+            std::memcpy(vertices.data() + size_t(i) * 3,
+                        reinterpret_cast<const uint8_t*>(input) + size_t(i) * stride, 3 * sizeof(float));
+        }
+    }
+};
+struct TriangleStorage : OwnedVertices {
+    std::vector<uint32_t> indices;
+    TriangleStorage(uint32_t nv, const float* v, uint32_t vs, uint32_t ni, const uint32_t* ix, uint32_t is)
+        : OwnedVertices(nv, v, vs), indices(ni) {
+        if (!ix || ni == 0 || ni % 3 || is < 3 * sizeof(uint32_t)) throw std::invalid_argument("Invalid triangles");
+        for (uint32_t i = 0; i < ni / 3; ++i) {
+            std::memcpy(indices.data() + size_t(i) * 3,
+                        reinterpret_cast<const uint8_t*>(ix) + size_t(i) * is, 3 * sizeof(uint32_t));
+        }
+        for (auto i : indices) if (i >= nv) throw std::invalid_argument("Invalid vertex index");
+    }
+};
+struct OwnedTriangleArray : TriangleStorage, TriangleVertexArray {
+    OwnedTriangleArray(uint32_t nv, const float* v, uint32_t vs, uint32_t ni, const uint32_t* ix, uint32_t is)
+        : TriangleStorage(nv, v, vs, ni, ix, is),
+          TriangleVertexArray(nv, vertices.data(), 12, ni / 3, indices.data(), 12,
+                              VertexDataType::VERTEX_FLOAT_TYPE, IndexDataType::INDEX_INTEGER_TYPE) {}
+};
+struct OwnedVertexArray : OwnedVertices, VertexArray {
+    OwnedVertexArray(uint32_t nv, const float* v, uint32_t vs)
+        : OwnedVertices(nv, v, vs), VertexArray(vertices.data(), 12, nv, DataType::VERTEX_FLOAT_TYPE) {}
+};
+struct PolygonStorage : OwnedVertices {
+    std::vector<uint32_t> indices;
+    std::vector<PolygonVertexArray::PolygonFace> faces;
+    PolygonStorage(uint32_t nv, const float* v, uint32_t vs, uint32_t ni, const uint32_t* ix, uint32_t is,
+                   const uint32_t* desc, uint32_t ds, uint32_t nf)
+        : OwnedVertices(nv, v, vs), indices(ni), faces(nf) {
+        if (!ix || !desc || !nf || is < sizeof(uint32_t) || ds < 2 * sizeof(uint32_t))
+            throw std::invalid_argument("Invalid polygons");
+        for (uint32_t i = 0; i < ni; ++i) {
+            std::memcpy(&indices[i], reinterpret_cast<const uint8_t*>(ix) + size_t(i) * is, sizeof(uint32_t));
+            if (indices[i] >= nv) throw std::invalid_argument("Invalid vertex index");
+        }
+        for (uint32_t i = 0; i < nf; ++i) {
+            uint32_t pair[2];
+            std::memcpy(pair, reinterpret_cast<const uint8_t*>(desc) + size_t(i) * ds, sizeof(pair));
+            if (pair[0] < 3 || pair[1] > ni || pair[0] > ni - pair[1])
+                throw std::invalid_argument("Invalid polygon face");
+            faces[i].nbVertices = pair[0];
+            faces[i].indexBase = pair[1];
+        }
+    }
+};
+struct OwnedPolygonArray : PolygonStorage, PolygonVertexArray {
+    OwnedPolygonArray(uint32_t nv, const float* v, uint32_t vs, uint32_t ni, const uint32_t* ix, uint32_t is,
+                      const uint32_t* desc, uint32_t ds, uint32_t nf)
+        : PolygonStorage(nv, v, vs, ni, ix, is, desc, ds, nf),
+          PolygonVertexArray(nv, vertices.data(), 12, indices.data(), 4, nf, faces.data(),
+                             VertexDataType::VERTEX_FLOAT_TYPE, IndexDataType::INDEX_INTEGER_TYPE) {}
+};
 
 // ==================== TriangleVertexArray ====================
 
@@ -1428,27 +1494,18 @@ RP3D_TriangleVertexArray* rp3d_triangle_vertex_array_create(
     const uint32_t* indicesStart,
     uint32_t indicesStride
 ) {
-    TriangleVertexArray::VertexDataType vertexDataType = TriangleVertexArray::VertexDataType::VERTEX_FLOAT_TYPE;
-    TriangleVertexArray::IndexDataType indexDataType = TriangleVertexArray::IndexDataType::INDEX_INTEGER_TYPE;
+    try {
+        TriangleVertexArray* array = new OwnedTriangleArray(nbVertices, verticesStart, verticesStride,
+                                                           nbIndices, indicesStart, indicesStride);
+        return reinterpret_cast<RP3D_TriangleVertexArray*>(array);
+    } catch (const std::exception&) { return nullptr; }
 
-    TriangleVertexArray* triangleArray = new TriangleVertexArray(
-        nbVertices,
-        verticesStart,
-        verticesStride,
-        nbIndices / 3,  // Number of triangles
-        indicesStart,
-        indicesStride,  // Index stride should be 12 bytes (3 indices per triangle)
-        vertexDataType,
-        indexDataType
-    );
-
-    return reinterpret_cast<RP3D_TriangleVertexArray*>(triangleArray);
 }
 
 EMSCRIPTEN_KEEPALIVE
 void rp3d_triangle_vertex_array_destroy(RP3D_TriangleVertexArray* triangleVertexArray) {
     TriangleVertexArray* tva = reinterpret_cast<TriangleVertexArray*>(triangleVertexArray);
-    delete tva;
+    delete static_cast<OwnedTriangleArray*>(tva);
 }
 
 EMSCRIPTEN_KEEPALIVE
@@ -1506,22 +1563,18 @@ RP3D_VertexArray* rp3d_vertex_array_create(
         return nullptr;
     }
 
-    // Create the VertexArray
-    VertexArray* va = new VertexArray(
-        verticesStart,
-        verticesStride,
-        nbVertices,
-        VertexArray::DataType::VERTEX_FLOAT_TYPE
-    );
+    try {
+        VertexArray* array = new OwnedVertexArray(nbVertices, verticesStart, verticesStride);
+        return reinterpret_cast<RP3D_VertexArray*>(array);
+    } catch (const std::exception&) { return nullptr; }
 
-    return reinterpret_cast<RP3D_VertexArray*>(va);
 }
 
 EMSCRIPTEN_KEEPALIVE
 void rp3d_vertex_array_destroy(RP3D_VertexArray* vertexArray) {
     if (!vertexArray) return;
     VertexArray* va = reinterpret_cast<VertexArray*>(vertexArray);
-    delete va;
+    delete static_cast<OwnedVertexArray*>(va);
 }
 
 EMSCRIPTEN_KEEPALIVE
@@ -1547,14 +1600,6 @@ uint32_t rp3d_vertex_array_get_stride(const RP3D_VertexArray* vertexArray) {
 
 // ==================== PolygonVertexArray ====================
 
-// Storage for polygon faces data - we need to keep this alive
-// as PolygonVertexArray only stores pointers
-struct PolygonArrayData {
-    std::vector<PolygonVertexArray::PolygonFace> faces;
-    PolygonVertexArray* array;
-};
-
-
 EMSCRIPTEN_KEEPALIVE
 RP3D_PolygonVertexArray* rp3d_polygon_vertex_array_create(
     uint32_t nbVertices,
@@ -1564,54 +1609,15 @@ RP3D_PolygonVertexArray* rp3d_polygon_vertex_array_create(
     const uint32_t* indicesStart,
     uint32_t indicesStride,
     const uint32_t* polygonIndicesStart,
-    uint32_t polygonIndicesStride
+    uint32_t polygonIndicesStride,
+    uint32_t nbFaces
 ) {
-    if (!verticesStart || !indicesStart || !polygonIndicesStart) {
-        std::cout << "PolygonVertexArray creation failed: null input data" << std::endl;
-        return nullptr;
-    }
+    try {
+        PolygonVertexArray* array = new OwnedPolygonArray(nbVertices, verticesStart, verticesStride,
+            nbIndices, indicesStart, indicesStride, polygonIndicesStart, polygonIndicesStride, nbFaces);
+        return reinterpret_cast<RP3D_PolygonVertexArray*>(array);
+    } catch (const std::exception&) { return nullptr; }
 
-    // Parse polygonIndices to build PolygonFace array
-    // Format: [nbVertices1, indexBase1, nbVertices2, indexBase2, ...]
-    // Each face requires 4 values, so nbFaces = number of indices / 2
-    uint32_t nbFaces = nbIndices / 4;
-
-    if (nbFaces == 0) {
-        std::cout << "PolygonVertexArray creation failed: no faces specified" << std::endl;
-        return nullptr;
-    }
-
-    // Allocate persistent storage for polygon data
-    PolygonArrayData* data = new PolygonArrayData();
-    data->faces.reserve(nbFaces);
-
-    // Build the PolygonFace array from the flat polygonIndices
-    for (uint32_t i = 0; i < nbFaces; i++) {
-        PolygonVertexArray::PolygonFace face;
-        face.nbVertices = polygonIndicesStart[i * 2];
-        
-        face.indexBase = polygonIndicesStart[i * 2 + 1];
-        data->faces.push_back(face);
-    }
-
-    // Create the PolygonVertexArray
-    PolygonVertexArray* pva = new PolygonVertexArray(
-        nbVertices,
-        verticesStart,
-        verticesStride,
-        indicesStart,
-        indicesStride,
-        nbFaces,
-        data->faces.data(),
-        PolygonVertexArray::VertexDataType::VERTEX_FLOAT_TYPE,
-        PolygonVertexArray::IndexDataType::INDEX_INTEGER_TYPE
-    );
-
-    data->array = pva;
-
-    RP3D_PolygonVertexArray* handle = reinterpret_cast<RP3D_PolygonVertexArray*>(pva);
-    
-    return handle;
 }
 
 EMSCRIPTEN_KEEPALIVE
@@ -1619,7 +1625,7 @@ void rp3d_polygon_vertex_array_destroy(RP3D_PolygonVertexArray* polygonVertexArr
     if (!polygonVertexArray) return;
 
     PolygonVertexArray* pva = reinterpret_cast<PolygonVertexArray*>(polygonVertexArray);
-    delete pva;
+    delete static_cast<OwnedPolygonArray*>(pva);
 }
 
 EMSCRIPTEN_KEEPALIVE
@@ -1934,4 +1940,13 @@ void rp3d_physics_common_destroy_concave_mesh_shape(RP3D_PhysicsCommon* common, 
     PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
     ConcaveMeshShape* cms = reinterpret_cast<ConcaveMeshShape*>(concaveMeshShape);
     pc->destroyConcaveMeshShape(cms);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void rp3d_collider_get_local_transform(const RP3D_Collider* collider, RP3D_Transform* out) {
+    from_rp3d_transform(reinterpret_cast<const Collider*>(collider)->getLocalToBodyTransform(), out);
+}
+EMSCRIPTEN_KEEPALIVE
+void rp3d_collider_set_local_transform(RP3D_Collider* collider, const RP3D_Transform* value) {
+    reinterpret_cast<Collider*>(collider)->setLocalToBodyTransform(to_rp3d_transform(value));
 }

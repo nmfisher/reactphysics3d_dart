@@ -1,419 +1,392 @@
-import 'dart:typed_data';
 import '../bindings/src/bindings.dart';
 import 'package:vector_math/vector_math_64.dart';
 import '../interfaces/collision_shape.dart';
 import 'ffi_physics_common.dart';
+import 'ffi_common_resource.dart';
 
-/// Base implementation for collision shapes
-abstract class FFICollisionShape implements CollisionShape {
-  final Pointer<RP3D_CollisionShape> _handle;
-  final FFIPhysicsCommon _common;
-
-  FFICollisionShape._(this._handle, this._common);
-
-  @override
-  Pointer<RP3D_CollisionShape> get handle => _handle;
-
+abstract class FFICollisionShape extends FFICommonResource<RP3D_CollisionShape>
+    implements CollisionShape {
+  final FFICommonResource<NativeType>? data;
+  FFICollisionShape(
+    Pointer<RP3D_CollisionShape> handle,
+    FFIPhysicsCommon common, [
+    this.data,
+  ]) : super(handle, common) {
+    data?.users.add(this);
+  }
   @override
   void dispose() {
-    _destroyShape();
+    super.dispose();
+    if (lifetime.isDisposed) data?.users.remove(this);
   }
-
-  void _destroyShape();
 }
 
-/// Box collision shape implementation
 class FFIBoxShape extends FFICollisionShape implements BoxShape {
   FFIBoxShape.internal(Pointer<RP3D_BoxShape> handle, FFIPhysicsCommon common)
-    : super._(handle.cast<RP3D_CollisionShape>(), common);
-
+    : super(handle.cast<RP3D_CollisionShape>(), common);
   @override
-  void _destroyShape() {
-    final boxHandle = _handle.cast<RP3D_BoxShape>();
-    rp3d_physics_common_destroy_box_shape(_common.handleForShapes!, boxHandle);
+  void destroyNative() {
+    rp3d_physics_common_destroy_box_shape(
+      common.handle,
+      handle.cast<RP3D_BoxShape>(),
+    );
   }
 }
 
-/// Sphere collision shape implementation
 class FFISphereShape extends FFICollisionShape implements SphereShape {
   FFISphereShape.internal(
     Pointer<RP3D_SphereShape> handle,
     FFIPhysicsCommon common,
-  ) : super._(handle.cast<RP3D_CollisionShape>(), common);
-
+  ) : super(handle.cast<RP3D_CollisionShape>(), common);
   @override
-  void _destroyShape() {
-    final sphereHandle = _handle.cast<RP3D_SphereShape>();
+  void destroyNative() {
     rp3d_physics_common_destroy_sphere_shape(
-      _common.handleForShapes!,
-      sphereHandle,
+      common.handle,
+      handle.cast<RP3D_SphereShape>(),
     );
   }
 }
 
-/// Capsule collision shape implementation
 class FFICapsuleShape extends FFICollisionShape implements CapsuleShape {
   FFICapsuleShape.internal(
     Pointer<RP3D_CapsuleShape> handle,
     FFIPhysicsCommon common,
-  ) : super._(handle.cast<RP3D_CollisionShape>(), common);
-
+  ) : super(handle.cast<RP3D_CollisionShape>(), common);
   @override
-  void _destroyShape() {
-    final capsuleHandle = _handle.cast<RP3D_CapsuleShape>();
+  void destroyNative() {
     rp3d_physics_common_destroy_capsule_shape(
-      _common.handleForShapes!,
-      capsuleHandle,
+      common.handle,
+      handle.cast<RP3D_CapsuleShape>(),
     );
   }
 }
 
-/// Height field implementation
-class FFIHeightField implements HeightField {
-  final Pointer<RP3D_HeightField> _handle;
-  final FFIPhysicsCommon _common;
-
-  FFIHeightField.internal(this._handle, this._common);
-
+class FFIHeightField extends FFICommonResource<RP3D_HeightField>
+    implements HeightField {
+  FFIHeightField.internal(
+    Pointer<RP3D_HeightField> handle,
+    FFIPhysicsCommon common,
+  ) : super(handle, common);
   @override
-  Pointer<RP3D_HeightField> get handle => _handle;
-
-  @override
-  void dispose() {
-    rp3d_physics_common_destroy_height_field(_common.handleForShapes!, _handle);
+  void destroyNative() {
+    rp3d_physics_common_destroy_height_field(
+      common.handle,
+      handle.cast<RP3D_HeightField>(),
+    );
   }
+
+  // Set by the factory after successful native creation.
+  int rows = 0;
+  int columns = 0;
 }
 
-/// Height field shape implementation
 class FFIHeightFieldShape extends FFICollisionShape
     implements HeightFieldShape {
   FFIHeightFieldShape.internal(
     Pointer<RP3D_HeightFieldShape> handle,
     FFIPhysicsCommon common,
-  ) : super._(handle.cast<RP3D_CollisionShape>(), common);
-
+    FFIHeightField data,
+  ) : super(handle.cast<RP3D_CollisionShape>(), common, data);
   @override
-  void _destroyShape() {
-    final heightFieldShapeHandle = _handle.cast<RP3D_HeightFieldShape>();
+  void destroyNative() {
     rp3d_physics_common_destroy_height_field_shape(
-      _common.handleForShapes!,
-      heightFieldShapeHandle,
+      common.handle,
+      handle.cast<RP3D_HeightFieldShape>(),
     );
   }
 
   @override
   void setScale(Vector3 scale) {
-    final scalePtr = StructAllocator.create<RP3D_Vector3>();
-
-    scalePtr.x = scale.x;
-    scalePtr.y = scale.y;
-    scalePtr.z = scale.z;
-    rp3d_concave_shape_set_scale(_handle.cast(), scalePtr.address);
+    final stack = saveNativeStack();
+    try {
+      if (!scale.x.isFinite ||
+          !scale.y.isFinite ||
+          !scale.z.isFinite ||
+          scale.x <= 0 ||
+          scale.y <= 0 ||
+          scale.z <= 0) {
+        throw ArgumentError('Scale components must be finite and positive');
+      }
+      final value = StructAllocator.create<RP3D_Vector3>();
+      value.x = scale.x;
+      value.y = scale.y;
+      value.z = scale.z;
+      rp3d_concave_shape_set_scale(handle.cast(), value.address);
+    } finally {
+      restoreNativeStack(stack);
+    }
   }
 
   @override
   Vector3 getVertexAt(int row, int column) {
-    final outVertexPtr = StructAllocator.create<RP3D_Vector3>();
-
-    final heightFieldShapeHandle = _handle.cast<RP3D_HeightFieldShape>();
-    rp3d_height_field_shape_get_vertex_at(
-      heightFieldShapeHandle,
-      row,
-      column,
-      outVertexPtr.address,
-    );
-
-    return Vector3(outVertexPtr.x, outVertexPtr.y, outVertexPtr.z);
-  }
-}
-
-/// Triangle vertex array implementation
-class FFITriangleVertexArray implements TriangleVertexArray {
-  final Pointer<RP3D_TriangleVertexArray> _handle;
-  final Float32List _vertices;
-  final Int32List _indices;
-
-  FFITriangleVertexArray.internal(this._handle, this._vertices, this._indices);
-
-  @override
-  Pointer<RP3D_TriangleVertexArray> get handle => _handle;
-
-  @override
-  void dispose() {
-    // Free the vertex and index data first, then destroy the array
-    _vertices.free();
-    _indices.free();
-    rp3d_triangle_vertex_array_destroy(_handle);
-  }
-
-  @override
-  int getVertexCount() {
-    return rp3d_triangle_vertex_array_get_nb_vertices(_handle);
-  }
-
-  @override
-  int getTriangleCount() {
-    return rp3d_triangle_vertex_array_get_nb_triangles(_handle);
-  }
-
-  @override
-  Vector3 getVertex(int index) {
-    final verticesStart = rp3d_triangle_vertex_array_get_vertices_start(
-      _handle,
-    );
-    if (verticesStart == null) {
-      throw Exception('Cannot get vertex data: vertices start pointer is null');
+    final stack = saveNativeStack();
+    try {
+      final field = data! as FFIHeightField;
+      RangeError.checkValueInInterval(row, 0, field.rows - 1, 'row');
+      RangeError.checkValueInInterval(column, 0, field.columns - 1, 'column');
+      final out = StructAllocator.create<RP3D_Vector3>();
+      rp3d_height_field_shape_get_vertex_at(
+        handle.cast(),
+        row,
+        column,
+        out.address,
+      );
+      return Vector3(out.x, out.y, out.z);
+    } finally {
+      restoreNativeStack(stack);
     }
-
-    // Each vertex has 3 float components (x, y, z)
-    final vertexPtr = verticesStart + (index * 3);
-    return Vector3(
-      vertexPtr.value,
-      (vertexPtr + 1).value,
-      (vertexPtr + 2).value,
-    );
-  }
-
-  @override
-  List<int> getTriangleIndices(int triangleIndex) {
-    final out = makeInt32List(3);
-
-    rp3d_triangle_vertex_array_get_triangle_vertices_indices(
-      _handle,
-      triangleIndex,
-      out.address.cast(),
-    );
-
-    return out;
   }
 }
 
-/// Vertex array implementation
-class FFIVertexArray implements VertexArray {
-  final Pointer<RP3D_VertexArray> _handle;
-  final Float32List _vertices;
-
-  FFIVertexArray.internal(this._handle, this._vertices);
-
+class FFITriangleMesh extends FFICommonResource<RP3D_TriangleMesh>
+    implements TriangleMesh {
+  FFITriangleMesh.internal(
+    Pointer<RP3D_TriangleMesh> handle,
+    FFIPhysicsCommon common,
+  ) : super(handle, common);
   @override
-  Pointer<RP3D_VertexArray> get handle => _handle;
-
-  @override
-  void dispose() {
-    // Free the vertex data first, then destroy the array
-    _vertices.free();
-    rp3d_vertex_array_destroy(_handle);
-  }
-
-  @override
-  int getVertexCount() {
-    return rp3d_vertex_array_get_nb_vertices(_handle);
-  }
-
-  @override
-  int getStride() {
-    return rp3d_vertex_array_get_stride(_handle);
-  }
-
-  @override
-  Vector3 getVertex(int index) {
-    final verticesStart = rp3d_vertex_array_get_vertices_start(_handle);
-    if (verticesStart == null) {
-      throw Exception('Cannot get vertex data: vertices start pointer is null');
-    }
-
-    // Each vertex has 3 float components (x, y, z)
-    final vertexPtr = verticesStart + (index * 3);
-    return Vector3(
-      vertexPtr.value,
-      (vertexPtr + 1).value,
-      (vertexPtr + 2).value,
-    );
-  }
-}
-
-/// Polygon vertex array implementation
-class FFIPolygonVertexArray implements PolygonVertexArray {
-  final Pointer<RP3D_PolygonVertexArray> _handle;
-  final Float32List _vertices;
-  final Int32List _indices;
-  final Int32List _polygonIndices;
-
-  FFIPolygonVertexArray.internal(
-    this._handle,
-    this._vertices,
-    this._indices,
-    this._polygonIndices,
-  );
-
-  @override
-  Pointer<RP3D_PolygonVertexArray> get handle => _handle;
-
-  @override
-  void dispose() {
-    // Free the allocated memory first, then destroy the array
-    _vertices.free();
-    _indices.free();
-    _polygonIndices.free();
-    rp3d_polygon_vertex_array_destroy(_handle);
-  }
-
-  @override
-  int getVertexCount() {
-    return rp3d_polygon_vertex_array_get_nb_vertices(_handle);
-  }
-
-  @override
-  int getFaceCount() {
-    return rp3d_polygon_vertex_array_get_nb_faces(_handle);
-  }
-
-  @override
-  Vector3 getVertex(int index) {
-    final outVertex = makeFloat32List(3);
-    rp3d_polygon_vertex_array_get_vertex(_handle, index, outVertex.address);
-    return Vector3(outVertex[0], outVertex[1], outVertex[2]);
-  }
-
-  @override
-  Map<String, int> getPolygonFace(int faceIndex) {
-    final outNbVertices = makeUint32List(1);
-    final outIndexBase = makeUint32List(1);
-
-    rp3d_polygon_vertex_array_get_polygon_face(
-      _handle,
-      faceIndex,
-      outNbVertices.address,
-      outIndexBase.address,
-    );
-
-    return {
-      'nbVertices': outNbVertices[0],
-      'indexBase': outIndexBase[0],
-    };
-  }
-
-  @override
-  int getIndicesStride() {
-    return rp3d_polygon_vertex_array_get_indices_stride(_handle);
-  }
-
-  @override
-  int getIndex(int indexPosition) {
-    final indicesStart = rp3d_polygon_vertex_array_get_indices_start(_handle);
-
-    // indicesStart is already a Pointer<Uint32>, so we can directly access by index
-    // The pointer arithmetic handles the byte offset automatically
-    return indicesStart[indexPosition];
-  }
-
-  @override
-  int getVertexIndexInFace(int faceIndex, int vertexInFace) {
-    return rp3d_polygon_vertex_array_get_vertex_index_in_face(
-      _handle,
-      faceIndex,
-      vertexInFace,
-    );
-  }
-}
-
-/// Triangle mesh implementation
-class FFITriangleMesh implements TriangleMesh {
-  final Pointer<RP3D_TriangleMesh> _handle;
-  final FFIPhysicsCommon _common;
-
-  FFITriangleMesh.internal(this._handle, this._common);
-
-  @override
-  Pointer<RP3D_TriangleMesh> get handle => _handle;
-
-  @override
-  void dispose() {
+  void destroyNative() {
     rp3d_physics_common_destroy_triangle_mesh(
-      _common.handleForShapes!,
-      _handle,
+      common.handle,
+      handle.cast<RP3D_TriangleMesh>(),
     );
   }
 
   @override
-  int getVertexCount() {
-    return rp3d_triangle_mesh_get_nb_vertices(_handle);
-  }
-
+  int getVertexCount() => rp3d_triangle_mesh_get_nb_vertices(handle);
   @override
-  int getTriangleCount() {
-    return rp3d_triangle_mesh_get_nb_triangles(_handle);
-  }
-
+  int getTriangleCount() => rp3d_triangle_mesh_get_nb_triangles(handle);
   @override
   Vector3 getVertex(int index) {
-    final outVertex = StructAllocator.create<RP3D_Vector3>();
-
-    rp3d_triangle_mesh_get_vertex(_handle, index, outVertex.address);
-    return Vector3(outVertex.x, outVertex.y, outVertex.z);
+    final stack = saveNativeStack();
+    try {
+      RangeError.checkValueInInterval(index, 0, getVertexCount() - 1, 'index');
+      final out = StructAllocator.create<RP3D_Vector3>();
+      rp3d_triangle_mesh_get_vertex(handle, index, out.address);
+      return Vector3(out.x, out.y, out.z);
+    } finally {
+      restoreNativeStack(stack);
+    }
   }
 
   @override
-  List<int> getTriangleIndices(int triangleIndex) {
-    final out = makeInt32List(3);
+  List<int> getTriangleIndices(int index) {
+    final stack = saveNativeStack();
+    try {
+      RangeError.checkValueInInterval(
+        index,
+        0,
+        getTriangleCount() - 1,
+        'index',
+      );
+      final out = makeInt32List(3);
+      try {
+        rp3d_triangle_mesh_get_triangle_vertices_indices(
+          handle,
+          index,
+          out.address.cast(),
+        );
+        return List<int>.of(out);
+      } finally {
+        out.free();
+      }
+    } finally {
+      restoreNativeStack(stack);
+    }
+  }
+}
 
-    rp3d_triangle_mesh_get_triangle_vertices_indices(
-      _handle,
-      triangleIndex,
-      out.address.cast(),
+class FFIConvexMesh extends FFICommonResource<RP3D_ConvexMesh>
+    implements ConvexMesh {
+  FFIConvexMesh.internal(
+    Pointer<RP3D_ConvexMesh> handle,
+    FFIPhysicsCommon common,
+  ) : super(handle, common);
+  @override
+  void destroyNative() {
+    rp3d_physics_common_destroy_convex_mesh(
+      common.handle,
+      handle.cast<RP3D_ConvexMesh>(),
     );
-
-    return out;
   }
 }
 
-/// Convex mesh implementation
-class FFIConvexMesh implements ConvexMesh {
-  final Pointer<RP3D_ConvexMesh> _handle;
-  final FFIPhysicsCommon _common;
-
-  FFIConvexMesh.internal(this._handle, this._common);
-
-  @override
-  Pointer<RP3D_ConvexMesh> get handle => _handle;
-
-  @override
-  void dispose() {
-    rp3d_physics_common_destroy_convex_mesh(_common.handleForShapes!, _handle);
-  }
-}
-
-/// Convex mesh shape implementation
 class FFIConvexMeshShape extends FFICollisionShape implements ConvexMeshShape {
   FFIConvexMeshShape.internal(
     Pointer<RP3D_ConvexMeshShape> handle,
     FFIPhysicsCommon common,
-  ) : super._(handle.cast<RP3D_CollisionShape>(), common);
-
+    FFIConvexMesh data,
+  ) : super(handle.cast<RP3D_CollisionShape>(), common, data);
   @override
-  void _destroyShape() {
-    final convexMeshShapeHandle = _handle.cast<RP3D_ConvexMeshShape>();
+  void destroyNative() {
     rp3d_physics_common_destroy_convex_mesh_shape(
-      _common.handleForShapes!,
-      convexMeshShapeHandle,
+      common.handle,
+      handle.cast<RP3D_ConvexMeshShape>(),
     );
   }
 }
 
-/// Concave mesh shape implementation
 class FFIConcaveMeshShape extends FFICollisionShape
     implements ConcaveMeshShape {
   FFIConcaveMeshShape.internal(
     Pointer<RP3D_ConcaveMeshShape> handle,
     FFIPhysicsCommon common,
-  ) : super._(handle.cast<RP3D_CollisionShape>(), common);
+    FFITriangleMesh data,
+  ) : super(handle.cast<RP3D_CollisionShape>(), common, data);
+  @override
+  void destroyNative() {
+    rp3d_physics_common_destroy_concave_mesh_shape(
+      common.handle,
+      handle.cast<RP3D_ConcaveMeshShape>(),
+    );
+  }
+}
+
+class FFITriangleVertexArray extends FFICommonResource<RP3D_TriangleVertexArray>
+    implements TriangleVertexArray {
+  FFITriangleVertexArray.internal(super.rawHandle, super.common);
+  @override
+  void destroyNative() => rp3d_triangle_vertex_array_destroy(handle);
+  @override
+  int getVertexCount() => rp3d_triangle_vertex_array_get_nb_vertices(handle);
+  @override
+  int getTriangleCount() => rp3d_triangle_vertex_array_get_nb_triangles(handle);
+  @override
+  Vector3 getVertex(int index) {
+    RangeError.checkValueInInterval(index, 0, getVertexCount() - 1, 'index');
+    final start = rp3d_triangle_vertex_array_get_vertices_start(handle);
+    return Vector3(
+      start[index * 3],
+      start[index * 3 + 1],
+      start[index * 3 + 2],
+    );
+  }
 
   @override
-  void _destroyShape() {
-    final concaveMeshShapeHandle = _handle.cast<RP3D_ConcaveMeshShape>();
-    rp3d_physics_common_destroy_concave_mesh_shape(
-      _common.handleForShapes!,
-      concaveMeshShapeHandle,
+  List<int> getTriangleIndices(int index) {
+    final stack = saveNativeStack();
+    try {
+      RangeError.checkValueInInterval(
+        index,
+        0,
+        getTriangleCount() - 1,
+        'index',
+      );
+      final out = makeInt32List(3);
+      try {
+        rp3d_triangle_vertex_array_get_triangle_vertices_indices(
+          handle,
+          index,
+          out.address.cast(),
+        );
+        return List<int>.of(out);
+      } finally {
+        out.free();
+      }
+    } finally {
+      restoreNativeStack(stack);
+    }
+  }
+}
+
+class FFIVertexArray extends FFICommonResource<RP3D_VertexArray>
+    implements VertexArray {
+  FFIVertexArray.internal(super.rawHandle, super.common);
+  @override
+  void destroyNative() => rp3d_vertex_array_destroy(handle);
+  @override
+  int getVertexCount() => rp3d_vertex_array_get_nb_vertices(handle);
+  @override
+  int getStride() => rp3d_vertex_array_get_stride(handle);
+  @override
+  Vector3 getVertex(int index) {
+    RangeError.checkValueInInterval(index, 0, getVertexCount() - 1, 'index');
+    final start = rp3d_vertex_array_get_vertices_start(handle);
+    return Vector3(
+      start[index * 3],
+      start[index * 3 + 1],
+      start[index * 3 + 2],
+    );
+  }
+}
+
+class FFIPolygonVertexArray extends FFICommonResource<RP3D_PolygonVertexArray>
+    implements PolygonVertexArray {
+  final int indexCount;
+  FFIPolygonVertexArray.internal(
+    super.rawHandle,
+    super.common,
+    this.indexCount,
+  );
+  @override
+  void destroyNative() => rp3d_polygon_vertex_array_destroy(handle);
+  @override
+  int getVertexCount() => rp3d_polygon_vertex_array_get_nb_vertices(handle);
+  @override
+  int getFaceCount() => rp3d_polygon_vertex_array_get_nb_faces(handle);
+  @override
+  Vector3 getVertex(int index) {
+    final stack = saveNativeStack();
+    try {
+      RangeError.checkValueInInterval(index, 0, getVertexCount() - 1, 'index');
+      final out = makeFloat32List(3);
+      try {
+        rp3d_polygon_vertex_array_get_vertex(handle, index, out.address);
+        return Vector3(out[0], out[1], out[2]);
+      } finally {
+        out.free();
+      }
+    } finally {
+      restoreNativeStack(stack);
+    }
+  }
+
+  @override
+  Map<String, int> getPolygonFace(int index) {
+    final stack = saveNativeStack();
+    try {
+      RangeError.checkValueInInterval(index, 0, getFaceCount() - 1, 'index');
+      final count = makeUint32List(1);
+      final base = makeUint32List(1);
+      try {
+        rp3d_polygon_vertex_array_get_polygon_face(
+          handle,
+          index,
+          count.address,
+          base.address,
+        );
+        return {'nbVertices': count[0], 'indexBase': base[0]};
+      } finally {
+        count.free();
+        base.free();
+      }
+    } finally {
+      restoreNativeStack(stack);
+    }
+  }
+
+  @override
+  int getIndicesStride() =>
+      rp3d_polygon_vertex_array_get_indices_stride(handle);
+  @override
+  int getIndex(int index) {
+    RangeError.checkValueInInterval(index, 0, indexCount - 1, 'index');
+    return rp3d_polygon_vertex_array_get_indices_start(handle)[index];
+  }
+
+  @override
+  int getVertexIndexInFace(int faceIndex, int vertexInFace) {
+    final face = getPolygonFace(faceIndex);
+    RangeError.checkValueInInterval(
+      vertexInFace,
+      0,
+      face['nbVertices']! - 1,
+      'vertexInFace',
+    );
+    return rp3d_polygon_vertex_array_get_vertex_index_in_face(
+      handle,
+      faceIndex,
+      vertexInFace,
     );
   }
 }

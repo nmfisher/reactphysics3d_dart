@@ -4,8 +4,11 @@ headers:
     - '../native/include/c_api/rp3d_c_api.h'
   include-directives:
     - '../native/include/c_api/rp3d_c_api.h'
+compiler-opts-automatic:
+  macos:
+    include-c-standard-library: false
 compiler-opts:
-  - "-D__EMSCRIPTEN__"
+  - "--target=wasm32-unknown-emscripten"
 structs:
   dependency-only: full
   exclude:
@@ -14,7 +17,8 @@ unions:
   dependency-only: opaque
   exclude:
     - '.*'
-ignore-source-errors: true
+ignore-source-errors: false
+silence-enum-warning: true
 enums:
   as-int:
     include:

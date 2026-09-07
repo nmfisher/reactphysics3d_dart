@@ -22,25 +22,31 @@ extension TransformExtension on Transform {
   /// Get the OpenGL matrix representation of this transform
   /// Returns a 4x4 column-major matrix as Float32List
   Float32List getOpenGLMatrix() {
-    // Create FFI transform struct
-    final ffiTransform = bindings.StructAllocator.create<bindings.RP3D_Transform>();
-    ffiTransform.position.x = position.x;
-    ffiTransform.position.y = position.y;
-    ffiTransform.position.z = position.z;
-    ffiTransform.orientation.x = orientation.x;
-    ffiTransform.orientation.y = orientation.y;
-    ffiTransform.orientation.z = orientation.z;
-    ffiTransform.orientation.w = orientation.w;
+    final stack = bindings.saveNativeStack();
+    try {
+      // Create FFI transform struct
+      final ffiTransform =
+          bindings.StructAllocator.create<bindings.RP3D_Transform>();
+      ffiTransform.position.x = position.x;
+      ffiTransform.position.y = position.y;
+      ffiTransform.position.z = position.z;
+      ffiTransform.orientation.x = orientation.x;
+      ffiTransform.orientation.y = orientation.y;
+      ffiTransform.orientation.z = orientation.z;
+      ffiTransform.orientation.w = orientation.w;
 
-    final matrixPointer = Float32List(16);
+      final matrixPointer = bindings.makeFloat32List(16);
 
-    // Call the native function - cast to Pointer<Float> for the API
-    bindings.rp3d_transform_get_opengl_matrix(
-      ffiTransform.address,
-      matrixPointer.address.cast(),
-    );
+      // Call the native function - cast to Pointer<Float> for the API
+      bindings.rp3d_transform_get_opengl_matrix(
+        ffiTransform.address,
+        matrixPointer.address.cast(),
+      );
 
-    return matrixPointer;
+      return Float32List.fromList(matrixPointer);
+    } finally {
+      bindings.restoreNativeStack(stack);
+    }
   }
 }
 
@@ -74,13 +80,17 @@ class RaycastInfo {
 
 /// Abstract interface for ReactPhysics3D physics engine
 abstract class ReactPhysics3D {
+  /// Destroy all owned worlds, shapes, meshes and arrays. Safe to call again.
+  void dispose();
   PhysicsCommon get physicsCommon;
   PhysicsWorld createWorld();
   BoxShape createBoxShape(Vector3 extent);
   SphereShape createSphereShape(double radius);
   CapsuleShape createCapsuleShape(double radius, double height);
 
-  /// Create a height field from float height data
+  /// Copy row-major heights (row * columns + column); rows run along Z.
+  /// Native bounds are computed from the samples and centered around zero.
+  /// minHeight/maxHeight are compatibility parameters and do not set bounds.
   HeightField createHeightFieldFloat({
     required int rows,
     required int columns,
@@ -89,7 +99,8 @@ abstract class ReactPhysics3D {
     required double maxHeight,
   });
 
-  /// Create a height field from integer height data
+  /// Copy row-major integer heights, multiplied by integerHeightScale.
+  /// Bounds are computed from samples; minHeight/maxHeight are not used.
   HeightField createHeightFieldInt({
     required int rows,
     required int columns,
@@ -100,15 +111,20 @@ abstract class ReactPhysics3D {
   });
 
   /// Create a height field shape from height field data
-  HeightFieldShape createHeightFieldShape(HeightField heightField, { Vector3? scaling});
+  HeightFieldShape createHeightFieldShape(
+    HeightField heightField, {
+    Vector3? scaling,
+  });
 
-  /// Create a triangle vertex array from vertex and index data
+  /// Copy finite XYZ vertices and triangle index triples into native storage.
+  /// The resulting descriptor can be disposed after constructing a mesh.
   TriangleVertexArray createTriangleVertexArray({
     required Float32List vertices,
     required Uint32List indices,
   });
 
-  /// Create a polygon vertex array from vertex and index data
+  /// Copy XYZ vertices, vertex indices and (vertex count, index base) face pairs.
+  /// Faces may have different vertex counts; each must have at least three.
   PolygonVertexArray createPolygonVertexArray({
     required Float32List vertices,
     required Uint32List indices,
@@ -135,7 +151,10 @@ abstract class ReactPhysics3D {
   ConvexMesh? createConvexMeshFromVertices(VertexArray vertexArray);
 
   /// Create a convex mesh shape from convex mesh
-  ConvexMeshShape createConvexMeshShape(ConvexMesh convexMesh, {Vector3? scaling});
+  ConvexMeshShape createConvexMeshShape(
+    ConvexMesh convexMesh, {
+    Vector3? scaling,
+  });
 
   /// Create a concave mesh shape from triangle mesh
   ConcaveMeshShape createConcaveMeshShape(
@@ -154,4 +173,10 @@ abstract class ReactPhysics3D {
 /// Factory function to create the FFI implementation of ReactPhysics3D
 ReactPhysics3D createReactPhysics3D() {
   return FFIReactPhysics3D();
+}
+
+/// Select an already-instantiated Emscripten module on globalThis before creating
+/// an engine in a browser. See README for loading and initialization order.
+void initializeReactPhysics3DWeb({String moduleName = 'rp3d'}) {
+  bindings.initializeWebBindings(moduleName);
 }

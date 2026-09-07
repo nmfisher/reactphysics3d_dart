@@ -1,11 +1,16 @@
+import 'native_lifetime.dart';
 import '../bindings/src/bindings.dart';
 import '../../reactphysics3d_dart.dart';
 
 /// FFI implementation of DebugRenderer
 class FFIDebugRenderer implements DebugRenderer {
-  final Pointer<RP3D_DebugRenderer> _ptr;
-
-  FFIDebugRenderer(this._ptr);
+  final Pointer<RP3D_DebugRenderer> _raw;
+  final NativeLifetime lifetime;
+  FFIDebugRenderer(this._raw, this.lifetime);
+  Pointer<RP3D_DebugRenderer> get _ptr {
+    lifetime.check();
+    return _raw;
+  }
 
   @override
   Pointer<RP3D_DebugRenderer> get handle => _ptr;
@@ -40,97 +45,111 @@ class FFIDebugRenderer implements DebugRenderer {
 
   @override
   List<DebugLine> getLines() {
-    final nbLines = getNbLines();
-    if (nbLines == 0) {
-      return [];
-    }
-
-    // Allocate arrays for vertices and colors
-    final vertices = makeFloat32List(nbLines * 6); // 2 points × 3 coords
-    final colors = makeInt32List(nbLines);
-
+    final stack = saveNativeStack();
     try {
-      // Get the debug lines data
-      rp3d_debug_renderer_get_lines_array(
-        _ptr,
-        vertices.address,
-        colors.address.cast(),
-      );
-
-      // Convert to Dart objects
-      final lines = <DebugLine>[];
-      for (int i = 0; i < nbLines; i++) {
-        final point1 = Vector3(
-          vertices[i * 6 + 0],
-          vertices[i * 6 + 1],
-          vertices[i * 6 + 2],
-        );
-        final point2 = Vector3(
-          vertices[i * 6 + 3],
-          vertices[i * 6 + 4],
-          vertices[i * 6 + 5],
-        );
-        final color = colors[i];
-
-        lines.add(DebugLine(point1: point1, point2: point2, color: color));
+      final nbLines = getNbLines();
+      if (nbLines == 0) {
+        return [];
       }
 
-      return lines;
+      // Allocate arrays for vertices and colors
+      final vertices = makeFloat32List(nbLines * 6); // 2 points × 3 coords
+      final colors = makeInt32List(nbLines);
+
+      try {
+        // Get the debug lines data
+        rp3d_debug_renderer_get_lines_array(
+          _ptr,
+          vertices.address,
+          colors.address.cast(),
+        );
+
+        // Convert to Dart objects
+        final lines = <DebugLine>[];
+        for (int i = 0; i < nbLines; i++) {
+          final point1 = Vector3(
+            vertices[i * 6 + 0],
+            vertices[i * 6 + 1],
+            vertices[i * 6 + 2],
+          );
+          final point2 = Vector3(
+            vertices[i * 6 + 3],
+            vertices[i * 6 + 4],
+            vertices[i * 6 + 5],
+          );
+          final color = colors[i];
+
+          lines.add(DebugLine(point1: point1, point2: point2, color: color));
+        }
+
+        return lines;
+      } finally {
+        vertices.free();
+        colors.free();
+      }
     } finally {
-      vertices.free();
-      colors.free();
+      restoreNativeStack(stack);
     }
   }
 
   @override
   List<DebugTriangle> getTriangles() {
-    final nbTriangles = getNbTriangles();
-    if (nbTriangles == 0) {
-      return [];
-    }
-
-    // Allocate arrays for vertices and colors
-    final vertices = makeFloat32List(nbTriangles * 9); // 3 points × 3 coords
-    final colors = makeInt32List(nbTriangles);
-
+    final stack = saveNativeStack();
     try {
-      // Get the debug triangles data
-      rp3d_debug_renderer_get_triangles_array(_ptr, vertices.address, colors.address.cast());
-
-      // Convert to Dart objects
-      final triangles = <DebugTriangle>[];
-      for (int i = 0; i < nbTriangles; i++) {
-        final point1 = Vector3(
-          vertices[i * 9 + 0],
-          vertices[i * 9 + 1],
-          vertices[i * 9 + 2],
-        );
-        final point2 = Vector3(
-          vertices[i * 9 + 3],
-          vertices[i * 9 + 4],
-          vertices[i * 9 + 5],
-        );
-        final point3 = Vector3(
-          vertices[i * 9 + 6],
-          vertices[i * 9 + 7],
-          vertices[i * 9 + 8],
-        );
-        final color = colors[i];
-
-        triangles.add(
-          DebugTriangle(
-            point1: point1,
-            point2: point2,
-            point3: point3,
-            color: color,
-          ),
-        );
+      final nbTriangles = getNbTriangles();
+      if (nbTriangles == 0) {
+        return [];
       }
 
-      return triangles;
+      // Allocate arrays for vertices and colors
+      final vertices = makeFloat32List(nbTriangles * 9); // 3 points × 3 coords
+      final colors = makeInt32List(nbTriangles);
+
+      try {
+        // Get the debug triangles data
+        rp3d_debug_renderer_get_triangles_array(
+          _ptr,
+          vertices.address,
+          colors.address.cast(),
+        );
+
+        // Convert to Dart objects
+        final triangles = <DebugTriangle>[];
+        for (int i = 0; i < nbTriangles; i++) {
+          final point1 = Vector3(
+            vertices[i * 9 + 0],
+            vertices[i * 9 + 1],
+            vertices[i * 9 + 2],
+          );
+          final point2 = Vector3(
+            vertices[i * 9 + 3],
+            vertices[i * 9 + 4],
+            vertices[i * 9 + 5],
+          );
+          final point3 = Vector3(
+            vertices[i * 9 + 6],
+            vertices[i * 9 + 7],
+            vertices[i * 9 + 8],
+          );
+          final color = colors[i];
+
+          triangles.add(
+            DebugTriangle(
+              point1: point1,
+              point2: point2,
+              point3: point3,
+              color: color,
+            ),
+          );
+        }
+
+        return triangles;
+      } finally {
+        vertices.free();
+        colors.free();
+      }
     } finally {
-      vertices.free();
-      colors.free();
+      restoreNativeStack(stack);
     }
   }
 }

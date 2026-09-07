@@ -1,9 +1,7 @@
 import '../bindings/src/bindings.dart' as ffi;
 import 'base_rp3d_type.dart';
 
-import '../bindings/src/bindings.dart' as ffi;
-
-/// Interface for physics materials
+/// A borrowed collider material; it expires when that collider is removed.
 abstract class Material extends BaseRP3DType<ffi.Pointer<ffi.RP3D_Material>> {
   /// Get the bounciness coefficient (0 = no bounce, 1 = perfect bounce)
   double get bounciness;
@@ -17,10 +15,10 @@ abstract class Material extends BaseRP3DType<ffi.Pointer<ffi.RP3D_Material>> {
   /// Set the friction coefficient
   void setFrictionCoefficient(double value);
 
-  /// Get the rolling resistance
+  /// Unsupported by this engine version; throws UnsupportedError.
   double get rollingResistance;
 
-  /// Set the rolling resistance
+  /// Unsupported by this engine version; throws UnsupportedError.
   void setRollingResistance(double value);
 
   /// Get the mass density
