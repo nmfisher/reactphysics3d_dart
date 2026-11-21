@@ -1,0 +1,59 @@
+# Published package files
+/*
+!/LICENSE
+!/LICENSE-ReactPhysics3D
+!/README.md
+!/BUILDING.md
+!/CHANGELOG.md
+!/pubspec.yaml
+!/analysis_options.yaml
+!/lib/
+!/test/
+
+# Examples and hooks used by consumers
+!/example/
+/example/*
+!/example/quick_start.dart
+!/example/heightfield_example.dart
+!/hook/
+/hook/*
+!/hook/build.dart
+!/hook/log.dart
+
+# Native bridge, headers, and prebuilt desktop archives
+!/native/
+/native/*
+!/native/include/
+!/native/src/
+!/native/macos/
+/native/macos/*
+!/native/macos/libreactphysics3d.a
+!/native/linux/
+/native/linux/*
+!/native/linux/arm64/
+!/native/linux/x86_64/
+/native/linux/*/*
+!/native/linux/arm64/libreactphysics3d.a
+!/native/linux/x86_64/libreactphysics3d.a
+!/native/windows/
+/native/windows/*
+!/native/windows/x86_64/
+/native/windows/x86_64/*
+!/native/windows/x86_64/reactphysics3d.lib
+
+# Browser module and static libraries for downstream Emscripten builds
+!/native/web/
+/native/web/*
+!/native/web/CMakeLists.txt
+!/native/web/module_init.cpp
+!/native/web/reactphysics3d_dart.cmake
+!/native/web/libreactphysics3d.a
+!/native/web/libreactphysics3d_dart.a
+!/native/web/reactphysics3d_dart.js
+!/native/web/reactphysics3d_dart.wasm
+
+# Local artifacts within included directories
+**/build/
+**/CMakeFiles/
+**/*.log
+**/._*

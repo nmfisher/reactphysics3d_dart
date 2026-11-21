@@ -8,11 +8,7 @@ import 'ffi_common_resource.dart';
 abstract class FFICollisionShape extends FFICommonResource<RP3D_CollisionShape>
     implements CollisionShape {
   final FFICommonResource<NativeType>? data;
-  FFICollisionShape(
-    Pointer<RP3D_CollisionShape> handle,
-    FFIPhysicsCommon common, [
-    this.data,
-  ]) : super(handle, common) {
+  FFICollisionShape(super.handle, super.common, [this.data]) {
     data?.users.add(this);
   }
 
@@ -73,10 +69,7 @@ class FFICapsuleShape extends FFICollisionShape implements CapsuleShape {
 
 class FFIHeightField extends FFICommonResource<RP3D_HeightField>
     implements HeightField {
-  FFIHeightField.internal(
-    Pointer<RP3D_HeightField> handle,
-    FFIPhysicsCommon common,
-  ) : super(handle, common);
+  FFIHeightField.internal(super.handle, super.common);
   @override
   void destroyNative() {
     rp3d_physics_common_destroy_height_field(
@@ -152,10 +145,7 @@ class FFIHeightFieldShape extends FFICollisionShape
 
 class FFITriangleMesh extends FFICommonResource<RP3D_TriangleMesh>
     implements TriangleMesh {
-  FFITriangleMesh.internal(
-    Pointer<RP3D_TriangleMesh> handle,
-    FFIPhysicsCommon common,
-  ) : super(handle, common);
+  FFITriangleMesh.internal(super.handle, super.common);
   @override
   void destroyNative() {
     rp3d_physics_common_destroy_triangle_mesh(
@@ -210,10 +200,7 @@ class FFITriangleMesh extends FFICommonResource<RP3D_TriangleMesh>
 
 class FFIConvexMesh extends FFICommonResource<RP3D_ConvexMesh>
     implements ConvexMesh {
-  FFIConvexMesh.internal(
-    Pointer<RP3D_ConvexMesh> handle,
-    FFIPhysicsCommon common,
-  ) : super(handle, common);
+  FFIConvexMesh.internal(super.handle, super.common);
   @override
   void destroyNative() {
     rp3d_physics_common_destroy_convex_mesh(

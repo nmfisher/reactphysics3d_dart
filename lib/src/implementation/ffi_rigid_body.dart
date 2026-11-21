@@ -207,8 +207,9 @@ class FFIRigidBody implements RigidBody {
     final stack = saveNativeStack();
     try {
       lifetime.check();
-      if (shape is! FFICollisionShape)
+      if (shape is! FFICollisionShape) {
         throw ArgumentError('Unsupported collision shape');
+      }
       shape.requireSameCommon(world.common);
       // Default transform if not provided
       final colliderTransform = transform ?? TransformIdentity.identity();

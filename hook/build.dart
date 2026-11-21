@@ -8,9 +8,10 @@ import 'log.dart';
 void main(List<String> args) async {
   await build(args, (BuildInput input, BuildOutputBuilder output) async {
     final packageRoot = input.packageRoot;
-    var pkgRootFilePath = packageRoot.toFilePath(windows: Platform.isWindows);
+    final pkgRootFilePath = packageRoot.toFilePath(windows: Platform.isWindows);
 
-    final logger = createLogger(pkgRootFilePath, "build.log");
+    final outputDirectory = input.outputDirectory;
+    final logger = createLogger(outputDirectory.toFilePath(), "build.log");
 
     if (!input.config.buildCodeAssets) {
       logger.info("buildCodeAssets is false, assumed to be building for web");
@@ -21,7 +22,6 @@ void main(List<String> args) async {
     var buildMode = BuildMode.release;
 
     final packageName = input.packageName;
-    final outputDirectory = input.outputDirectory;
     final targetOS = config.code.targetOS;
 
     logger.info("""

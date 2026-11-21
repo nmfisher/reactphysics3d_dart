@@ -21,7 +21,14 @@ Thumbs.db
 *.dylib
 *.dll
 *.a
+!/native/linux/arm64/libreactphysics3d.a
+!/native/linux/x86_64/libreactphysics3d.a
+!/native/macos/libreactphysics3d.a
+!/native/web/libreactphysics3d.a
+!/native/web/libreactphysics3d_dart.a
 *.lib
+!/native/windows/x86_64/reactphysics3d.lib
 *.wasm
+!/native/web/reactphysics3d_dart.wasm
 *.js.map
 **/CMakeFiles/

@@ -1,10 +1,8 @@
 import 'native_lifetime.dart';
 import 'ffi_physics_common.dart';
-import 'sendport_event_listener.dart';
 import 'package:reactphysics3d_dart/src/implementation/ffi_rigid_body.dart';
 import 'package:reactphysics3d_dart/src/implementation/ffi_debug_renderer.dart';
 import 'package:reactphysics3d_dart/src/implementation/ffi_collider.dart';
-import 'package:reactphysics3d_dart/src/interfaces/event_listener.dart';
 import '../bindings/src/bindings.dart';
 import '../ffi_reactphysics3d.dart';
 import '../reactphysics3d.dart';

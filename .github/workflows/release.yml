@@ -1,0 +1,107 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release, or leave empty to use pubspec.yaml
+        type: string
+      ref:
+        description: Branch or commit to release
+        type: string
+        default: master
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: create-release
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+
+      - name: Validate release version
+        id: version
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          version=$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml)
+          requested_version="${REQUESTED_VERSION#v}"
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Invalid pubspec version '$version'."
+            exit 1
+          fi
+          if [[ -n "$requested_version" && "$requested_version" != "$version" ]]; then
+            echo "::error::Requested version '$requested_version' does not match pubspec version '$version'."
+            exit 1
+          fi
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Check for an existing tag
+        id: existing
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          remote_tag=$(git ls-remote --refs origin "refs/tags/$TAG")
+          if [[ -z "$remote_tag" ]]; then
+            exit 0
+          fi
+          if gh run list --workflow publish-pub-dev.yml --event push --branch "$TAG" --limit 10 \
+            --json conclusion --jq 'any(.[]; .conclusion == "success")' | grep -qx true; then
+            echo "${TAG} has already been released."
+            echo "complete=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Tag $TAG already exists. Check or rerun its Publish to pub.dev workflow."
+            exit 1
+          fi
+
+      - name: Push annotated release tag
+        if: steps.existing.outputs.complete != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+          SHA: ${{ steps.version.outputs.sha }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$GH_TOKEN" ]]; then
+            echo "::error::Configure the RELEASE_TOKEN secret before creating a release."
+            exit 1
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git tag -a "$TAG" -m "Release $TAG" "$SHA"
+          git -c credential.helper= -c 'credential.helper=!gh auth git-credential' \
+            push origin "refs/tags/$TAG"
+
+      - name: Find the tag-triggered release run
+        if: steps.existing.outputs.complete != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          SHA: ${{ steps.version.outputs.sha }}
+        run: |
+          set -euo pipefail
+          for _ in {1..12}; do
+            url=$(gh run list --workflow publish-pub-dev.yml --event push --branch "$TAG" --commit "$SHA" \
+              --limit 1 --json url --jq '.[0].url // ""' || true)
+            if [[ -n "$url" ]]; then
+              printf 'Release %s is running at %s\n' "$TAG" "$url" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::The tag did not start Publish to pub.dev. Check RELEASE_TOKEN permissions."
+          exit 1

@@ -1,6 +1,7 @@
 name: CI
 
 on:
+  workflow_call:
   push:
     branches: [master]
   pull_request:
@@ -32,6 +33,12 @@ jobs:
         # pulls in the whole package and forces dart2js to type check the
         # generated bindings against the ffigen_js runtime.
       - run: dart compile js -o web_bindings_smoke.js tool/web_bindings_smoke.dart
+      - name: Run bundled WebAssembly engine
+        run: |
+          mkdir -p build/web-smoke
+          cp native/web/reactphysics3d_dart.{js,wasm} build/web-smoke/
+          dart compile js -o build/web-smoke/smoke.js tool/web_smoke.dart
+          node tool/run_web_smoke.cjs build/web-smoke
       - uses: actions/upload-artifact@v5
         with:
           name: web-bindings-smoke
@@ -45,19 +52,7 @@ jobs:
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: stable
-      - name: Build engine static library
-        run: |
-          scripts/fetch_engine.sh
-          cmake -S build/third_party/reactphysics3d -B build/engine \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
-              -DRP3D_COMPILE_TESTS=OFF \
-              -DRP3D_COMPILE_TESTBED=OFF
-          cmake --build build/engine --config Release --parallel
-          cp build/engine/libreactphysics3d.a native/linux/x86_64/libreactphysics3d.a
       - run: dart pub get
-        # Compiles native/src against the freshly built static library and runs
-        # the FFI test suites through the build hook.
       - run: dart test
 
   test-windows:
@@ -67,18 +62,6 @@ jobs:
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: stable
-      - name: Build engine static library
-        shell: bash
-        run: |
-          scripts/fetch_engine.sh
-          export MSYS_NO_PATHCONV=1
-          cmake -S build/third_party/reactphysics3d -B build/engine \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DRP3D_COMPILE_TESTS=OFF \
-              -DRP3D_COMPILE_TESTBED=OFF \
-              -DCMAKE_CXX_FLAGS="/FIchrono"
-          cmake --build build/engine --config Release
-          mkdir -p native/windows/x86_64
-          cp build/engine/Release/reactphysics3d.lib native/windows/x86_64/reactphysics3d.lib
       - run: dart pub get
+      - run: dart run example/quick_start.dart
       - run: dart test

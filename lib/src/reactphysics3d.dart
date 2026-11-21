@@ -51,7 +51,15 @@ extension TransformExtension on Transform {
 }
 
 /// Body type enumeration
-enum BodyType { STATIC, KINEMATIC, DYNAMIC }
+enum BodyType {
+  // The uppercase names are part of the public API.
+  // ignore: constant_identifier_names
+  STATIC,
+  // ignore: constant_identifier_names
+  KINEMATIC,
+  // ignore: constant_identifier_names
+  DYNAMIC,
+}
 
 /// Ray for raycasting queries
 class Ray {

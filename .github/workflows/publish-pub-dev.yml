@@ -1,0 +1,154 @@
+name: Publish to pub.dev
+
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-pub-dev-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      pub-state: ${{ steps.registry.outputs.state }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Check version
+        id: version
+        run: |
+          set -euo pipefail
+          version=$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml)
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Invalid pubspec version '$version'."
+            exit 1
+          fi
+          if [[ "$GITHUB_EVENT_NAME" == push && "$GITHUB_REF_NAME" != "v$version" ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match pubspec version $version."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Check pub.dev
+        id: registry
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          response="$RUNNER_TEMP/pub-package.json"
+          status=$(curl --silent --show-error --retry 3 --output "$response" --write-out '%{http_code}' \
+            https://pub.dev/api/packages/reactphysics3d_dart)
+          case "$status" in
+            200)
+              state=$(jq -r --arg version "$VERSION" \
+                'if any(.versions[]; .version == $version) then "published" else "ready" end' "$response")
+              ;;
+            404)
+              state=bootstrap
+              echo "::notice::Publish the first version manually, then enable automated publishing on pub.dev."
+              ;;
+            *)
+              echo "::error::pub.dev returned HTTP $status."
+              exit 1
+              ;;
+          esac
+          echo "state=$state" >> "$GITHUB_OUTPUT"
+
+      - uses: dart-lang/setup-dart@v1
+        if: steps.registry.outputs.state != 'published'
+
+      - name: Dry-run publish
+        if: steps.registry.outputs.state != 'published'
+        run: dart pub publish --dry-run
+
+  tests:
+    if: github.event_name == 'push'
+    needs: validate
+    uses: ./.github/workflows/ci.yml
+
+  artifacts:
+    if: github.event_name == 'push'
+    needs: validate
+    uses: ./.github/workflows/build-artifacts.yml
+
+  release:
+    if: github.event_name == 'push'
+    needs: [validate, tests, artifacts]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v6
+        with:
+          pattern: artifacts-*
+          path: dist
+          merge-multiple: true
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          set -euo pipefail
+          archives=()
+          for platform in macos-arm64 macos-x86_64 linux-x86_64 linux-aarch64 windows-x64 web-module web-emscripten; do
+            archive="dist/reactphysics3d_dart-$VERSION-$platform.zip"
+            if [[ ! -s "$archive" ]]; then
+              echo "::error::Missing release archive $archive."
+              exit 1
+            fi
+            archives+=("$archive")
+          done
+
+          if uploaded=$(gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[].name'); then
+            for archive in "${archives[@]}"; do
+              if ! grep -Fxq -- "${archive##*/}" <<< "$uploaded"; then
+                gh release upload "$GITHUB_REF_NAME" "$archive"
+              fi
+            done
+          else
+            flags=(--verify-tag --generate-notes --title "reactphysics3d_dart $VERSION")
+            if [[ "${VERSION%%+*}" == *-* ]]; then
+              flags+=(--prerelease)
+            fi
+            gh release create "$GITHUB_REF_NAME" "${flags[@]}" "${archives[@]}"
+          fi
+
+  publish:
+    name: Publish to pub.dev
+    if: github.event_name == 'push' && needs.validate.outputs.pub-state == 'ready'
+    needs: [validate, release]
+    runs-on: ubuntu-latest
+    environment: pub.dev
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: dart-lang/setup-dart@v1
+      - name: Publish package
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          set -euo pipefail
+          status=$(curl --silent --show-error --retry 3 --output /dev/null --write-out '%{http_code}' \
+            "https://pub.dev/api/packages/reactphysics3d_dart/versions/$VERSION")
+          case "$status" in
+            200) echo "reactphysics3d_dart $VERSION is already on pub.dev." ;;
+            404) dart pub publish --force ;;
+            *)
+              echo "::error::pub.dev returned HTTP $status."
+              exit 1
+              ;;
+          esac

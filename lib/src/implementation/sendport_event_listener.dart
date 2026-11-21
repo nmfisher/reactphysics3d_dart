@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import '../bindings/src/bindings.dart';
 import '../interfaces/collision_callback.dart';
 import '../interfaces/event_listener.dart';
@@ -28,8 +27,9 @@ class SendPortEventListener implements EventListener {
     _port = EventPort(poll);
     try {
       _pointer = rp3d_create_sendport_event_listener(_port.id.toBigInt);
-      if (_pointer == nullptr)
+      if (_pointer == nullptr) {
         throw StateError('Failed to create event listener');
+      }
     } catch (_) {
       _port.close();
       rethrow;
@@ -96,8 +96,9 @@ class SendPortEventListener implements EventListener {
         if (_disposed ||
             generation != _generation ||
             !identical(world, _world) ||
-            world.lifetime.isDisposed)
+            world.lifetime.isDisposed) {
           break;
+        }
         final data = _decode(packet, world);
         if (data.contactPairs.isNotEmpty) _callback.onContact(data);
       }
@@ -110,8 +111,9 @@ class SendPortEventListener implements EventListener {
   ContactCallbackData _decode(Uint8List bytes, FFIPhysicsWorld world) {
     final reader = _EventReader(ByteData.sublistView(bytes));
     final type = reader.uint32();
-    if (type != 0 && type != 1)
+    if (type != 0 && type != 1) {
       throw FormatException('Unknown physics event type: $type');
+    }
     final count = reader.uint32();
     final pairs = <ContactPair>[];
     for (var i = 0; i < count; i++) {

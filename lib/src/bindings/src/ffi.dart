@@ -1,16 +1,10 @@
 import 'dart:async';
-import 'dart:io';
-import 'dart:typed_data';
 
 import 'bindings.dart';
 export 'dart:typed_data';
 export 'rp3d_ffi.g.dart';
 export 'package:ffi/ffi.dart';
 export 'dart:ffi' hide Size;
-
-const FILAMENT_SINGLE_THREADED = false;
-const FILAMENT_WASM = false;
-bool get IS_WINDOWS => Platform.isWindows;
 
 Uint8List makeUint8List(int length) {
   return Uint8List(length);

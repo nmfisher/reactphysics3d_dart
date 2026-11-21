@@ -1,6 +1,5 @@
 import '../../reactphysics3d_dart.dart';
 import '../bindings/src/bindings.dart' as ffi;
-import 'event_listener.dart';
 
 /// Interface for physics simulation world
 abstract class PhysicsWorld

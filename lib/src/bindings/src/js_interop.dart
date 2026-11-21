@@ -25,12 +25,12 @@ export 'rp3d_js_interop.g.dart'
 // Temporary typed buffers use a scoped heap arena, so large terrain/mesh input
 // cannot exhaust the Emscripten stack. Generated small structs use the stack.
 final _buffers = <int>[];
-typedef _Scope = ({int stack, int buffers});
-_Scope saveNativeStack() => (
+typedef NativeStackScope = ({int stack, int buffers});
+NativeStackScope saveNativeStack() => (
   stack: NativeLibrary.instance.stackSave().address,
   buffers: _buffers.length,
 );
-void restoreNativeStack(_Scope scope) {
+void restoreNativeStack(NativeStackScope scope) {
   final memory = _Memory(NativeLibrary.instance);
   while (_buffers.length > scope.buffers) {
     memory._free(_buffers.removeLast());

@@ -3,8 +3,9 @@
 Dart wrappers for ReactPhysics3D 0.10.2: rigid bodies, collision shapes, raycasts,
 collision/trigger events, materials, and debug geometry.
 
-Native builds use Dart FFI and build hooks. macOS arm64 and Linux arm64/x86_64
-archives are included. Browser builds use a separately built Emscripten module.
+Native builds require Dart 3.10 or later and a C++ toolchain. The package bundles
+engine archives for macOS arm64 (macOS 13 or later), Linux arm64/x86_64, and
+Windows x64. Browser builds use the bundled Emscripten module.
 See [BUILDING.md](BUILDING.md) for prerequisites, platform limits, and regeneration.
 The high-level wrapper does not expose joints. Impulses and rolling resistance
 throw `UnsupportedError` rather than silently ignoring calls.
@@ -20,11 +21,10 @@ dependencies:
 
 ## Prebuilt libraries
 
-The ReactPhysics3D C++ engine itself is not published to a package registry:
-the Dart package compiles the C API wrapper (`native/src/rp3d_c_api.cpp`) from
-source and links it against a prebuilt `libreactphysics3d.a` per platform.
-Those libraries are built and published by the
-[Build artifacts workflow](.github/workflows/build-artifacts.yml):
+The Dart build hook compiles the C bridge from source and links it against the
+matching bundled engine archive. The GitHub
+[Build artifacts workflow](https://github.com/nmfisher/reactphysics3d_dart/blob/master/.github/workflows/build-artifacts.yml)
+also builds desktop archives and Emscripten artifacts for tagged releases:
 
 ```
 https://github.com/nmfisher/reactphysics3d_dart/releases/download/<tag>/reactphysics3d_dart-<version>-<platform>.zip
@@ -153,8 +153,10 @@ For immediate queries, use `testCollision`, `testCollisionBody`,
 
 ## Browser initialization
 
-Build and serve the Emscripten `.js` and `.wasm` files, then instantiate the module
-before starting the compiled Dart application:
+Copy `reactphysics3d_dart.js` and `reactphysics3d_dart.wasm` from the installed
+package's `native/web/` directory into your application's web assets. Serve
+them together and instantiate the module before starting the compiled Dart
+application. This example loads a Dart application compiled to JavaScript.
 
 ```html
 <script src="reactphysics3d_dart.js"></script>
@@ -175,4 +177,5 @@ so serve it with cross-origin isolation headers as described in BUILDING.md.
 
 ## License
 
-ReactPhysics3D is by Daniel Chappuis and uses the Zlib license.
+The Dart wrapper and C bridge use the [MIT license](LICENSE).
+ReactPhysics3D is by Daniel Chappuis and uses the [Zlib license](LICENSE-ReactPhysics3D).

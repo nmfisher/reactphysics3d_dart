@@ -11,13 +11,12 @@ name: Build artifacts
 #   native          libreactphysics3d.a per desktop platform, matching the
 #                   libraries committed under native/<os>/<arch>/
 #
-# Tag pushes (v*) publish all zips to a GitHub Release. Pull requests and
-# manual runs build and verify everything but stop short of publishing.
+# The tag-triggered publishing workflow calls this workflow and attaches the
+# resulting ZIPs to the GitHub release.
 
 on:
   pull_request:
-  push:
-    tags: ['v*']
+  workflow_call:
   workflow_dispatch:
 
 permissions:
@@ -78,11 +77,11 @@ jobs:
           CMake hook, extract into native/web/ next to
           reactphysics3d_dart.cmake.
           EOF
-          cp native/web/libreactphysics3d.a build/web/libreactphysics3d_dart.a dist/
+          cp native/web/libreactphysics3d.a build/web/libreactphysics3d_dart.a LICENSE LICENSE-ReactPhysics3D dist/
           (cd dist && zip -q "reactphysics3d_dart-${VERSION}-web-emscripten.zip" \
-              libreactphysics3d.a libreactphysics3d_dart.a README.txt)
+              libreactphysics3d.a libreactphysics3d_dart.a README.txt LICENSE LICENSE-ReactPhysics3D)
 
-          cp build/web/build/out/reactphysics3d_dart.{js,wasm} dist-module/
+          cp build/web/build/out/reactphysics3d_dart.{js,wasm} LICENSE LICENSE-ReactPhysics3D dist-module/
           cat > dist-module/README.txt <<EOF
           reactphysics3d_dart ${VERSION} - standalone web module
           ReactPhysics3D engine: ${RP3D_ENGINE_REF}
@@ -96,7 +95,7 @@ jobs:
           (COOP/COEP headers) and keep the two files side by side.
           EOF
           (cd dist-module && zip -q "../dist/reactphysics3d_dart-${VERSION}-web-module.zip" \
-              reactphysics3d_dart.js reactphysics3d_dart.wasm README.txt)
+              reactphysics3d_dart.js reactphysics3d_dart.wasm README.txt LICENSE LICENSE-ReactPhysics3D)
 
       - uses: actions/upload-artifact@v5
         with:
@@ -206,7 +205,7 @@ jobs:
           package_native() {
             local lib="$1" platform="$2"
             mkdir -p "dist/${platform}"
-            cp "${lib}" "dist/${platform}/"
+            cp "${lib}" LICENSE-ReactPhysics3D "dist/${platform}/"
             cat > "dist/${platform}/README.txt" <<EOF
           reactphysics3d_dart ${VERSION} - ${platform}
           ReactPhysics3D engine: ${RP3D_ENGINE_REF}
@@ -218,7 +217,7 @@ jobs:
           need this file (the C API wrapper is compiled from source).
           EOF
             (cd "dist/${platform}" && make_zip "../reactphysics3d_dart-${VERSION}-${platform}.zip" \
-                "$(basename "${lib}")" README.txt)
+                "$(basename "${lib}")" README.txt LICENSE-ReactPhysics3D)
           }
           # MSVC (multi-config) names the archive reactphysics3d.lib under
           # Release/; Makefile/Ninja generators name it libreactphysics3d.a.
@@ -236,25 +235,3 @@ jobs:
           path: dist/*.zip
           retention-days: 7
           if-no-files-found: error
-
-  release:
-    if: startsWith(github.ref, 'refs/tags/')
-    needs: [web, native]
-    permissions:
-      contents: write
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v6
-        with:
-          path: dist
-          merge-multiple: true
-
-      - name: Create release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          ls dist/*.zip
-          gh release create "${GITHUB_REF_NAME}" \
-              --title "reactphysics3d_dart ${GITHUB_REF_NAME#v}" \
-              --generate-notes \
-              dist/*.zip

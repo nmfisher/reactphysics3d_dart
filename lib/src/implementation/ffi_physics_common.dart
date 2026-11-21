@@ -176,8 +176,8 @@ class FFIPhysicsCommon implements PhysicsCommon {
       }
 
       // Initialize error buffer with null bytes
-      final _error = makeUint8List(errorBufferSize);
-      _error.fillRange(0, _error.length, 0);
+      final error = makeUint8List(errorBufferSize);
+      error.fillRange(0, error.length, 0);
 
       final heightFieldHandle = rp3d_physics_common_create_height_field_float(
         _handle!,
@@ -186,16 +186,16 @@ class FFIPhysicsCommon implements PhysicsCommon {
         heights.address,
         minHeight,
         maxHeight,
-        _error.address.cast(),
+        error.address.cast(),
         errorBufferSize,
       );
 
-      if (heightFieldHandle == nullptr || _error[0] != 0) {
+      if (heightFieldHandle == nullptr || error[0] != 0) {
         if (heightFieldHandle != nullptr) {
           rp3d_physics_common_destroy_height_field(handle, heightFieldHandle);
         }
         final message = String.fromCharCodes(
-          _error,
+          error,
         ).split('\x00').where((part) => part.isNotEmpty).join('; ');
         throw ReactPhysics3DException(
           'Failed to create HeightField${message.isEmpty ? "" : ": $message"}',
@@ -238,8 +238,8 @@ class FFIPhysicsCommon implements PhysicsCommon {
         );
       }
 
-      final _error = makeUint8List(errorBufferSize);
-      _error.fillRange(0, _error.length, 0);
+      final error = makeUint8List(errorBufferSize);
+      error.fillRange(0, error.length, 0);
 
       final heightFieldHandle = rp3d_physics_common_create_height_field_int(
         _handle!,
@@ -249,16 +249,16 @@ class FFIPhysicsCommon implements PhysicsCommon {
         minHeight,
         maxHeight,
         integerHeightScale,
-        _error.address.cast(),
+        error.address.cast(),
         errorBufferSize,
       );
 
-      if (heightFieldHandle == nullptr || _error[0] != 0) {
+      if (heightFieldHandle == nullptr || error[0] != 0) {
         if (heightFieldHandle != nullptr) {
           rp3d_physics_common_destroy_height_field(handle, heightFieldHandle);
         }
         final message = String.fromCharCodes(
-          _error,
+          error,
         ).split('\x00').where((part) => part.isNotEmpty).join('; ');
         throw ReactPhysics3DException(
           'Failed to create HeightField${message.isEmpty ? "" : ": $message"}',

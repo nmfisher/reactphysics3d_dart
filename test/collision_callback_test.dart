@@ -1,7 +1,6 @@
 import 'helpers/message_test_helpers.dart';
 import 'package:test/test.dart';
 import 'package:reactphysics3d_dart/reactphysics3d_dart.dart';
-import 'package:reactphysics3d_dart/src/implementation/sendport_event_listener.dart';
 import 'dart:ffi' as ffi;
 import 'package:reactphysics3d_dart/src/bindings/src/bindings.dart'
     as ffi_bindings;
@@ -367,26 +366,6 @@ class _TestCollisionCallback implements CollisionCallback {
   }
 }
 
-/// Simple test overlap callback
-class _TestOverlapCallback implements OverlapCallback {
-  bool wasCalled = false;
-  int callCount = 0;
-  OverlapCallbackData? lastCallbackData;
-
-  @override
-  void onOverlap(OverlapCallbackData callbackData) {
-    wasCalled = true;
-    callCount++;
-    lastCallbackData = callbackData;
-  }
-
-  void reset() {
-    wasCalled = false;
-    callCount = 0;
-    lastCallbackData = null;
-  }
-}
-
 /// Helper for testing message reading
 class _TestMessageReader {
   final ffi.Pointer<ffi.Uint8> _data;
@@ -395,13 +374,13 @@ class _TestMessageReader {
   _TestMessageReader(this._data) : _offset = 0;
 
   int readUint32() {
-    final value = _data.elementAt(_offset).cast<ffi.Uint32>().value;
+    final value = (_data + _offset).cast<ffi.Uint32>().value;
     _offset += 4;
     return value;
   }
 
   int readUint64() {
-    final value = _data.elementAt(_offset).cast<ffi.Uint64>().value;
+    final value = (_data + _offset).cast<ffi.Uint64>().value;
     _offset += 8;
     return value;
   }

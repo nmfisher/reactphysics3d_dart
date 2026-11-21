@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import './bindings/src/bindings.dart';
 import '../reactphysics3d_dart.dart';
 import 'implementation/ffi_physics_common.dart';
@@ -46,6 +45,7 @@ extension TransformPointer on RP3D_Transform {
 class FFIReactPhysics3D implements ReactPhysics3D {
   final FFIPhysicsCommon _physicsCommon;
 
+  @override
   PhysicsCommon get physicsCommon => _physicsCommon;
 
   FFIReactPhysics3D() : _physicsCommon = FFIPhysicsCommon();
@@ -217,6 +217,7 @@ class FFIReactPhysics3D implements ReactPhysics3D {
   }
 
   /// Dispose of the ReactPhysics3D instance
+  @override
   void dispose() {
     _physicsCommon.dispose();
   }
