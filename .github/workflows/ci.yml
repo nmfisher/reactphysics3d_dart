@@ -49,3 +49,26 @@ jobs:
         # Compiles native/src against the prebuilt static library and runs the
         # FFI test suites through the build hook.
       - run: dart test
+
+  test-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - name: Build engine static library
+        shell: bash
+        run: |
+          scripts/fetch_engine.sh
+          export MSYS_NO_PATHCONV=1
+          cmake -S build/third_party/reactphysics3d -B build/engine \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DRP3D_COMPILE_TESTS=OFF \
+              -DRP3D_COMPILE_TESTBED=OFF \
+              -DCMAKE_CXX_FLAGS="/FIchrono"
+          cmake --build build/engine --config Release
+          mkdir -p native/windows/x86_64
+          cp build/engine/Release/reactphysics3d.lib native/windows/x86_64/reactphysics3d.lib
+      - run: dart pub get
+      - run: dart test

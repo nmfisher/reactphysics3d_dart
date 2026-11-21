@@ -88,6 +88,8 @@ class RigidBody : public Body {
         RigidBody& operator=(const RigidBody& body) = delete;
 
         /// Set the current position and orientation
+        /// The linear and angular velocities of the body are preserved (changing the transform
+        /// of a body does not change how it moves but only where it is in the world)
         virtual void setTransform(const Transform& transform) override;
 
         /// Return the mass of the body
@@ -118,6 +120,8 @@ class RigidBody : public Body {
         const Vector3& getLocalCenterOfMass() const;
 
         /// Set the center of mass of the body (in local-space coordinates)
+        /// Moving the center of mass inside the body updates the linear velocity so that it
+        /// stays the velocity of the new center of mass. The position of the body is not changed.
         void setLocalCenterOfMass(const Vector3& centerOfMass);
 
         /// Compute and set the local-space center of mass of the body using its colliders

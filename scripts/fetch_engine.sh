@@ -9,22 +9,34 @@
 # Usage: scripts/fetch_engine.sh [engine-dir]
 #
 # Environment:
-#   RP3D_ENGINE_REF   engine tag/commit to build (default: v0.10.2)
+#   RP3D_ENGINE_REF   engine tag/commit to build (default: 79399f49ddfa63ac5b19b6417e31fa733f3627dd)
+#   RP3D_ENGINE_URL   engine git URL (default: https://github.com/nmfisher/reactphysics3d.git)
 
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-RP3D_ENGINE_REF="${RP3D_ENGINE_REF:-v0.10.2}"
+RP3D_ENGINE_REF="${RP3D_ENGINE_REF:-79399f49ddfa63ac5b19b6417e31fa733f3627dd}"
 ENGINE_DIR="${1:-${REPO_ROOT}/build/third_party/reactphysics3d}"
-ENGINE_URL="https://github.com/DanielChappuis/reactphysics3d.git"
+ENGINE_URL="${RP3D_ENGINE_URL:-https://github.com/nmfisher/reactphysics3d.git}"
 
 echo "==> Fetching ReactPhysics3D ${RP3D_ENGINE_REF} into ${ENGINE_DIR}"
 mkdir -p "$(dirname "${ENGINE_DIR}")"
-if [ ! -d "${ENGINE_DIR}/.git" ] || [ "$(git -C "${ENGINE_DIR}" describe --tags --exact-match HEAD 2>/dev/null || true)" != "${RP3D_ENGINE_REF}" ]; then
-    echo "    cloning ${RP3D_ENGINE_REF}"
+CURRENT_REF=""
+if [ -d "${ENGINE_DIR}/.git" ]; then
+    CURRENT_SHA="$(git -C "${ENGINE_DIR}" rev-parse HEAD 2>/dev/null || true)"
+    CURRENT_TAG="$(git -C "${ENGINE_DIR}" describe --tags --exact-match HEAD 2>/dev/null || true)"
+    if [ "${CURRENT_SHA}" = "${RP3D_ENGINE_REF}" ] || [ "${CURRENT_TAG}" = "${RP3D_ENGINE_REF}" ]; then
+        CURRENT_REF="${RP3D_ENGINE_REF}"
+    fi
+fi
+if [ "${CURRENT_REF}" != "${RP3D_ENGINE_REF}" ]; then
+    echo "    fetching ${RP3D_ENGINE_REF}"
     rm -rf "${ENGINE_DIR}"
-    git clone --quiet --depth 1 --branch "${RP3D_ENGINE_REF}" \
-        "${ENGINE_URL}" "${ENGINE_DIR}"
+    mkdir -p "${ENGINE_DIR}"
+    git -C "${ENGINE_DIR}" init --quiet
+    git -C "${ENGINE_DIR}" remote add origin "${ENGINE_URL}"
+    git -C "${ENGINE_DIR}" fetch --quiet --depth 1 origin "${RP3D_ENGINE_REF}"
+    git -C "${ENGINE_DIR}" checkout --quiet --detach FETCH_HEAD
 fi
 
 echo "==> Verifying vendored headers against ${RP3D_ENGINE_REF}"

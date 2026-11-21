@@ -24,7 +24,7 @@ permissions:
   contents: read
 
 env:
-  RP3D_ENGINE_REF: v0.10.2
+  RP3D_ENGINE_REF: 79399f49ddfa63ac5b19b6417e31fa733f3627dd
   EMSDK_VERSION: 6.0.4
 
 jobs:

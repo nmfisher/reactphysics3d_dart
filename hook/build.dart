@@ -59,6 +59,10 @@ targetOS: $targetOS
       if (targetOS == OS.macOS) path.join(pkgRootFilePath, "native/macos"),
       if (targetOS == OS.linux)
         path.join(pkgRootFilePath, "native/linux", archDirName),
+      if (targetOS == OS.windows) ...[
+        path.join(pkgRootFilePath, "native/windows", archDirName),
+        path.join(pkgRootFilePath, "native/windows"),
+      ],
     ];
 
     // Libraries to link against
@@ -68,21 +72,18 @@ targetOS: $targetOS
 
     final defines = <String, String?>{};
     final flags = <String>[
-      "-std=c++11",
       if (targetOS == OS.linux) "-pthread",
     ];
-
-    flags.addAll(libDirs.map((dir) => "-L$dir"));
 
     var frameworks = <String>[];
 
     if (targetOS != OS.windows) {
-      if (!flags.any((f) => f.contains("-std=c++"))) {
-        flags.add('-std=c++11');
-      }
+      flags.addAll(libDirs.map((dir) => "-L$dir"));
     } else {
       defines["WIN32"] = "1";
       defines["_DLL"] = "1";
+      defines["NOMINMAX"] = "1";
+      defines["WIN32_LEAN_AND_MEAN"] = "1";
       if (buildMode == BuildMode.debug) {
         defines["_DEBUG"] = "1";
       } else {
@@ -91,11 +92,10 @@ targetOS: $targetOS
       }
 
       flags.addAll([
-        "/std:c++11",
+        "/EHsc",
+        "/FIchrono",
         if (buildMode == BuildMode.debug) ...["/MDd", "/Zi"],
         if (buildMode == BuildMode.release) "/MD",
-        "/VERBOSE",
-        ...defines.keys.map((k) => "/D$k=${defines[k]}"),
       ]);
     }
 
@@ -120,10 +120,12 @@ targetOS: $targetOS
       final cbuilder = CBuilder.library(
         name: packageName,
         language: Language.cpp,
+        std: 'c++17',
         assetName: 'reactphysics3d_dart.dart',
         sources: sources,
         includes: includeDirs,
         defines: defines,
+        libraries: targetOS == OS.windows ? libs : const [],
         libraryDirectories: libDirs,
         flags: [
           if (targetOS == OS.macOS) '-mmacosx-version-min=13.0',

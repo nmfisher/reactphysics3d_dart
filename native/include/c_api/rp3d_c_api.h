@@ -15,7 +15,11 @@
 #endif
 
 #ifndef EMSCRIPTEN_KEEPALIVE
+#ifdef _WIN32
+#define EMSCRIPTEN_KEEPALIVE __declspec(dllexport)
+#else
 #define EMSCRIPTEN_KEEPALIVE
+#endif
 #endif
 
 #ifdef __cplusplus

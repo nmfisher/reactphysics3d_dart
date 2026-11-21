@@ -458,15 +458,10 @@ RP3D_FORCE_INLINE bodypair OverlappingPairs::computeBodiesIndexPair(Entity body1
 // Set if we need to test a given pair for overlap
 RP3D_FORCE_INLINE void OverlappingPairs::setNeedToTestOverlap(uint64 pairId, bool needToTestOverlap) {
 
-    assert(mMapConvexPairIdToPairIndex.containsKey(pairId) || mMapConcavePairIdToPairIndex.containsKey(pairId));
-
-    auto it = mMapConvexPairIdToPairIndex.find(pairId);
-    if (it != mMapConvexPairIdToPairIndex.end()) {
-        mConvexPairs[static_cast<uint32>(it->second)].needToTestOverlap = needToTestOverlap;
-    }
-    else {
-        mConcavePairs[static_cast<uint32>(mMapConcavePairIdToPairIndex[pairId])].needToTestOverlap = needToTestOverlap;
-    }
+    // Filter changes can request a broad-phase check while both bodies are sleeping/static.
+    OverlappingPair* pair = getOverlappingPair(pairId);
+    assert(pair != nullptr);
+    pair->needToTestOverlap = needToTestOverlap;
 }
 
 // Return a reference to an overlapping pair
