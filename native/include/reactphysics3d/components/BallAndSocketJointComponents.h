@@ -213,7 +213,7 @@ class BallAndSocketJointComponents : public Components {
         void setIsConeLimitEnabled(Entity jointEntity, bool isLimitEnabled);
 
         /// Return the cone limit impulse
-        bool getConeLimitImpulse(Entity jointEntity) const;
+        decimal getConeLimitImpulse(Entity jointEntity) const;
 
         /// Set the cone limit impulse
         void setConeLimitImpulse(Entity jointEntity, decimal impulse);
@@ -225,7 +225,7 @@ class BallAndSocketJointComponents : public Components {
         void setConeLimitHalfAngle(Entity jointEntity, decimal halfAngle);
 
         /// Return the inverse mass matrix cone limit
-        bool getInverseMassMatrixConeLimit(Entity jointEntity) const;
+        decimal getInverseMassMatrixConeLimit(Entity jointEntity) const;
 
         /// Set the inverse mass matrix cone limit
         void setInverseMassMatrixConeLimit(Entity jointEntity, decimal inverseMassMatrix);
@@ -244,6 +244,7 @@ class BallAndSocketJointComponents : public Components {
 
         // -------------------- Friendship -------------------- //
 
+        friend class BallAndSocketJoint;
         friend class BroadPhaseSystem;
         friend class SolveBallAndSocketJointSystem;
 };
@@ -403,7 +404,7 @@ RP3D_FORCE_INLINE void BallAndSocketJointComponents::setIsConeLimitEnabled(Entit
 }
 
 // Return the cone limit impulse
-RP3D_FORCE_INLINE bool BallAndSocketJointComponents::getConeLimitImpulse(Entity jointEntity) const {
+RP3D_FORCE_INLINE decimal BallAndSocketJointComponents::getConeLimitImpulse(Entity jointEntity) const {
 
     assert(mMapEntityToComponentIndex.containsKey(jointEntity));
     return mConeLimitImpulse[mMapEntityToComponentIndex[jointEntity]];
@@ -431,7 +432,7 @@ RP3D_FORCE_INLINE void BallAndSocketJointComponents::setConeLimitHalfAngle(Entit
 }
 
 // Return the inverse mass matrix cone limit
-RP3D_FORCE_INLINE bool BallAndSocketJointComponents::getInverseMassMatrixConeLimit(Entity jointEntity) const {
+RP3D_FORCE_INLINE decimal BallAndSocketJointComponents::getInverseMassMatrixConeLimit(Entity jointEntity) const {
 
     assert(mMapEntityToComponentIndex.containsKey(jointEntity));
     return mInverseMassMatrixConeLimit[mMapEntityToComponentIndex[jointEntity]];

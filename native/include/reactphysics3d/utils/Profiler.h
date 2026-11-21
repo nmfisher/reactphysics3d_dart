@@ -381,17 +381,19 @@ class ProfileSample {
         /// Constructor
         ProfileSample(const char* name, Profiler* profiler) :mProfiler(profiler) {
 
-			assert(profiler != nullptr);
-
-            // Ask the profiler to start profiling a block of code
-			mProfiler->startProfilingBlock(name);
+            if (mProfiler != nullptr) {
+                // Ask the profiler to start profiling a block of code
+                mProfiler->startProfilingBlock(name);
+            }
         }
 
         /// Destructor
         ~ProfileSample() {
 
-            // Tell the profiler to stop profiling a block of code
-			mProfiler->stopProfilingBlock();
+            if (mProfiler != nullptr) {
+                // Tell the profiler to stop profiling a block of code
+                mProfiler->stopProfilingBlock();
+            }
         }
 };
 

@@ -169,7 +169,7 @@ class DynamicAABBTree {
 #ifdef IS_RP3D_PROFILING_ENABLED
 
 		/// Pointer to the profiler
-		Profiler* mProfiler;
+		Profiler* mProfiler = nullptr;
 
 #endif
 
@@ -201,9 +201,6 @@ class DynamicAABBTree {
 
 #ifndef NDEBUG
 
-        /// Check if the tree structure is valid (for debugging purpose)
-        void check() const;
-
         /// Check if the node structure is valid (for debugging purpose)
         void checkNode(int32 nodeID) const;
 
@@ -212,6 +209,13 @@ class DynamicAABBTree {
     public:
 
         // -------------------- Methods -------------------- //
+
+#ifndef NDEBUG
+
+        /// Check if the tree structure is valid (for debugging purpose)
+        void check() const;
+
+#endif
 
         /// Constructor
         DynamicAABBTree(MemoryAllocator& allocator, decimal fatAABBInflatePercentage = decimal(0.0));

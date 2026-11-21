@@ -387,6 +387,7 @@ class Map {
                         }
                         else {
                             assert(false);
+                            return false;
                         }
                     }
                 }

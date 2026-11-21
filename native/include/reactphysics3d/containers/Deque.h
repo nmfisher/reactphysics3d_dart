@@ -92,7 +92,7 @@ class Deque {
             void* newMemory = mAllocator.allocate(capacity * sizeof(T));
             T* destination = static_cast<T*>(newMemory);
 
-            const uint64 newStartIndex = capacity / 2 - 1;
+            const uint64 newStartIndex = (capacity - mSize) / 2;
 
             if (mBuffer != nullptr) {
 
@@ -272,7 +272,7 @@ class Deque {
 
         /// Copy constructor
         Deque(const Deque<T>& deque)
-            : mBuffer(nullptr), mSize(0), mCapacity(0), mFirstItemIndex(deque.mFirstItemIndex),
+            : mBuffer(nullptr), mSize(0), mCapacity(0), mFirstItemIndex(0),
               mAllocator(deque.mAllocator) {
 
             // Allocate memory
@@ -280,11 +280,13 @@ class Deque {
 
             if (deque.mSize > 0) {
 
+                mFirstItemIndex = (mCapacity - deque.mSize) / 2;
+
                 // Add the items into the deque
                 for(uint64 i=0; i < deque.mSize; i++) {
 
                     // Construct the element at its location in the buffer
-                    new (static_cast<void*>(&(mBuffer[deque.mFirstItemIndex + i]))) T(deque.mBuffer[deque.mFirstItemIndex + i]);
+                    new (static_cast<void*>(&(mBuffer[mFirstItemIndex + i]))) T(deque.mBuffer[deque.mFirstItemIndex + i]);
                 }
 
                 mSize = deque.mSize;
@@ -464,6 +466,8 @@ class Deque {
                 reserve(deque.mCapacity);
 
                 if (deque.mSize > 0) {
+
+                    mFirstItemIndex = (mCapacity - deque.mSize) / 2;
 
                     // Add the items into the deque
                     for(uint64 i=0; i < deque.mSize; i++) {

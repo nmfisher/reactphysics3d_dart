@@ -30,6 +30,7 @@
 #include <reactphysics3d/utils/Logger.h>
 #include <reactphysics3d/containers/Array.h>
 #include <reactphysics3d/containers/Map.h>
+#include <chrono>
 #include <string>
 #include <iostream>
 #include <fstream>

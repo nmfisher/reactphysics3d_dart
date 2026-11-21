@@ -235,6 +235,14 @@ class Array {
             addRange(array);
         }
 
+        /// Move constructor
+        Array(Array<T>&& array) noexcept
+            : mBuffer(array.mBuffer), mSize(array.mSize), mCapacity(array.mCapacity), mAllocator(array.mAllocator) {
+            array.mBuffer = nullptr;
+            array.mSize = 0;
+            array.mCapacity = 0;
+        }
+
         /// Destructor
         ~Array() {
 

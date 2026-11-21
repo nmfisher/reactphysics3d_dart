@@ -96,6 +96,9 @@ class CollisionDetectionSystem {
         /// Set of pair of bodies that cannot collide between each other
         Set<bodypair> mNoCollisionPairs;
 
+        /// Reference counts for pairs of bodies that cannot collide between each other
+        Map<bodypair, uint32> mNoCollisionPairsCounts;
+
         /// Broad-phase overlapping pairs
         OverlappingPairs mOverlappingPairs;
 
@@ -169,13 +172,16 @@ class CollisionDetectionSystem {
         /// Reference to the half-edge structure of the triangle polyhedron
         HalfEdgeStructure& mTriangleHalfEdgeStructure;
 
+        /// Scratch last-frame collision info used by read-only world snapshot queries
+        LastFrameCollisionInfo mSnapshotLastFrameCollisionInfo;
+
         /// Allocated size for a triangle shape
         static const size_t mTriangleShapeAllocatedSize;
 
 #ifdef IS_RP3D_PROFILING_ENABLED
 
     /// Pointer to the profiler
-    Profiler* mProfiler;
+    Profiler* mProfiler = nullptr;
 
 #endif
 
@@ -233,7 +239,7 @@ class CollisionDetectionSystem {
 
         /// Compute the concave vs convex middle-phase algorithm for a given pair of bodies
         void computeConvexVsConcaveMiddlePhase(OverlappingPairs::ConcaveOverlappingPair& overlappingPair, MemoryAllocator& allocator,
-                                               NarrowPhaseInput& narrowPhaseInput, bool reportContacts);
+                                               NarrowPhaseInput& narrowPhaseInput, bool reportContacts, bool isWorldQuery = false);
 
         /// Swap the previous and current contacts arrays
         void swapPreviousAndCurrentContacts();
@@ -401,6 +407,7 @@ class CollisionDetectionSystem {
         // -------------------- Friendship -------------------- //
 
         friend class PhysicsWorld;
+        friend class Collider;
         friend class ConvexMeshShape;
         friend class RigidBody;
         friend class DebugRenderer;
@@ -423,11 +430,6 @@ RP3D_FORCE_INLINE void CollisionDetectionSystem::addCollider(Collider* collider,
 
     // Add the mapping between the collider broad-phase id and its entity
     mMapBroadPhaseIdToColliderEntity.add(Pair<int, Entity>(broadPhaseId, collider->getEntity()));
-}
-
-// Remove a pair of bodies that cannot collide with each other
-RP3D_FORCE_INLINE void CollisionDetectionSystem::removeNoCollisionPair(Entity body1Entity, Entity body2Entity) {
-    mNoCollisionPairs.remove(OverlappingPairs::computeBodiesIndexPair(body1Entity, body2Entity));
 }
 
 // Ask for a collision shape to be tested again during broad-phase.

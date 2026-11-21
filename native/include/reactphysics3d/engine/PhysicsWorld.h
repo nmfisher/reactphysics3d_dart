@@ -51,6 +51,7 @@
 #include <reactphysics3d/systems/DynamicsSystem.h>
 #include <reactphysics3d/engine/Islands.h>
 #include <reactphysics3d/utils/DebugRenderer.h>
+#include <atomic>
 #include <sstream>
 
 /// Namespace ReactPhysics3D
@@ -225,11 +226,11 @@ class PhysicsWorld {
 #ifdef IS_RP3D_PROFILING_ENABLED
 
         /// Real-time hierarchical profiler
-        Profiler* mProfiler;
+        Profiler* mProfiler = nullptr;
 #endif
 
         /// Total number of worlds
-        static uint32 mNbWorlds;
+        static std::atomic<uint32> mNbWorlds;
 
         /// All the islands of bodies of the current frame
         Islands mIslands;

@@ -82,7 +82,7 @@ class CollisionShape {
 #ifdef IS_RP3D_PROFILING_ENABLED
 
 		/// Pointer to the profiler
-		Profiler* mProfiler;
+		Profiler* mProfiler = nullptr;
 
 #endif
         

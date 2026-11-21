@@ -9,13 +9,13 @@
 # Usage: scripts/fetch_engine.sh [engine-dir]
 #
 # Environment:
-#   RP3D_ENGINE_REF   engine tag/commit to build (default: 79399f49ddfa63ac5b19b6417e31fa733f3627dd)
+#   RP3D_ENGINE_REF   engine tag/commit to build (default: a2f2fc72a98ab2fa5a930e56729d67099832aa0c)
 #   RP3D_ENGINE_URL   engine git URL (default: https://github.com/nmfisher/reactphysics3d.git)
 
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-RP3D_ENGINE_REF="${RP3D_ENGINE_REF:-79399f49ddfa63ac5b19b6417e31fa733f3627dd}"
+RP3D_ENGINE_REF="${RP3D_ENGINE_REF:-a2f2fc72a98ab2fa5a930e56729d67099832aa0c}"
 ENGINE_DIR="${1:-${REPO_ROOT}/build/third_party/reactphysics3d}"
 ENGINE_URL="${RP3D_ENGINE_URL:-https://github.com/nmfisher/reactphysics3d.git}"
 

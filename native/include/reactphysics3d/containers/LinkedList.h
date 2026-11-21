@@ -117,6 +117,7 @@ RP3D_FORCE_INLINE void LinkedList<T>::reset() {
     ListElement* element = mListHead;
     while (element != nullptr) {
         ListElement* nextElement = element->next;
+        element->~ListElement();
         mAllocator.release(element, mElementAllocationSize);
         element = nextElement;
     }
