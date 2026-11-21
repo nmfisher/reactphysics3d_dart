@@ -56,8 +56,9 @@ class CallbackHolder<T extends Function> {
   }
 }
 
-Pointer<T> allocate<T extends NativeType>(int count) {
-  return calloc.allocate<T>(count * sizeOf<Pointer>());
+/// Allocates [byteCount] zero-initialized bytes on the native heap.
+Pointer<T> allocate<T extends NativeType>(int byteCount) {
+  return calloc.allocate<T>(byteCount);
 }
 
 void free(Pointer ptr) {
@@ -80,33 +81,31 @@ class FinalizableUint8List implements Finalizable {
 }
 
 int _requestId = 0;
-final _requests = <int, Completer>{};
+final _requests = <int, Completer<void>>{};
 
 void _voidCallbackHandler(int requestId) {
-  _requests[requestId]!.complete();
+  _requests.remove(requestId)?.complete();
 }
 
-late NativeCallable<Void Function(Int32)> _voidCallbackNativeCallable =
-    NativeCallable<Void Function(Int32)>.listener(_voidCallbackHandler);
+NativeCallable<Void Function(Int32)>? _voidCallbackNativeCallable;
 
 Future<void> withVoidCallback(
-  Function(int, Pointer<NativeFunction<Void Function(Int32)>>) func,
+  void Function(int, Pointer<NativeFunction<Void Function(Int32)>>) func,
 ) async {
-  var requestId = _requestId;
-  _requestId++;
-  final completer = Completer();
+  final requestId = _requestId++;
+  final completer = Completer<void>();
   _requests[requestId] = completer;
 
-  _voidCallbackNativeCallable = NativeCallable<Void Function(Int32)>.listener(
-    _voidCallbackHandler,
-  );
-  func.call(requestId, _voidCallbackNativeCallable.nativeFunction.cast());
+  final callable = _voidCallbackNativeCallable ??=
+      NativeCallable<Void Function(Int32)>.listener(_voidCallbackHandler)
+        ..keepIsolateAlive = false;
+  func.call(requestId, callable.nativeFunction);
 
   await completer.future;
 }
 
 Future<Pointer<T>> withPointerCallback<T extends NativeType>(
-  Function(Pointer<NativeFunction<Void Function(Pointer<T>)>>) func,
+  void Function(Pointer<NativeFunction<Void Function(Pointer<T>)>>) func,
 ) async {
   final completer = Completer<Pointer<T>>();
   // ignore: prefer_function_declarations_over_variables
@@ -122,7 +121,7 @@ Future<Pointer<T>> withPointerCallback<T extends NativeType>(
 }
 
 Future<bool> withBoolCallback(
-  Function(Pointer<NativeFunction<Void Function(Bool)>>) func,
+  void Function(Pointer<NativeFunction<Void Function(Bool)>>) func,
 ) async {
   final completer = Completer<bool>();
   // ignore: prefer_function_declarations_over_variables
@@ -137,7 +136,7 @@ Future<bool> withBoolCallback(
 }
 
 Future<double> withFloatCallback(
-  Function(Pointer<NativeFunction<Void Function(Float)>>) func,
+  void Function(Pointer<NativeFunction<Void Function(Float)>>) func,
 ) async {
   final completer = Completer<double>();
   // ignore: prefer_function_declarations_over_variables
@@ -154,7 +153,7 @@ Future<double> withFloatCallback(
 }
 
 Future<int> withIntCallback(
-  Function(Pointer<NativeFunction<Void Function(Int32)>>) func,
+  void Function(Pointer<NativeFunction<Void Function(Int32)>>) func,
 ) async {
   final completer = Completer<int>();
   // ignore: prefer_function_declarations_over_variables
@@ -171,7 +170,7 @@ Future<int> withIntCallback(
 }
 
 Future<int> withUInt32Callback(
-  Function(Pointer<NativeFunction<Void Function(Uint32)>>) func,
+  void Function(Pointer<NativeFunction<Void Function(Uint32)>>) func,
 ) async {
   final completer = Completer<int>();
   // ignore: prefer_function_declarations_over_variables
@@ -188,7 +187,7 @@ Future<int> withUInt32Callback(
 }
 
 Future<String> withCharPtrCallback(
-  Function(Pointer<NativeFunction<Void Function(Pointer<Char>)>>) func,
+  void Function(Pointer<NativeFunction<Void Function(Pointer<Char>)>>) func,
 ) async {
   final completer = Completer<String>();
   // ignore: prefer_function_declarations_over_variables
@@ -218,7 +217,7 @@ extension DartBigIntExtension on int {
 
 extension Float32ListExtension on Float32List {
   Uint8List asUint8List() {
-    return this.buffer.asUint8List(this.offsetInBytes);
+    return buffer.asUint8List(offsetInBytes, lengthInBytes);
   }
 }
 

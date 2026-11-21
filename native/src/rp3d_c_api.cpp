@@ -147,9 +147,14 @@ RP3D_HeightField* rp3d_physics_common_create_height_field_float(
         memset(errorBuffer, 0, errorBufferSize);
     }
 
+    if (!pc || (!heights && size_t(nbRows) * size_t(nbColumns) > 0)) {
+        return nullptr;
+    }
+
     // Create height data array and copy from input
-    std::vector<float> heightData(nbRows * nbColumns);
-    for (uint32_t i = 0; i < nbRows * nbColumns; ++i) {
+    const size_t totalSamples = size_t(nbRows) * size_t(nbColumns);
+    std::vector<float> heightData(totalSamples);
+    for (size_t i = 0; i < totalSamples; ++i) {
         heightData[i] = heights[i];
     }
 
@@ -163,20 +168,6 @@ RP3D_HeightField* rp3d_physics_common_create_height_field_float(
         messages,
         1.0f        // integerHeightScale parameter
     );
-
-    // Log all messages for debugging
-    std::cout << "HeightField creation - Total messages: " << messages.size() << std::endl;
-    for(size_t i = 0; i < messages.size(); ++i) {
-        const auto& message = messages[i];
-        std::string messageTypeStr;
-        switch(message.type) {
-            case Message::Type::Error: messageTypeStr = "ERROR"; break;
-            case Message::Type::Warning: messageTypeStr = "WARNING"; break;
-            case Message::Type::Information: messageTypeStr = "INFO"; break;
-            default: messageTypeStr = "UNKNOWN"; break;
-        }
-        std::cout << "Message " << i << " [" << messageTypeStr << "]: " << message.text << std::endl;
-    }
 
     // Copy error messages to buffer if provided
     if (errorBuffer != nullptr && errorBufferSize > 0) {
@@ -227,6 +218,10 @@ RP3D_HeightField* rp3d_physics_common_create_height_field_int(
         memset(errorBuffer, 0, errorBufferSize);
     }
 
+    if (!pc || (!heights && size_t(nbRows) * size_t(nbColumns) > 0)) {
+        return nullptr;
+    }
+
     // Create height field with integer data type
     std::vector<Message> messages;
     HeightField* heightField = pc->createHeightField(
@@ -237,20 +232,6 @@ RP3D_HeightField* rp3d_physics_common_create_height_field_int(
         messages,
         static_cast<decimal>(integerHeightScale)
     );
-
-    // Log all messages for debugging
-    std::cout << "HeightField creation (int) - Total messages: " << messages.size() << std::endl;
-    for(size_t i = 0; i < messages.size(); ++i) {
-        const auto& message = messages[i];
-        std::string messageTypeStr;
-        switch(message.type) {
-            case Message::Type::Error: messageTypeStr = "ERROR"; break;
-            case Message::Type::Warning: messageTypeStr = "WARNING"; break;
-            case Message::Type::Information: messageTypeStr = "INFO"; break;
-            default: messageTypeStr = "UNKNOWN"; break;
-        }
-        std::cout << "Message " << i << " [" << messageTypeStr << "]: " << message.text << std::endl;
-    }
 
     // Copy error messages to buffer if provided
     if (errorBuffer != nullptr && errorBufferSize > 0) {
@@ -291,10 +272,11 @@ void rp3d_physics_common_destroy_height_field(RP3D_PhysicsCommon* common, RP3D_H
 // HeightFieldShape creation
 EMSCRIPTEN_KEEPALIVE
 RP3D_HeightFieldShape* rp3d_physics_common_create_height_field_shape(RP3D_PhysicsCommon* common, RP3D_HeightField* heightField, RP3D_Vector3* scaling) {
+    if (!common || !heightField) return nullptr;
     PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
     HeightField* hf = reinterpret_cast<HeightField*>(heightField);
-    Vector3 *rpScaling = reinterpret_cast<Vector3 *>(scaling);
-    HeightFieldShape* shape = pc->createHeightFieldShape(hf, *rpScaling);
+    const Vector3 scaleVec = scaling ? to_rp3d_vector3(scaling) : Vector3(1, 1, 1);
+    HeightFieldShape* shape = pc->createHeightFieldShape(hf, scaleVec);
     return reinterpret_cast<RP3D_HeightFieldShape*>(shape);
 }
 
@@ -437,9 +419,10 @@ class SingleRaycastCallback : public RaycastCallback {
 // Raycasting
 EMSCRIPTEN_KEEPALIVE
 uint8_t rp3d_world_raycast(const RP3D_PhysicsWorld* world, const RP3D_Ray* ray, RP3D_RaycastInfo* raycastInfo) {
+    if (!world || !ray || !raycastInfo) return 0;
     const PhysicsWorld* pw = reinterpret_cast<const PhysicsWorld*>(world);
 
-    Ray r(to_rp3d_vector3(&ray->point1), to_rp3d_vector3(&ray->point2));
+    Ray r(to_rp3d_vector3(&ray->point1), to_rp3d_vector3(&ray->point2), ray->maxFraction);
     SingleRaycastCallback callback;
 
     pw->raycast(r, &callback);
@@ -1049,12 +1032,6 @@ uint16_t rp3d_collider_get_collide_with_mask_bits(const RP3D_Collider* collider)
 // ==================== Material ====================
 
 EMSCRIPTEN_KEEPALIVE
-void rp3d_material_destroy(RP3D_Material* material) {
-    Material* m = reinterpret_cast<Material*>(material);
-    delete m;
-}
-
-EMSCRIPTEN_KEEPALIVE
 void rp3d_material_set_bounciness(RP3D_Material* material, float bounciness) {
     Material* m = reinterpret_cast<Material*>(material);
     m->setBounciness(bounciness);
@@ -1094,6 +1071,7 @@ float rp3d_material_get_mass_density(const RP3D_Material* material) {
 
 EMSCRIPTEN_KEEPALIVE
 void rp3d_shape_get_local_bounds(const RP3D_CollisionShape* shape, RP3D_AABB* outAABB) {
+    if (!shape || !outAABB) return;
     const CollisionShape* cs = reinterpret_cast<const CollisionShape*>(shape);
     AABB aabb = cs->getLocalBounds();
     from_rp3d_vector3(aabb.getMin(), &outAABB->min);
@@ -1101,12 +1079,11 @@ void rp3d_shape_get_local_bounds(const RP3D_CollisionShape* shape, RP3D_AABB* ou
 }
 
 EMSCRIPTEN_KEEPALIVE
-void rp3d_concave_shape_set_scale(RP3D_HeightFieldShape* shape, const RP3D_Vector3* scale) {
-    ConcaveShape* concaveShape = reinterpret_cast<ConcaveShape*>(shape);
-    Vector3 scaleVec = to_rp3d_vector3(scale);
-
-    concaveShape->setScale(scaleVec);
-    return;
+void rp3d_concave_shape_set_scale(RP3D_CollisionShape* shape, const RP3D_Vector3* scale) {
+    if (!shape || !scale) return;
+    ConcaveShape* concaveShape = dynamic_cast<ConcaveShape*>(reinterpret_cast<CollisionShape*>(shape));
+    if (!concaveShape) return;
+    concaveShape->setScale(to_rp3d_vector3(scale));
 }
 
 // ==================== Math Utilities ====================
@@ -1277,7 +1254,7 @@ void rp3d_debug_renderer_get_lines_array(const RP3D_DebugRenderer* renderer, flo
         outVertices[i * 6 + 4] = line.point2.y;
         outVertices[i * 6 + 5] = line.point2.z;
 
-        // Color (RGBA packed into uint32)
+        // Color (24-bit RGB packed into uint32: 0x00RRGGBB)
         outColors[i] = line.color1;
     }
 }
@@ -1305,7 +1282,7 @@ void rp3d_debug_renderer_get_triangles_array(const RP3D_DebugRenderer* renderer,
         outVertices[i * 9 + 7] = triangle.point3.y;
         outVertices[i * 9 + 8] = triangle.point3.z;
 
-        // Color (RGBA packed into uint32)
+        // Color (24-bit RGB packed into uint32: 0x00RRGGBB)
         outColors[i] = triangle.color1;
     }
 }
@@ -1504,6 +1481,7 @@ RP3D_TriangleVertexArray* rp3d_triangle_vertex_array_create(
 
 EMSCRIPTEN_KEEPALIVE
 void rp3d_triangle_vertex_array_destroy(RP3D_TriangleVertexArray* triangleVertexArray) {
+    if (!triangleVertexArray) return;
     TriangleVertexArray* tva = reinterpret_cast<TriangleVertexArray*>(triangleVertexArray);
     delete static_cast<OwnedTriangleArray*>(tva);
 }
@@ -1542,6 +1520,7 @@ void rp3d_triangle_vertex_array_get_triangle_vertices_indices(
     uint32_t triangleIndex,
     uint32_t* out) {
     const TriangleVertexArray* tva = reinterpret_cast<const TriangleVertexArray*>(triangleVertexArray);
+    if (!tva || !out) return;
     tva->getTriangleVerticesIndices(triangleIndex, out[0], out[1], out[2]);
 }
 
@@ -1553,13 +1532,7 @@ RP3D_VertexArray* rp3d_vertex_array_create(
     const float* verticesStart,
     uint32_t verticesStride
 ) {
-    if (!verticesStart) {
-        std::cout << "VertexArray creation failed: null input data" << std::endl;
-        return nullptr;
-    }
-
-    if (nbVertices < 4) {
-        std::cout << "VertexArray creation failed: minimum 4 vertices required for convex hull" << std::endl;
+    if (!verticesStart || nbVertices < 4) {
         return nullptr;
     }
 
@@ -1630,18 +1603,21 @@ void rp3d_polygon_vertex_array_destroy(RP3D_PolygonVertexArray* polygonVertexArr
 
 EMSCRIPTEN_KEEPALIVE
 uint32_t rp3d_polygon_vertex_array_get_nb_vertices(RP3D_PolygonVertexArray* polygonVertexArray) {
+    if (!polygonVertexArray) return 0;
     PolygonVertexArray* pva = reinterpret_cast<PolygonVertexArray*>(polygonVertexArray);
     return pva->getNbVertices();
 }
 
 EMSCRIPTEN_KEEPALIVE
 uint32_t rp3d_polygon_vertex_array_get_nb_faces(RP3D_PolygonVertexArray* polygonVertexArray) {
+    if (!polygonVertexArray) return 0;
     PolygonVertexArray* pva = reinterpret_cast<PolygonVertexArray*>(polygonVertexArray);
     return pva->getNbFaces();
 }
 
 EMSCRIPTEN_KEEPALIVE
 void rp3d_polygon_vertex_array_get_vertex(RP3D_PolygonVertexArray* polygonVertexArray, uint32_t vertexIndex, float* outVertex) {
+    if (!polygonVertexArray || !outVertex) return;
     PolygonVertexArray* pva = reinterpret_cast<PolygonVertexArray*>(polygonVertexArray);
     Vector3 vertex = pva->getVertex(vertexIndex);
     outVertex[0] = vertex.x;
@@ -1651,6 +1627,7 @@ void rp3d_polygon_vertex_array_get_vertex(RP3D_PolygonVertexArray* polygonVertex
 
 EMSCRIPTEN_KEEPALIVE
 void rp3d_polygon_vertex_array_get_polygon_face(RP3D_PolygonVertexArray* polygonVertexArray, uint32_t faceIndex, uint32_t* outNbVertices, uint32_t* outIndexBase) {
+    if (!polygonVertexArray || !outNbVertices || !outIndexBase) return;
     PolygonVertexArray* pva = reinterpret_cast<PolygonVertexArray*>(polygonVertexArray);
     PolygonVertexArray::PolygonFace* face = pva->getPolygonFace(faceIndex);
     *outNbVertices = face->nbVertices;
@@ -1659,18 +1636,21 @@ void rp3d_polygon_vertex_array_get_polygon_face(RP3D_PolygonVertexArray* polygon
 
 EMSCRIPTEN_KEEPALIVE
 uint32_t rp3d_polygon_vertex_array_get_indices_stride(RP3D_PolygonVertexArray* polygonVertexArray) {
+    if (!polygonVertexArray) return 0;
     PolygonVertexArray* pva = reinterpret_cast<PolygonVertexArray*>(polygonVertexArray);
     return pva->getIndicesStride();
 }
 
 EMSCRIPTEN_KEEPALIVE
 const uint32_t* rp3d_polygon_vertex_array_get_indices_start(RP3D_PolygonVertexArray* polygonVertexArray) {
+    if (!polygonVertexArray) return nullptr;
     PolygonVertexArray* pva = reinterpret_cast<PolygonVertexArray*>(polygonVertexArray);
     return reinterpret_cast<const uint32_t*>(pva->getIndicesStart());
 }
 
 EMSCRIPTEN_KEEPALIVE
 uint32_t rp3d_polygon_vertex_array_get_vertex_index_in_face(RP3D_PolygonVertexArray* polygonVertexArray, uint32_t faceIndex, uint32_t vertexInFace) {
+    if (!polygonVertexArray) return 0;
     PolygonVertexArray* pva = reinterpret_cast<PolygonVertexArray*>(polygonVertexArray);
     return pva->getVertexIndexInFace(faceIndex, vertexInFace);
 }
@@ -1682,22 +1662,18 @@ RP3D_TriangleMesh* rp3d_physics_common_create_triangle_mesh(
     RP3D_PhysicsCommon* common,
     RP3D_TriangleVertexArray* triangleVertexArray
 ) {
+    if (!common || !triangleVertexArray) return nullptr;
     PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
     TriangleVertexArray* tva = reinterpret_cast<TriangleVertexArray*>(triangleVertexArray);
 
     std::vector<Message> messages;
     TriangleMesh* triangleMesh = pc->createTriangleMesh(*tva, messages);
-
-    // Output any error messages
-    for(const auto & message : messages) {
-        std::cout << "TriangleMesh creation: " << message.text << std::endl;
-    }
-
     return reinterpret_cast<RP3D_TriangleMesh*>(triangleMesh);
 }
 
 EMSCRIPTEN_KEEPALIVE
 void rp3d_physics_common_destroy_triangle_mesh(RP3D_PhysicsCommon* common, RP3D_TriangleMesh* triangleMesh) {
+    if (!common || !triangleMesh) return;
     PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
     TriangleMesh* tm = reinterpret_cast<TriangleMesh*>(triangleMesh);
     pc->destroyTriangleMesh(tm);
@@ -1737,6 +1713,7 @@ void rp3d_triangle_mesh_get_triangle_vertices_indices(
     uint32_t triangleIndex,
     uint32_t *indices) {
     const TriangleMesh* tm = reinterpret_cast<const TriangleMesh*>(triangleMesh);
+    if (!tm || !indices) return;
     tm->getTriangleVerticesIndices(triangleIndex, indices[0], indices[1], indices[2]);
 }
 
@@ -1747,66 +1724,57 @@ RP3D_ConvexMesh* rp3d_physics_common_create_convex_mesh_from_triangles(
     RP3D_PhysicsCommon* common,
     RP3D_TriangleVertexArray* triangleVertexArray
 ) {
+    if (!common || !triangleVertexArray) return nullptr;
     PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
     TriangleVertexArray* tva = reinterpret_cast<TriangleVertexArray*>(triangleVertexArray);
 
-    // Input validation
-    if (!tva || !tva->getVerticesStart() || tva->getNbVertices() < 3) {
-        std::cout << "ConvexMesh creation failed: Invalid triangle vertex array data" << std::endl;
-        return nullptr;
-    }
-
-    // Check vertex stride is valid for 3D positions
-    if (tva->getVerticesStride() < 12) { // At least 3 floats * 4 bytes
-        std::cout << "ConvexMesh creation failed: Invalid vertex stride" << std::endl;
-        return nullptr;
-    }
-
-    // Extract unique vertices from triangle data to avoid duplicates
-    const float* verticesData = static_cast<const float*>(tva->getVerticesStart());
-    const uint32_t* indicesData = static_cast<const uint32_t*>(tva->getIndicesStart());
-    uint32_t nbVertices = tva->getNbVertices();
-    uint32_t nbTriangles = tva->getNbTriangles();
-    uint32_t vertexStride = tva->getVerticesStride() / 4; // Convert bytes to float count
-
-    // For simplicity and safety, create a VertexArray with the original vertex data
-    // but limit the number of vertices to prevent crashes with degenerate data
-    uint32_t maxVertices = std::min(nbVertices, 1000u); // Safety limit
-    if (maxVertices < 4) {
-        std::cout << "ConvexMesh creation failed: Not enough vertices (minimum 4 required)" << std::endl;
+    const uint32_t nbVertices = tva->getNbVertices();
+    const uint32_t nbTriangles = tva->getNbTriangles();
+    if (!tva->getVerticesStart() || nbVertices < 4 || nbTriangles == 0 || tva->getVerticesStride() < 12) {
         return nullptr;
     }
 
     try {
+        // Collect only the unique vertices referenced by the triangle indices,
+        // without truncating large meshes or including unreferenced vertices.
+        std::vector<bool> used(nbVertices, false);
+        uint32_t uniqueCount = 0;
+        for (uint32_t t = 0; t < nbTriangles; ++t) {
+            uint32_t i0 = 0, i1 = 0, i2 = 0;
+            tva->getTriangleVerticesIndices(t, i0, i1, i2);
+            if (i0 >= nbVertices || i1 >= nbVertices || i2 >= nbVertices) {
+                return nullptr;
+            }
+            if (!used[i0]) { used[i0] = true; ++uniqueCount; }
+            if (!used[i1]) { used[i1] = true; ++uniqueCount; }
+            if (!used[i2]) { used[i2] = true; ++uniqueCount; }
+        }
+        if (uniqueCount < 4) {
+            return nullptr;
+        }
+
+        std::vector<float> referencedVertices;
+        referencedVertices.reserve(size_t(uniqueCount) * 3);
+        for (uint32_t v = 0; v < nbVertices; ++v) {
+            if (used[v]) {
+                const Vector3 vertex = tva->getVertex(v);
+                referencedVertices.push_back(static_cast<float>(vertex.x));
+                referencedVertices.push_back(static_cast<float>(vertex.y));
+                referencedVertices.push_back(static_cast<float>(vertex.z));
+            }
+        }
 
         VertexArray vertexArray(
-            verticesData,
-            tva->getVerticesStride(),
-            maxVertices,
+            referencedVertices.data(),
+            3 * sizeof(float),
+            uniqueCount,
             VertexArray::DataType::VERTEX_FLOAT_TYPE
         );
 
         std::vector<Message> messages;
         ConvexMesh* convexMesh = pc->createConvexMesh(vertexArray, messages);
-
-        // Output any error messages
-        if (!messages.empty()) {
-            for(const auto & message : messages) {
-                std::cout << "ConvexMesh creation warning: " << message.text << std::endl;
-            }
-        }
-
-        if (!convexMesh) {
-            std::cout << "ConvexMesh creation failed: QuickHull algorithm failed" << std::endl;
-            return nullptr;
-        }
-
         return reinterpret_cast<RP3D_ConvexMesh*>(convexMesh);
-    } catch (const std::exception& e) {
-        std::cout << "ConvexMesh creation failed with exception: " << e.what() << std::endl;
-        return nullptr;
     } catch (...) {
-        std::cout << "ConvexMesh creation failed with unknown exception" << std::endl;
         return nullptr;
     }
 }
@@ -1816,33 +1784,17 @@ RP3D_ConvexMesh* rp3d_physics_common_create_convex_mesh_from_polygons(
     RP3D_PhysicsCommon* common,
     RP3D_PolygonVertexArray* polygonVertexArray
 ) {
-    std::cout << "start" << std::endl;
+    if (!common || !polygonVertexArray) return nullptr;
     PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
     PolygonVertexArray* pva = reinterpret_cast<PolygonVertexArray*>(polygonVertexArray);
 
-    if (!pva) {
-        std::cout << "ConvexMesh creation from polygons failed: null polygon vertex array" << std::endl;
+    try {
+        std::vector<Message> messages;
+        ConvexMesh* convexMesh = pc->createConvexMesh(*pva, messages);
+        return reinterpret_cast<RP3D_ConvexMesh*>(convexMesh);
+    } catch (...) {
         return nullptr;
     }
-
-    std::vector<Message> messages;
-    ConvexMesh* convexMesh = pc->createConvexMesh(*pva, messages);
-
-    // Output any error messages
-    if (!messages.empty()) {
-        for(const auto & message : messages) {
-            std::cout << "ConvexMesh creation from polygons warning: " << message.text << std::endl;
-        }
-    } else {
-        std::cout << "No messages" << std::endl;
-    }
-
-    if (!convexMesh) {
-        std::cout << "ConvexMesh creation from polygons failed: algorithm failed" << std::endl;
-        return nullptr;
-    }
-
-    return reinterpret_cast<RP3D_ConvexMesh*>(convexMesh);
 }
 
 EMSCRIPTEN_KEEPALIVE
@@ -1850,41 +1802,19 @@ RP3D_ConvexMesh* rp3d_physics_common_create_convex_mesh_from_vertices(
     RP3D_PhysicsCommon* common,
     RP3D_VertexArray* vertexArray
 ) {
+    if (!common || !vertexArray) return nullptr;
     PhysicsCommon* pc = reinterpret_cast<PhysicsCommon*>(common);
     VertexArray* va = reinterpret_cast<VertexArray*>(vertexArray);
 
-    if (!va) {
-        std::cout << "ConvexMesh creation from vertices failed: null vertex array" << std::endl;
-        return nullptr;
-    }
-
     if (va->getNbVertices() < 4) {
-        std::cout << "ConvexMesh creation from vertices failed: minimum 4 vertices required" << std::endl;
         return nullptr;
     }
 
     try {
         std::vector<Message> messages;
         ConvexMesh* convexMesh = pc->createConvexMesh(*va, messages);
-
-        // Output any error messages
-        if (!messages.empty()) {
-            for(const auto & message : messages) {
-                std::cout << "ConvexMesh creation from vertices warning: " << message.text << std::endl;
-            }
-        }
-
-        if (!convexMesh) {
-            std::cout << "ConvexMesh creation from vertices failed: QuickHull algorithm failed" << std::endl;
-            return nullptr;
-        }
-
         return reinterpret_cast<RP3D_ConvexMesh*>(convexMesh);
-    } catch (const std::exception& e) {
-        std::cout << "ConvexMesh creation from vertices failed with exception: " << e.what() << std::endl;
-        return nullptr;
     } catch (...) {
-        std::cout << "ConvexMesh creation from vertices failed with unknown exception" << std::endl;
         return nullptr;
     }
 }

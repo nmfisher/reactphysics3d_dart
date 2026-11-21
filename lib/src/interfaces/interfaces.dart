@@ -28,7 +28,6 @@ export 'debug_renderer.dart';
 export 'debug_item.dart';
 export 'debug_structures.dart';
 
-// Math and transform interfaces
-export 'transform.dart';
+// Math and event listener interfaces
 export 'event_listener.dart';
 export '../implementation/sendport_event_listener.dart';

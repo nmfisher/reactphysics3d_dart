@@ -11,6 +11,13 @@ class _Callback extends CollisionCallback {
   void onContact(ContactCallbackData data) => callback(data);
 }
 
+class _TriggerCallback extends OverlapCallback {
+  final void Function(OverlapCallbackData) callback;
+  _TriggerCallback(this.callback);
+  @override
+  void onOverlap(OverlapCallbackData data) => callback(data);
+}
+
 void main() {
   late ReactPhysics3D physics;
   setUp(() => physics = createReactPhysics3D());
@@ -304,4 +311,169 @@ void main() {
       expect(native.rp3d_listener_message_size(listener.pointer), 0);
     },
   );
+
+  test('raycast respects maxFraction and validates ray parameters', () {
+    final world = physics.createWorld();
+    final body = world.createRigidBody()
+      ..addCollider(physics.createSphereShape(0.5));
+    expect(
+      world.raycast(
+        Ray(Vector3(0, 5, 0), Vector3(0, -5, 0), maxFraction: 0.25),
+      ),
+      isNull,
+    );
+    final hit = world.raycast(
+      Ray(Vector3(0, 5, 0), Vector3(0, -5, 0), maxFraction: 0.75),
+    );
+    expect(hit, isNotNull);
+    expect(hit!.body, same(body));
+    expect(
+      () => world.raycast(
+        Ray(Vector3(0, 5, 0), Vector3(0, -5, 0), maxFraction: -0.1),
+      ),
+      throwsArgumentError,
+    );
+  });
+
+  test('concave mesh scaling, trigger overlap callback and FFI helpers work', () {
+    final world = physics.createWorld()..setIsGravityEnabled(false);
+    final tva = physics.createTriangleVertexArray(
+      vertices: Float32List.fromList([-1, 0, -1, 1, 0, -1, 0, 0, 1]),
+      indices: Uint32List.fromList([0, 2, 1]),
+    );
+    final mesh = physics.createTriangleMesh(tva);
+    tva.dispose();
+    final shape = physics.createConcaveMeshShape(mesh);
+    final ground = world.createRigidBody()
+      ..type = BodyType.STATIC
+      ..addCollider(shape);
+    expect(world.raycast(Ray(Vector3(1.5, 2, -1), Vector3(1.5, -2, -1))), isNull);
+    shape.setScale(Vector3.all(3));
+    expect(
+      world.raycast(Ray(Vector3(1.5, 2, -1), Vector3(1.5, -2, -1)))?.body,
+      same(ground),
+    );
+    expect(() => shape.setScale(Vector3.zero()), throwsArgumentError);
+
+    final sphere = physics.createSphereShape(1);
+    final triggerBody = world.createRigidBody(
+      transform: (
+        position: Vector3(0, 10, 0),
+        orientation: Quaternion.identity(),
+      ),
+    );
+    triggerBody.addCollider(sphere).setAsTrigger(true);
+    final otherBody = world.createRigidBody(
+      transform: (
+        position: Vector3(0, 10, 0),
+        orientation: Quaternion.identity(),
+      ),
+    );
+    otherBody.addCollider(sphere);
+
+    var overlapPairs = 0;
+    world.testTriggerOverlap(
+      _TriggerCallback((data) => overlapPairs += data.nbOverlapPairs),
+    );
+    expect(overlapPairs, 1);
+
+    final backing = Float32List.fromList([1, 2, 3, 4, 5]);
+    final slice = Float32List.sublistView(backing, 1, 3);
+    expect(slice.asUint8List().length, 8);
+
+    final rayInfos = native.allocate<native.RP3D_RaycastInfo>(
+      2 * native.sizeOf<native.RP3D_RaycastInfo>(),
+    );
+    try {
+      rayInfos[1].hitFraction = 0.5;
+      expect(rayInfos[1].hitFraction, 0.5);
+    } finally {
+      native.free(rayInfos);
+    }
+  });
+
+  test(
+    'convex mesh from triangles keeps >1000 vertices and ignores unreferenced outliers',
+    () {
+      // 1,100 unreferenced outlier vertices at y = 100 followed by a tetrahedron
+      // at indices 1100..1103 near the origin (with apex at y = 2).
+      final coords = <double>[];
+      for (var i = 0; i < 1100; i++) {
+        coords.addAll([0, 100, 0]);
+      }
+      coords.addAll([
+        -1, 0, -1, // 1100
+        1, 0, -1, // 1101
+        0, 0, 1, // 1102
+        0, 2, 0, // 1103
+      ]);
+      final tva = physics.createTriangleVertexArray(
+        vertices: Float32List.fromList(coords),
+        indices: Uint32List.fromList([
+          1100, 1102, 1101,
+          1100, 1101, 1103,
+          1101, 1102, 1103,
+          1102, 1100, 1103,
+        ]),
+      );
+      final convex = physics.createConvexMeshFromTriangles(tva);
+      final shape = physics.createConvexMeshShape(convex);
+      final world = physics.createWorld();
+      world.createRigidBody().addCollider(shape);
+      // Should hit the tetrahedron near y = 2, NOT an unreferenced outlier at y = 100.
+      final hit = world.raycast(Ray(Vector3(0, 10, 0), Vector3(0, -1, 0)));
+      expect(hit, isNotNull);
+      expect(hit!.worldPoint.y, closeTo(2, 0.1));
+    },
+  );
+
+  test('shape, transform, mass and cross-factory validations reject bad inputs', () {
+    expect(() => physics.createBoxShape(Vector3(0, 1, 1)), throwsArgumentError);
+    expect(() => physics.createSphereShape(0), throwsArgumentError);
+    expect(() => physics.createCapsuleShape(1, -1), throwsArgumentError);
+
+    final world = physics.createWorld();
+    final body = world.createRigidBody();
+    expect(() => body.mass = -1, throwsArgumentError);
+    expect(
+      () => body.transform = (
+        position: Vector3.zero(),
+        orientation: Quaternion(0, 0, 0, 0),
+      ),
+      throwsArgumentError,
+    );
+
+    final other = createReactPhysics3D();
+    try {
+      final otherTva = other.createTriangleVertexArray(
+        vertices: Float32List.fromList([0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]),
+        indices: Uint32List.fromList([0, 2, 1, 0, 1, 3, 0, 3, 2, 1, 2, 3]),
+      );
+      final otherPva = other.createPolygonVertexArray(
+        vertices: Float32List.fromList([0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]),
+        indices: Uint32List.fromList([0, 2, 1, 0, 1, 3, 0, 3, 2, 1, 2, 3]),
+        polygonIndices: Uint32List.fromList([3, 0, 3, 3, 3, 6, 3, 9]),
+      );
+      final otherVa = other.createVertexArray(
+        Float32List.fromList([0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]),
+      );
+      final otherWorld = other.createWorld();
+      expect(() => physics.createTriangleMesh(otherTva), throwsArgumentError);
+      expect(
+        () => physics.createConvexMeshFromTriangles(otherTva),
+        throwsArgumentError,
+      );
+      expect(
+        () => physics.createConvexMeshFromPolygons(otherPva),
+        throwsArgumentError,
+      );
+      expect(
+        () => physics.createConvexMeshFromVertices(otherVa),
+        throwsArgumentError,
+      );
+      expect(() => physics.createRigidBody(otherWorld), throwsArgumentError);
+    } finally {
+      other.dispose();
+    }
+  });
 }

@@ -56,7 +56,10 @@ targetOS: $targetOS
 
     // Library directories
     final libDirs = <String>[
-      if (targetOS == OS.macOS) path.join(pkgRootFilePath, "native/macos"),
+      if (targetOS == OS.macOS) ...[
+        path.join(pkgRootFilePath, "native/macos", archDirName),
+        path.join(pkgRootFilePath, "native/macos"),
+      ],
       if (targetOS == OS.linux)
         path.join(pkgRootFilePath, "native/linux", archDirName),
       if (targetOS == OS.windows) ...[
@@ -145,11 +148,7 @@ targetOS: $targetOS
 
       logger.info("Running CBuilder...");
 
-      output.metadata.addAll({
-        "includeDirs": includeDirs
-            .map((dir) => path.join(pkgRootFilePath, dir))
-            .toList(),
-      });
+      output.metadata.addAll({"includeDirs": includeDirs});
       output.metadata.addAll({"outputDir": outputDirectory.path});
 
       await cbuilder.run(input: input, output: output, logger: logger);

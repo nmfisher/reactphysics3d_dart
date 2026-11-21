@@ -54,14 +54,14 @@ class FFIDebugRenderer implements DebugRenderer {
 
       // Allocate arrays for vertices and colors
       final vertices = makeFloat32List(nbLines * 6); // 2 points × 3 coords
-      final colors = makeInt32List(nbLines);
+      final colors = makeUint32List(nbLines);
 
       try {
         // Get the debug lines data
         rp3d_debug_renderer_get_lines_array(
           _ptr,
           vertices.address,
-          colors.address.cast(),
+          colors.address,
         );
 
         // Convert to Dart objects
@@ -103,14 +103,14 @@ class FFIDebugRenderer implements DebugRenderer {
 
       // Allocate arrays for vertices and colors
       final vertices = makeFloat32List(nbTriangles * 9); // 3 points × 3 coords
-      final colors = makeInt32List(nbTriangles);
+      final colors = makeUint32List(nbTriangles);
 
       try {
         // Get the debug triangles data
         rp3d_debug_renderer_get_triangles_array(
           _ptr,
           vertices.address,
-          colors.address.cast(),
+          colors.address,
         );
 
         // Convert to Dart objects

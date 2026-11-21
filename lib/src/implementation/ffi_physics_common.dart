@@ -21,7 +21,7 @@ class FFIPhysicsCommon implements PhysicsCommon {
   FFIPhysicsCommon() {
     _handle = rp3d_physics_common_create();
     if (_handle == nullptr) {
-      throw Exception('Failed to create PhysicsCommon');
+      throw const ReactPhysics3DException('Failed to create PhysicsCommon');
     }
   }
 
@@ -53,11 +53,41 @@ class FFIPhysicsCommon implements PhysicsCommon {
     _checkDisposed();
     final worldHandle = rp3d_physics_common_create_physics_world(_handle!);
     if (worldHandle == nullptr) {
-      throw Exception('Failed to create PhysicsWorld');
+      throw const ReactPhysics3DException('Failed to create PhysicsWorld');
     }
     final world = FFIPhysicsWorld(worldHandle, this);
     worlds.add(world);
     return world;
+  }
+
+  void _requirePositiveVector3(Vector3 v, String name) {
+    if (!v.x.isFinite ||
+        !v.y.isFinite ||
+        !v.z.isFinite ||
+        v.x <= 0 ||
+        v.y <= 0 ||
+        v.z <= 0) {
+      throw ArgumentError.value(
+        v,
+        name,
+        'Components must be finite and positive',
+      );
+    }
+  }
+
+  void _requireNonZeroVector3(Vector3 v, String name) {
+    if (!v.x.isFinite ||
+        !v.y.isFinite ||
+        !v.z.isFinite ||
+        v.x == 0 ||
+        v.y == 0 ||
+        v.z == 0) {
+      throw ArgumentError.value(
+        v,
+        name,
+        'Components must be finite and non-zero',
+      );
+    }
   }
 
   @override
@@ -65,6 +95,7 @@ class FFIPhysicsCommon implements PhysicsCommon {
     final stack = saveNativeStack();
     try {
       _checkDisposed();
+      _requirePositiveVector3(extent, 'extent');
       final extentsPtr = _toFFIVector3(extent);
 
       final shapeHandle = rp3d_physics_common_create_box_shape(
@@ -72,7 +103,7 @@ class FFIPhysicsCommon implements PhysicsCommon {
         extentsPtr.address,
       );
       if (shapeHandle == nullptr) {
-        throw Exception('Failed to create BoxShape');
+        throw const ReactPhysics3DException('Failed to create BoxShape');
       }
       return FFIBoxShape.internal(shapeHandle, this);
     } finally {
@@ -83,12 +114,15 @@ class FFIPhysicsCommon implements PhysicsCommon {
   @override
   SphereShape createSphereShape(double radius) {
     _checkDisposed();
+    if (!radius.isFinite || radius <= 0) {
+      throw ArgumentError.value(radius, 'radius', 'Must be finite and positive');
+    }
     final shapeHandle = rp3d_physics_common_create_sphere_shape(
       _handle!,
       radius,
     );
     if (shapeHandle == nullptr) {
-      throw Exception('Failed to create SphereShape');
+      throw const ReactPhysics3DException('Failed to create SphereShape');
     }
     return FFISphereShape.internal(shapeHandle, this);
   }
@@ -96,13 +130,19 @@ class FFIPhysicsCommon implements PhysicsCommon {
   @override
   CapsuleShape createCapsuleShape(double radius, double height) {
     _checkDisposed();
+    if (!radius.isFinite || radius <= 0) {
+      throw ArgumentError.value(radius, 'radius', 'Must be finite and positive');
+    }
+    if (!height.isFinite || height <= 0) {
+      throw ArgumentError.value(height, 'height', 'Must be finite and positive');
+    }
     final shapeHandle = rp3d_physics_common_create_capsule_shape(
       _handle!,
       radius,
       height,
     );
     if (shapeHandle == nullptr) {
-      throw Exception('Failed to create CapsuleShape');
+      throw const ReactPhysics3DException('Failed to create CapsuleShape');
     }
     return FFICapsuleShape.internal(shapeHandle, this);
   }
@@ -124,10 +164,15 @@ class FFIPhysicsCommon implements PhysicsCommon {
 
       // Validate inputs
       if (rows <= 0 || columns <= 0) {
-        throw Exception('Rows and columns must be positive');
+        throw const ReactPhysics3DException('Rows and columns must be positive');
       }
       if (heights.length != rows * columns) {
-        throw Exception('Heights array length must match rows * columns');
+        throw const ReactPhysics3DException(
+          'Heights array length must match rows * columns',
+        );
+      }
+      if (heights.any((h) => !h.isFinite)) {
+        throw const ReactPhysics3DException('Heights must be finite');
       }
 
       // Initialize error buffer with null bytes
@@ -152,7 +197,7 @@ class FFIPhysicsCommon implements PhysicsCommon {
         final message = String.fromCharCodes(
           _error,
         ).split('\x00').where((part) => part.isNotEmpty).join('; ');
-        throw Exception(
+        throw ReactPhysics3DException(
           'Failed to create HeightField${message.isEmpty ? "" : ": $message"}',
         );
       }
@@ -185,6 +230,13 @@ class FFIPhysicsCommon implements PhysicsCommon {
       if (heights.length != rows * columns) {
         throw ArgumentError('Heights array length must match rows * columns');
       }
+      if (!integerHeightScale.isFinite || integerHeightScale <= 0) {
+        throw ArgumentError.value(
+          integerHeightScale,
+          'integerHeightScale',
+          'Must be finite and positive',
+        );
+      }
 
       final _error = makeUint8List(errorBufferSize);
       _error.fillRange(0, _error.length, 0);
@@ -208,7 +260,7 @@ class FFIPhysicsCommon implements PhysicsCommon {
         final message = String.fromCharCodes(
           _error,
         ).split('\x00').where((part) => part.isNotEmpty).join('; ');
-        throw Exception(
+        throw ReactPhysics3DException(
           'Failed to create HeightField${message.isEmpty ? "" : ": $message"}',
         );
       }
@@ -230,6 +282,7 @@ class FFIPhysicsCommon implements PhysicsCommon {
     try {
       _checkDisposed();
       scaling ??= Vector3.all(1);
+      _requirePositiveVector3(scaling, 'scaling');
       final rpScaling = _toFFIVector3(scaling);
       final ffiHeightField = heightField as FFIHeightField;
       ffiHeightField.requireSameCommon(this);
@@ -239,7 +292,7 @@ class FFIPhysicsCommon implements PhysicsCommon {
         rpScaling.address,
       );
       if (shapeHandle == nullptr) {
-        throw Exception('Failed to create HeightFieldShape');
+        throw const ReactPhysics3DException('Failed to create HeightFieldShape');
       }
       return FFIHeightFieldShape.internal(shapeHandle, this, ffiHeightField);
     } finally {
@@ -278,7 +331,7 @@ class FFIPhysicsCommon implements PhysicsCommon {
       }
 
       // Allocate index data
-      final indicesPtr = makeInt32List(indices.length);
+      final indicesPtr = makeUint32List(indices.length);
       for (int i = 0; i < indices.length; i++) {
         indicesPtr[i] = indices[i];
       }
@@ -288,11 +341,13 @@ class FFIPhysicsCommon implements PhysicsCommon {
         verticesPtr.address,
         3 * sizeOf<Float>(),
         indices.length,
-        indicesPtr.address.cast(),
+        indicesPtr.address,
         3 * sizeOf<Uint32>(),
       );
       if (triangleArrayHandle == nullptr) {
-        throw Exception('Failed to create TriangleVertexArray');
+        throw const ReactPhysics3DException(
+          'Failed to create TriangleVertexArray',
+        );
       }
       return FFITriangleVertexArray.internal(triangleArrayHandle, this);
     } finally {
@@ -334,14 +389,14 @@ class FFIPhysicsCommon implements PhysicsCommon {
       }
 
       // Allocate index data
-      final indicesPtr = makeInt32List(indices.length);
+      final indicesPtr = makeUint32List(indices.length);
       for (int i = 0; i < indices.length; i++) {
         indicesPtr[i] = indices[i];
       }
 
       // Allocate polygon indices data
       // Format: [nbVertices1, indexBase1, nbVertices2, indexBase2, ...]
-      final polygonIndicesPtr = makeInt32List(polygonIndices.length);
+      final polygonIndicesPtr = makeUint32List(polygonIndices.length);
       for (int i = 0; i < polygonIndices.length; i++) {
         polygonIndicesPtr[i] = polygonIndices[i];
       }
@@ -351,15 +406,17 @@ class FFIPhysicsCommon implements PhysicsCommon {
         verticesPtr.address,
         3 * sizeOf<Float>(), // verticesStride: 3 floats * 4 bytes
         indices.length, // nbIndices (used to determine nbFaces)
-        indicesPtr.address.cast(),
+        indicesPtr.address,
         sizeOf<Uint32>(), // indicesStride: 4 bytes per int
-        polygonIndicesPtr.address.cast(),
+        polygonIndicesPtr.address,
         2 * sizeOf<Uint32>(), // polygonIndicesStride: 2 values per face
         polygonIndices.length ~/ 2,
       );
 
       if (polygonArrayHandle == nullptr) {
-        throw Exception('Failed to create PolygonVertexArray');
+        throw const ReactPhysics3DException(
+          'Failed to create PolygonVertexArray',
+        );
       }
 
       return FFIPolygonVertexArray.internal(
@@ -394,7 +451,7 @@ class FFIPhysicsCommon implements PhysicsCommon {
       );
 
       if (vertexArrayHandle == nullptr) {
-        throw Exception('Failed to create VertexArray');
+        throw const ReactPhysics3DException('Failed to create VertexArray');
       }
 
       return FFIVertexArray.internal(vertexArrayHandle, this);
@@ -407,12 +464,13 @@ class FFIPhysicsCommon implements PhysicsCommon {
   TriangleMesh createTriangleMesh(TriangleVertexArray triangleVertexArray) {
     _checkDisposed();
     final ffiTriangleArray = triangleVertexArray as FFITriangleVertexArray;
+    ffiTriangleArray.requireSameCommon(this);
     final triangleMeshHandle = rp3d_physics_common_create_triangle_mesh(
       _handle!,
       ffiTriangleArray.handle,
     );
     if (triangleMeshHandle == nullptr) {
-      throw Exception('Failed to create TriangleMesh');
+      throw const ReactPhysics3DException('Failed to create TriangleMesh');
     }
     return FFITriangleMesh.internal(triangleMeshHandle, this);
   }
@@ -423,13 +481,14 @@ class FFIPhysicsCommon implements PhysicsCommon {
   ) {
     _checkDisposed();
     final ffiTriangleArray = triangleVertexArray as FFITriangleVertexArray;
+    ffiTriangleArray.requireSameCommon(this);
     final convexMeshHandle =
         rp3d_physics_common_create_convex_mesh_from_triangles(
           _handle!,
           ffiTriangleArray.handle,
         );
     if (convexMeshHandle == nullptr) {
-      throw Exception(
+      throw const ReactPhysics3DException(
         'Failed to create ConvexMesh from triangles - invalid vertex data or algorithm failed',
       );
     }
@@ -441,15 +500,16 @@ class FFIPhysicsCommon implements PhysicsCommon {
     PolygonVertexArray polygonVertexArray,
   ) {
     _checkDisposed();
-
+    final ffiPolygonArray = polygonVertexArray as FFIPolygonVertexArray;
+    ffiPolygonArray.requireSameCommon(this);
     final convexMeshHandle =
         rp3d_physics_common_create_convex_mesh_from_polygons(
           _handle!,
-          polygonVertexArray.handle,
+          ffiPolygonArray.handle,
         );
     if (convexMeshHandle == nullptr) {
-      throw Exception(
-        'Failed to create ConvexMesh from triangles - invalid vertex data or algorithm failed',
+      throw const ReactPhysics3DException(
+        'Failed to create ConvexMesh from polygons - invalid vertex data or algorithm failed',
       );
     }
     return FFIConvexMesh.internal(convexMeshHandle, this);
@@ -458,10 +518,12 @@ class FFIPhysicsCommon implements PhysicsCommon {
   @override
   ConvexMesh? createConvexMeshFromVertices(VertexArray vertexArray) {
     _checkDisposed();
+    final ffiVertexArray = vertexArray as FFIVertexArray;
+    ffiVertexArray.requireSameCommon(this);
     final convexMeshHandle =
         rp3d_physics_common_create_convex_mesh_from_vertices(
           _handle!,
-          vertexArray.handle,
+          ffiVertexArray.handle,
         );
 
     // Return null if convex mesh creation failed (QuickHull algorithm can fail)
@@ -482,8 +544,10 @@ class FFIPhysicsCommon implements PhysicsCommon {
       _checkDisposed();
       final ffiConvexMesh = convexMesh as FFIConvexMesh;
       ffiConvexMesh.requireSameCommon(this);
+      final resolvedScale = scaling ?? Vector3.all(1.0);
+      _requireNonZeroVector3(resolvedScale, 'scaling');
 
-      final scalePtr = _toFFIVector3(scaling ?? Vector3.all(1.0));
+      final scalePtr = _toFFIVector3(resolvedScale);
 
       final convexMeshShapeHandle =
           rp3d_physics_common_create_convex_mesh_shape(
@@ -492,7 +556,7 @@ class FFIPhysicsCommon implements PhysicsCommon {
             scalePtr.address,
           );
       if (convexMeshShapeHandle == nullptr) {
-        throw Exception('Failed to create ConvexMeshShape');
+        throw const ReactPhysics3DException('Failed to create ConvexMeshShape');
       }
       return FFIConvexMeshShape.internal(
         convexMeshShapeHandle,
@@ -514,8 +578,10 @@ class FFIPhysicsCommon implements PhysicsCommon {
       _checkDisposed();
       final ffiTriangleMesh = triangleMesh as FFITriangleMesh;
       ffiTriangleMesh.requireSameCommon(this);
+      final resolvedScale = scaling ?? Vector3.all(1.0);
+      _requireNonZeroVector3(resolvedScale, 'scaling');
 
-      final scalePtr = _toFFIVector3(scaling ?? Vector3.all(1.0));
+      final scalePtr = _toFFIVector3(resolvedScale);
 
       final concaveMeshShapeHandle =
           rp3d_physics_common_create_concave_mesh_shape(
@@ -524,7 +590,9 @@ class FFIPhysicsCommon implements PhysicsCommon {
             scalePtr.address,
           );
       if (concaveMeshShapeHandle == nullptr) {
-        throw Exception('Failed to create ConcaveMeshShape');
+        throw const ReactPhysics3DException(
+          'Failed to create ConcaveMeshShape',
+        );
       }
       return FFIConcaveMeshShape.internal(
         concaveMeshShapeHandle,

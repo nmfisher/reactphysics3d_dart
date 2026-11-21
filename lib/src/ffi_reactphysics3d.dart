@@ -2,10 +2,22 @@ import 'dart:typed_data';
 import './bindings/src/bindings.dart';
 import '../reactphysics3d_dart.dart';
 import 'implementation/ffi_physics_common.dart';
+import 'implementation/ffi_physics_world.dart';
 
 extension TransformStruct on Transform {
+  void validate() {
+    if (!position.x.isFinite || !position.y.isFinite || !position.z.isFinite) {
+      throw ArgumentError('Transform position must be finite');
+    }
+    final lenSq = orientation.length2;
+    if (!lenSq.isFinite || (lenSq - 1.0).abs() > 1e-3) {
+      throw ArgumentError('Transform orientation must be a unit quaternion');
+    }
+  }
+
   /// Helper function to convert Transform to FFI Transform
   RP3D_Transform toStruct() {
+    validate();
     final xform = StructAllocator.create<RP3D_Transform>();
     xform.position.x = position.x;
     xform.position.y = position.y;
@@ -107,8 +119,11 @@ class FFIReactPhysics3D implements ReactPhysics3D {
     required Float32List vertices,
     required Uint32List indices,
   }) {
+    _physicsCommon.lifetime.check();
     if (vertices.length < 9 || indices.length < 3) {
-      throw Exception("At least one triangle (3 vertices) required");
+      throw const ReactPhysics3DException(
+        "At least one triangle (3 vertices) required",
+      );
     }
     return _physicsCommon.createTriangleVertexArray(
       vertices: vertices,
@@ -186,6 +201,14 @@ class FFIReactPhysics3D implements ReactPhysics3D {
     BodyType type = BodyType.DYNAMIC,
     double mass = 1.0,
   }) {
+    _physicsCommon.lifetime.check();
+    if (world is! FFIPhysicsWorld ||
+        !identical(world.common, _physicsCommon)) {
+      throw ArgumentError('World belongs to another PhysicsCommon');
+    }
+    if (!mass.isFinite || mass < 0) {
+      throw ArgumentError.value(mass, 'mass', 'Must be finite and non-negative');
+    }
     final rigidBody = world.createRigidBody(transform: transform);
     rigidBody.type = type;
     rigidBody.mass = mass;

@@ -1,6 +1,7 @@
 import '../bindings/src/bindings.dart';
 import 'package:vector_math/vector_math_64.dart';
 import '../interfaces/collision_shape.dart';
+import 'ffi_collider.dart';
 import 'ffi_physics_common.dart';
 import 'ffi_common_resource.dart';
 
@@ -14,6 +15,15 @@ abstract class FFICollisionShape extends FFICommonResource<RP3D_CollisionShape>
   ]) : super(handle, common) {
     data?.users.add(this);
   }
+
+  void _refreshAttachedColliders() {
+    for (final user in users) {
+      if (user is FFICollider && !user.lifetime.isDisposed) {
+        user.localOrientation = user.localOrientation;
+      }
+    }
+  }
+
   @override
   void dispose() {
     super.dispose();
@@ -99,6 +109,7 @@ class FFIHeightFieldShape extends FFICollisionShape
   void setScale(Vector3 scale) {
     final stack = saveNativeStack();
     try {
+      final ptr = handle;
       if (!scale.x.isFinite ||
           !scale.y.isFinite ||
           !scale.z.isFinite ||
@@ -111,7 +122,8 @@ class FFIHeightFieldShape extends FFICollisionShape
       value.x = scale.x;
       value.y = scale.y;
       value.z = scale.z;
-      rp3d_concave_shape_set_scale(handle.cast(), value.address);
+      rp3d_concave_shape_set_scale(ptr, value.address);
+      _refreshAttachedColliders();
     } finally {
       restoreNativeStack(stack);
     }
@@ -179,12 +191,12 @@ class FFITriangleMesh extends FFICommonResource<RP3D_TriangleMesh>
         getTriangleCount() - 1,
         'index',
       );
-      final out = makeInt32List(3);
+      final out = makeUint32List(3);
       try {
         rp3d_triangle_mesh_get_triangle_vertices_indices(
           handle,
           index,
-          out.address.cast(),
+          out.address,
         );
         return List<int>.of(out);
       } finally {
@@ -240,6 +252,30 @@ class FFIConcaveMeshShape extends FFICollisionShape
       handle.cast<RP3D_ConcaveMeshShape>(),
     );
   }
+
+  @override
+  void setScale(Vector3 scale) {
+    final stack = saveNativeStack();
+    try {
+      final ptr = handle;
+      if (!scale.x.isFinite ||
+          !scale.y.isFinite ||
+          !scale.z.isFinite ||
+          scale.x <= 0 ||
+          scale.y <= 0 ||
+          scale.z <= 0) {
+        throw ArgumentError('Scale components must be finite and positive');
+      }
+      final value = StructAllocator.create<RP3D_Vector3>();
+      value.x = scale.x;
+      value.y = scale.y;
+      value.z = scale.z;
+      rp3d_concave_shape_set_scale(ptr, value.address);
+      _refreshAttachedColliders();
+    } finally {
+      restoreNativeStack(stack);
+    }
+  }
 }
 
 class FFITriangleVertexArray extends FFICommonResource<RP3D_TriangleVertexArray>
@@ -272,12 +308,12 @@ class FFITriangleVertexArray extends FFICommonResource<RP3D_TriangleVertexArray>
         getTriangleCount() - 1,
         'index',
       );
-      final out = makeInt32List(3);
+      final out = makeUint32List(3);
       try {
         rp3d_triangle_vertex_array_get_triangle_vertices_indices(
           handle,
           index,
-          out.address.cast(),
+          out.address,
         );
         return List<int>.of(out);
       } finally {

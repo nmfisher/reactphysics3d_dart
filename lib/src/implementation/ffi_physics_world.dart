@@ -206,6 +206,21 @@ class FFIPhysicsWorld implements PhysicsWorld {
   RaycastInfo? raycast(Ray ray) {
     final stack = saveNativeStack();
     try {
+      if (!ray.point1.x.isFinite ||
+          !ray.point1.y.isFinite ||
+          !ray.point1.z.isFinite ||
+          !ray.point2.x.isFinite ||
+          !ray.point2.y.isFinite ||
+          !ray.point2.z.isFinite) {
+        throw ArgumentError('Ray endpoints must be finite');
+      }
+      if (!ray.maxFraction.isFinite || ray.maxFraction < 0) {
+        throw ArgumentError.value(
+          ray.maxFraction,
+          'maxFraction',
+          'Must be finite and non-negative',
+        );
+      }
       // Create FFI ray struct
       final rayStruct = StructAllocator.create<RP3D_Ray>();
       rayStruct.point1.x = ray.point1.x;
@@ -214,7 +229,7 @@ class FFIPhysicsWorld implements PhysicsWorld {
       rayStruct.point2.x = ray.point2.x;
       rayStruct.point2.y = ray.point2.y;
       rayStruct.point2.z = ray.point2.z;
-      rayStruct.maxFraction = 1.0;
+      rayStruct.maxFraction = ray.maxFraction;
 
       // Create raycast info struct to receive results
       final raycastInfoStruct = StructAllocator.create<RP3D_RaycastInfo>();
@@ -441,6 +456,47 @@ class FFIPhysicsWorld implements PhysicsWorld {
 
         final callbackData = ContactCallbackData(contactPairs: contactPairs);
         callback.onContact(callbackData);
+      } finally {
+        rp3d_free_overlap_callback_data(resultPtr);
+      }
+    } finally {
+      restoreNativeStack(stack);
+    }
+  }
+
+  @override
+  void testTriggerOverlap(OverlapCallback callback) {
+    final stack = saveNativeStack();
+    try {
+      final resultPtr = rp3d_test_overlap_world_sync(_ptr);
+      try {
+        final data = resultPtr.ref;
+        final overlapPairs = <OverlapPair>[];
+        for (var i = 0; i < data.nbOverlapPairs; i++) {
+          final pairData = data.overlapPairs[i];
+          if (pairData.body1.address == 0 ||
+              pairData.body2.address == 0 ||
+              pairData.collider1.address == 0 ||
+              pairData.collider2.address == 0) {
+            continue;
+          }
+          final eventType = switch (pairData.eventType) {
+            0 => OverlapEventType.overlapStart,
+            1 => OverlapEventType.overlapStay,
+            2 => OverlapEventType.overlapExit,
+            _ => OverlapEventType.overlapStart,
+          };
+          overlapPairs.add(
+            OverlapPair(
+              collider1: colliderAtAddress(pairData.collider1.address),
+              collider2: colliderAtAddress(pairData.collider2.address),
+              body1: bodyAtAddress(pairData.body1.address),
+              body2: bodyAtAddress(pairData.body2.address),
+              eventType: eventType,
+            ),
+          );
+        }
+        callback.onOverlap(OverlapCallbackData(overlapPairs: overlapPairs));
       } finally {
         rp3d_free_overlap_callback_data(resultPtr);
       }

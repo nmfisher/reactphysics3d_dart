@@ -304,11 +304,14 @@ extern "C" EMSCRIPTEN_KEEPALIVE int rp3d_initialize_dart_api(void* data) {
 #endif
 }
 extern "C" EMSCRIPTEN_KEEPALIVE uint32_t rp3d_listener_message_size(RP3D_EventListener* listener) {
+    if (!listener) return 0;
     return reinterpret_cast<SendPortEventListener*>(listener)->messageSize();
 }
 extern "C" EMSCRIPTEN_KEEPALIVE uint32_t rp3d_listener_read_message(RP3D_EventListener* listener, uint8_t* data, uint32_t capacity) {
+    if (!listener) return 0;
     return reinterpret_cast<SendPortEventListener*>(listener)->read(data, capacity);
 }
 extern "C" EMSCRIPTEN_KEEPALIVE void rp3d_listener_clear_messages(RP3D_EventListener* listener) {
+    if (!listener) return;
     reinterpret_cast<SendPortEventListener*>(listener)->clear();
 }

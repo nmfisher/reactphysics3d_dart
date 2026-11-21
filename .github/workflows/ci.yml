@@ -45,9 +45,19 @@ jobs:
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: stable
+      - name: Build engine static library
+        run: |
+          scripts/fetch_engine.sh
+          cmake -S build/third_party/reactphysics3d -B build/engine \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+              -DRP3D_COMPILE_TESTS=OFF \
+              -DRP3D_COMPILE_TESTBED=OFF
+          cmake --build build/engine --config Release --parallel
+          cp build/engine/libreactphysics3d.a native/linux/x86_64/libreactphysics3d.a
       - run: dart pub get
-        # Compiles native/src against the prebuilt static library and runs the
-        # FFI test suites through the build hook.
+        # Compiles native/src against the freshly built static library and runs
+        # the FFI test suites through the build hook.
       - run: dart test
 
   test-windows:

@@ -161,6 +161,7 @@ jobs:
           fi
           cmake -S build/third_party/reactphysics3d -B build/engine \
               -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
               -DRP3D_COMPILE_TESTS=OFF \
               -DRP3D_COMPILE_TESTBED=OFF \
               "${EXTRA_ARGS[@]}"
@@ -180,6 +181,7 @@ jobs:
           fi
           cmake -S build/third_party/reactphysics3d -B "build/engine-${{ matrix.extra }}" \
               -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
               -DRP3D_COMPILE_TESTS=OFF \
               -DRP3D_COMPILE_TESTBED=OFF \
               "${EXTRA_ARGS[@]}"

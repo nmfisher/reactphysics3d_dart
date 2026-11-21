@@ -78,6 +78,9 @@ abstract class PhysicsWorld
   /// This queries for trigger overlaps without generating contact points.
   void testOverlap(CollisionCallback callback);
 
+  /// Test overlap (trigger) and report overlapping trigger colliders via [OverlapCallback].
+  void testTriggerOverlap(OverlapCallback callback);
+
   /// Register automatic events, delivered asynchronously after update returns.
   /// The caller owns the listener. World disposal detaches it but does not dispose it.
   /// Pass null to remove the current listener.

@@ -57,8 +57,9 @@ enum BodyType { STATIC, KINEMATIC, DYNAMIC }
 class Ray {
   final Vector3 point1;
   final Vector3 point2;
+  final double maxFraction;
 
-  Ray(this.point1, this.point2);
+  Ray(this.point1, this.point2, {this.maxFraction = 1.0});
 }
 
 /// Raycast hit information

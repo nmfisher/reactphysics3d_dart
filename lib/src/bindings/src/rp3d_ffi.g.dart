@@ -841,38 +841,31 @@ external int rp3d_collider_get_is_world_query_collider(
   ffi.Pointer<RP3D_Collider> collider,
 );
 
-@ffi.Native<ffi.Void Function(ffi.Pointer<RP3D_Collider>, ffi.UnsignedShort)>(
+@ffi.Native<ffi.Void Function(ffi.Pointer<RP3D_Collider>, ffi.Uint16)>(
     isLeaf: true)
 external void rp3d_collider_set_collision_category_bits(
   ffi.Pointer<RP3D_Collider> collider,
   int collisionCategoryBits,
 );
 
-@ffi.Native<ffi.UnsignedShort Function(ffi.Pointer<RP3D_Collider>)>(
-    isLeaf: true)
+@ffi.Native<ffi.Uint16 Function(ffi.Pointer<RP3D_Collider>)>(isLeaf: true)
 external int rp3d_collider_get_collision_category_bits(
   ffi.Pointer<RP3D_Collider> collider,
 );
 
-@ffi.Native<ffi.Void Function(ffi.Pointer<RP3D_Collider>, ffi.UnsignedShort)>(
+@ffi.Native<ffi.Void Function(ffi.Pointer<RP3D_Collider>, ffi.Uint16)>(
     isLeaf: true)
 external void rp3d_collider_set_collide_with_mask_bits(
   ffi.Pointer<RP3D_Collider> collider,
   int collideWithMaskBits,
 );
 
-@ffi.Native<ffi.UnsignedShort Function(ffi.Pointer<RP3D_Collider>)>(
-    isLeaf: true)
+@ffi.Native<ffi.Uint16 Function(ffi.Pointer<RP3D_Collider>)>(isLeaf: true)
 external int rp3d_collider_get_collide_with_mask_bits(
   ffi.Pointer<RP3D_Collider> collider,
 );
 
 /// ==================== Material ====================
-@ffi.Native<ffi.Void Function(ffi.Pointer<RP3D_Material>)>(isLeaf: true)
-external void rp3d_material_destroy(
-  ffi.Pointer<RP3D_Material> material,
-);
-
 @ffi.Native<ffi.Void Function(ffi.Pointer<RP3D_Material>, ffi.Float)>(
     isLeaf: true)
 external void rp3d_material_set_bounciness(
@@ -919,10 +912,10 @@ external void rp3d_shape_get_local_bounds(
 );
 
 @ffi.Native<
-    ffi.Void Function(ffi.Pointer<RP3D_HeightFieldShape>,
+    ffi.Void Function(ffi.Pointer<RP3D_CollisionShape>,
         ffi.Pointer<RP3D_Vector3>)>(isLeaf: true)
 external void rp3d_concave_shape_set_scale(
-  ffi.Pointer<RP3D_HeightFieldShape> shape,
+  ffi.Pointer<RP3D_CollisionShape> shape,
   ffi.Pointer<RP3D_Vector3> scale,
 );
 

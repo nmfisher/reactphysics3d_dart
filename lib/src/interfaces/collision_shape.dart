@@ -134,4 +134,7 @@ abstract class ConvexMesh
 abstract class ConvexMeshShape extends CollisionShape {}
 
 /// Interface for concave mesh collision shapes
-abstract class ConcaveMeshShape extends CollisionShape {}
+abstract class ConcaveMeshShape extends CollisionShape {
+  /// Set the scale of the collision shape
+  void setScale(Vector3 scale);
+}

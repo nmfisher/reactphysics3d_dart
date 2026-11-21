@@ -82,8 +82,10 @@ class FFIRigidBody implements RigidBody {
 
   @override
   void setTransform(Transform value) {
+    final ptr = _ptr;
+    value.validate();
     rp3d_body_set_transform(
-      _ptr,
+      ptr,
       value.position.x,
       value.position.y,
       value.position.z,
@@ -98,7 +100,17 @@ class FFIRigidBody implements RigidBody {
   double get mass => rp3d_body_get_mass(_ptr);
 
   @override
-  set mass(double value) => rp3d_body_set_mass(_ptr, value);
+  set mass(double value) {
+    final ptr = _ptr;
+    if (!value.isFinite || value < 0) {
+      throw ArgumentError.value(
+        value,
+        'mass',
+        'Must be finite and non-negative',
+      );
+    }
+    rp3d_body_set_mass(ptr, value);
+  }
 
   @override
   Vector3 get linearVelocity {

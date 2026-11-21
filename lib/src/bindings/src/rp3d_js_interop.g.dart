@@ -493,7 +493,6 @@ extension type GeneratedBindings(NativeLibrary _) implements JSObject {
   );
 
   /// ==================== Material ====================
-  external void _rp3d_material_destroy(Pointer<RP3D_Material> material);
   external void _rp3d_material_set_bounciness(
     Pointer<RP3D_Material> material,
     double bounciness,
@@ -522,7 +521,7 @@ extension type GeneratedBindings(NativeLibrary _) implements JSObject {
     Pointer<RP3D_AABB> outAABB,
   );
   external void _rp3d_concave_shape_set_scale(
-    Pointer<RP3D_HeightFieldShape> shape,
+    Pointer<RP3D_CollisionShape> shape,
     Pointer<RP3D_Vector3> scale,
   );
 
@@ -1836,13 +1835,6 @@ int rp3d_collider_get_collide_with_mask_bits(Pointer<RP3D_Collider> collider) {
 }
 
 /// ==================== Material ====================
-void rp3d_material_destroy(Pointer<RP3D_Material> material) {
-  final result = GeneratedBindings.instance._rp3d_material_destroy(
-    material.cast(),
-  );
-  return result;
-}
-
 void rp3d_material_set_bounciness(
   Pointer<RP3D_Material> material,
   double bounciness,
@@ -1910,7 +1902,7 @@ void rp3d_shape_get_local_bounds(
 }
 
 void rp3d_concave_shape_set_scale(
-  Pointer<RP3D_HeightFieldShape> shape,
+  Pointer<RP3D_CollisionShape> shape,
   Pointer<RP3D_Vector3> scale,
 ) {
   final result = GeneratedBindings.instance._rp3d_concave_shape_set_scale(
@@ -2276,6 +2268,21 @@ void rp3d_listener_clear_messages(Pointer<RP3D_EventListener> listener) {
   return result;
 }
 
+/// ==================== Enums ====================
+sealed class RP3D_BodyType {
+  static const RP3D_BODY_TYPE_STATIC = 1;
+  static const RP3D_BODY_TYPE_KINEMATIC = 2;
+  static const RP3D_BODY_TYPE_DYNAMIC = 3;
+}
+
+sealed class RP3D_DebugItem {
+  static const RP3D_DEBUG_ITEM_COLLIDER_AABB = 1;
+  static const RP3D_DEBUG_ITEM_COLLIDER_BROADPHASE_AABB = 2;
+  static const RP3D_DEBUG_ITEM_COLLISION_SHAPE = 4;
+  static const RP3D_DEBUG_ITEM_CONTACT_POINT = 8;
+  static const RP3D_DEBUG_ITEM_CONTACT_NORMAL = 16;
+}
+
 extension RP3D_PhysicsCommonExt on Pointer<RP3D_PhysicsCommon> {
   RP3D_PhysicsCommon toDart() {
     return RP3D_PhysicsCommon(this);
@@ -2339,44 +2346,62 @@ final class RP3D_Vector3 extends Struct {
   Pointer<RP3D_Vector3> get address => super.address.cast();
   double get x {
     final addr = Pointer<RP3D_Vector3>(this.address.addr + 0);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return data.getFloat32(addr.addr, Endian.little);
+    }
     final value = NativeLibrary.instance.getValue(addr, 'float').toDartDouble;
     return value;
   }
 
   set x(double val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_Vector3>(this.address.addr + 0),
-      val.toJS,
-      'float',
-    );
+    final addr = Pointer<RP3D_Vector3>(this.address.addr + 0);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setFloat32(addr.addr, val, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, 'float');
   }
 
   double get y {
     final addr = Pointer<RP3D_Vector3>(this.address.addr + 4);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return data.getFloat32(addr.addr, Endian.little);
+    }
     final value = NativeLibrary.instance.getValue(addr, 'float').toDartDouble;
     return value;
   }
 
   set y(double val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_Vector3>(this.address.addr + 4),
-      val.toJS,
-      'float',
-    );
+    final addr = Pointer<RP3D_Vector3>(this.address.addr + 4);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setFloat32(addr.addr, val, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, 'float');
   }
 
   double get z {
     final addr = Pointer<RP3D_Vector3>(this.address.addr + 8);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return data.getFloat32(addr.addr, Endian.little);
+    }
     final value = NativeLibrary.instance.getValue(addr, 'float').toDartDouble;
     return value;
   }
 
   set z(double val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_Vector3>(this.address.addr + 8),
-      val.toJS,
-      'float',
-    );
+    final addr = Pointer<RP3D_Vector3>(this.address.addr + 8);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setFloat32(addr.addr, val, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, 'float');
   }
 
   RP3D_Vector3(super.address);
@@ -2617,32 +2642,22 @@ extension RP3D_TransformExt on Pointer<RP3D_Transform> {
 
 final class RP3D_Transform extends Struct {
   Pointer<RP3D_Transform> get address => super.address.cast();
-  RP3D_Vector3 get position {
-    final addr = Pointer<RP3D_Transform>(this.address.addr + 0);
-    final value = NativeLibrary.instance.getValue(addr, '*');
-    return RP3D_Vector3(Pointer<RP3D_Vector3>(addr));
-  }
-
+  RP3D_Vector3 get position =>
+      RP3D_Vector3(Pointer<RP3D_Vector3>(this.address.addr + 0));
   set position(RP3D_Vector3 val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_Transform>(this.address.addr + 0),
-      val.address.toJS,
-      '*',
-    );
+    final heap = NativeLibrary.instance.HEAPU8.toDart;
+    final source = val.address.addr;
+    final bytes = heap.sublist(source, source + 12);
+    heap.setRange(this.address.addr + 0, this.address.addr + 0 + 12, bytes);
   }
 
-  RP3D_Quaternion get orientation {
-    final addr = Pointer<RP3D_Transform>(this.address.addr + 12);
-    final value = NativeLibrary.instance.getValue(addr, '*');
-    return RP3D_Quaternion(Pointer<RP3D_Quaternion>(addr));
-  }
-
+  RP3D_Quaternion get orientation =>
+      RP3D_Quaternion(Pointer<RP3D_Quaternion>(this.address.addr + 12));
   set orientation(RP3D_Quaternion val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_Transform>(this.address.addr + 12),
-      val.address.toJS,
-      '*',
-    );
+    final heap = NativeLibrary.instance.HEAPU8.toDart;
+    final source = val.address.addr;
+    final bytes = heap.sublist(source, source + 16);
+    heap.setRange(this.address.addr + 12, this.address.addr + 12 + 16, bytes);
   }
 
   RP3D_Transform(super.address);
@@ -2664,58 +2679,82 @@ final class RP3D_Quaternion extends Struct {
   Pointer<RP3D_Quaternion> get address => super.address.cast();
   double get x {
     final addr = Pointer<RP3D_Quaternion>(this.address.addr + 0);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return data.getFloat32(addr.addr, Endian.little);
+    }
     final value = NativeLibrary.instance.getValue(addr, 'float').toDartDouble;
     return value;
   }
 
   set x(double val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_Quaternion>(this.address.addr + 0),
-      val.toJS,
-      'float',
-    );
+    final addr = Pointer<RP3D_Quaternion>(this.address.addr + 0);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setFloat32(addr.addr, val, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, 'float');
   }
 
   double get y {
     final addr = Pointer<RP3D_Quaternion>(this.address.addr + 4);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return data.getFloat32(addr.addr, Endian.little);
+    }
     final value = NativeLibrary.instance.getValue(addr, 'float').toDartDouble;
     return value;
   }
 
   set y(double val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_Quaternion>(this.address.addr + 4),
-      val.toJS,
-      'float',
-    );
+    final addr = Pointer<RP3D_Quaternion>(this.address.addr + 4);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setFloat32(addr.addr, val, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, 'float');
   }
 
   double get z {
     final addr = Pointer<RP3D_Quaternion>(this.address.addr + 8);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return data.getFloat32(addr.addr, Endian.little);
+    }
     final value = NativeLibrary.instance.getValue(addr, 'float').toDartDouble;
     return value;
   }
 
   set z(double val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_Quaternion>(this.address.addr + 8),
-      val.toJS,
-      'float',
-    );
+    final addr = Pointer<RP3D_Quaternion>(this.address.addr + 8);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setFloat32(addr.addr, val, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, 'float');
   }
 
   double get w {
     final addr = Pointer<RP3D_Quaternion>(this.address.addr + 12);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return data.getFloat32(addr.addr, Endian.little);
+    }
     final value = NativeLibrary.instance.getValue(addr, 'float').toDartDouble;
     return value;
   }
 
   set w(double val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_Quaternion>(this.address.addr + 12),
-      val.toJS,
-      'float',
-    );
+    final addr = Pointer<RP3D_Quaternion>(this.address.addr + 12);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setFloat32(addr.addr, val, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, 'float');
   }
 
   RP3D_Quaternion(super.address);
@@ -2735,46 +2774,42 @@ extension RP3D_RayExt on Pointer<RP3D_Ray> {
 
 final class RP3D_Ray extends Struct {
   Pointer<RP3D_Ray> get address => super.address.cast();
-  RP3D_Vector3 get point1 {
-    final addr = Pointer<RP3D_Ray>(this.address.addr + 0);
-    final value = NativeLibrary.instance.getValue(addr, '*');
-    return RP3D_Vector3(Pointer<RP3D_Vector3>(addr));
-  }
-
+  RP3D_Vector3 get point1 =>
+      RP3D_Vector3(Pointer<RP3D_Vector3>(this.address.addr + 0));
   set point1(RP3D_Vector3 val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_Ray>(this.address.addr + 0),
-      val.address.toJS,
-      '*',
-    );
+    final heap = NativeLibrary.instance.HEAPU8.toDart;
+    final source = val.address.addr;
+    final bytes = heap.sublist(source, source + 12);
+    heap.setRange(this.address.addr + 0, this.address.addr + 0 + 12, bytes);
   }
 
-  RP3D_Vector3 get point2 {
-    final addr = Pointer<RP3D_Ray>(this.address.addr + 12);
-    final value = NativeLibrary.instance.getValue(addr, '*');
-    return RP3D_Vector3(Pointer<RP3D_Vector3>(addr));
-  }
-
+  RP3D_Vector3 get point2 =>
+      RP3D_Vector3(Pointer<RP3D_Vector3>(this.address.addr + 12));
   set point2(RP3D_Vector3 val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_Ray>(this.address.addr + 12),
-      val.address.toJS,
-      '*',
-    );
+    final heap = NativeLibrary.instance.HEAPU8.toDart;
+    final source = val.address.addr;
+    final bytes = heap.sublist(source, source + 12);
+    heap.setRange(this.address.addr + 12, this.address.addr + 12 + 12, bytes);
   }
 
   double get maxFraction {
     final addr = Pointer<RP3D_Ray>(this.address.addr + 24);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return data.getFloat32(addr.addr, Endian.little);
+    }
     final value = NativeLibrary.instance.getValue(addr, 'float').toDartDouble;
     return value;
   }
 
   set maxFraction(double val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_Ray>(this.address.addr + 24),
-      val.toJS,
-      'float',
-    );
+    final addr = Pointer<RP3D_Ray>(this.address.addr + 24);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setFloat32(addr.addr, val, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, 'float');
   }
 
   RP3D_Ray(super.address);
@@ -2794,72 +2829,80 @@ final class RP3D_RaycastInfo extends Struct {
   Pointer<RP3D_RaycastInfo> get address => super.address.cast();
   Pointer<RP3D_RigidBody> get body {
     final addr = Pointer<RP3D_RaycastInfo>(this.address.addr + 0);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return Pointer<RP3D_RigidBody>(data.getUint32(addr.addr, Endian.little));
+    }
     final value = NativeLibrary.instance.getValue(addr, '*');
     return Pointer<RP3D_RigidBody>(value.toDartInt);
   }
 
   set body(Pointer<RP3D_RigidBody> val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_RaycastInfo>(this.address.addr + 0),
-      val.toJS,
-      '*',
-    );
+    final addr = Pointer<RP3D_RaycastInfo>(this.address.addr + 0);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setUint32(addr.addr, val.addr, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, '*');
   }
 
   Pointer<RP3D_Collider> get collider {
     final addr = Pointer<RP3D_RaycastInfo>(this.address.addr + 4);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return Pointer<RP3D_Collider>(data.getUint32(addr.addr, Endian.little));
+    }
     final value = NativeLibrary.instance.getValue(addr, '*');
     return Pointer<RP3D_Collider>(value.toDartInt);
   }
 
   set collider(Pointer<RP3D_Collider> val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_RaycastInfo>(this.address.addr + 4),
-      val.toJS,
-      '*',
-    );
+    final addr = Pointer<RP3D_RaycastInfo>(this.address.addr + 4);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setUint32(addr.addr, val.addr, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, '*');
   }
 
-  RP3D_Vector3 get worldPoint {
-    final addr = Pointer<RP3D_RaycastInfo>(this.address.addr + 8);
-    final value = NativeLibrary.instance.getValue(addr, '*');
-    return RP3D_Vector3(Pointer<RP3D_Vector3>(addr));
-  }
-
+  RP3D_Vector3 get worldPoint =>
+      RP3D_Vector3(Pointer<RP3D_Vector3>(this.address.addr + 8));
   set worldPoint(RP3D_Vector3 val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_RaycastInfo>(this.address.addr + 8),
-      val.address.toJS,
-      '*',
-    );
+    final heap = NativeLibrary.instance.HEAPU8.toDart;
+    final source = val.address.addr;
+    final bytes = heap.sublist(source, source + 12);
+    heap.setRange(this.address.addr + 8, this.address.addr + 8 + 12, bytes);
   }
 
-  RP3D_Vector3 get worldNormal {
-    final addr = Pointer<RP3D_RaycastInfo>(this.address.addr + 20);
-    final value = NativeLibrary.instance.getValue(addr, '*');
-    return RP3D_Vector3(Pointer<RP3D_Vector3>(addr));
-  }
-
+  RP3D_Vector3 get worldNormal =>
+      RP3D_Vector3(Pointer<RP3D_Vector3>(this.address.addr + 20));
   set worldNormal(RP3D_Vector3 val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_RaycastInfo>(this.address.addr + 20),
-      val.address.toJS,
-      '*',
-    );
+    final heap = NativeLibrary.instance.HEAPU8.toDart;
+    final source = val.address.addr;
+    final bytes = heap.sublist(source, source + 12);
+    heap.setRange(this.address.addr + 20, this.address.addr + 20 + 12, bytes);
   }
 
   double get hitFraction {
     final addr = Pointer<RP3D_RaycastInfo>(this.address.addr + 32);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return data.getFloat32(addr.addr, Endian.little);
+    }
     final value = NativeLibrary.instance.getValue(addr, 'float').toDartDouble;
     return value;
   }
 
   set hitFraction(double val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_RaycastInfo>(this.address.addr + 32),
-      val.toJS,
-      'float',
-    );
+    final addr = Pointer<RP3D_RaycastInfo>(this.address.addr + 32);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setFloat32(addr.addr, val, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, 'float');
   }
 
   RP3D_RaycastInfo(super.address);
@@ -2886,13 +2929,6 @@ final class RP3D_Collider extends Struct {
       NativeLibrary.instance.stackAlloc<RP3D_Collider>(0),
     );
   }
-}
-
-/// ==================== Enums ====================
-sealed class RP3D_BodyType {
-  static const RP3D_BODY_TYPE_STATIC = 1;
-  static const RP3D_BODY_TYPE_KINEMATIC = 2;
-  static const RP3D_BODY_TYPE_DYNAMIC = 3;
 }
 
 extension RP3D_CollisionShapeExt on Pointer<RP3D_CollisionShape> {
@@ -2937,32 +2973,22 @@ extension RP3D_AABBExt on Pointer<RP3D_AABB> {
 
 final class RP3D_AABB extends Struct {
   Pointer<RP3D_AABB> get address => super.address.cast();
-  RP3D_Vector3 get min {
-    final addr = Pointer<RP3D_AABB>(this.address.addr + 0);
-    final value = NativeLibrary.instance.getValue(addr, '*');
-    return RP3D_Vector3(Pointer<RP3D_Vector3>(addr));
-  }
-
+  RP3D_Vector3 get min =>
+      RP3D_Vector3(Pointer<RP3D_Vector3>(this.address.addr + 0));
   set min(RP3D_Vector3 val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_AABB>(this.address.addr + 0),
-      val.address.toJS,
-      '*',
-    );
+    final heap = NativeLibrary.instance.HEAPU8.toDart;
+    final source = val.address.addr;
+    final bytes = heap.sublist(source, source + 12);
+    heap.setRange(this.address.addr + 0, this.address.addr + 0 + 12, bytes);
   }
 
-  RP3D_Vector3 get max {
-    final addr = Pointer<RP3D_AABB>(this.address.addr + 12);
-    final value = NativeLibrary.instance.getValue(addr, '*');
-    return RP3D_Vector3(Pointer<RP3D_Vector3>(addr));
-  }
-
+  RP3D_Vector3 get max =>
+      RP3D_Vector3(Pointer<RP3D_Vector3>(this.address.addr + 12));
   set max(RP3D_Vector3 val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_AABB>(this.address.addr + 12),
-      val.address.toJS,
-      '*',
-    );
+    final heap = NativeLibrary.instance.HEAPU8.toDart;
+    final source = val.address.addr;
+    final bytes = heap.sublist(source, source + 12);
+    heap.setRange(this.address.addr + 12, this.address.addr + 12 + 12, bytes);
   }
 
   RP3D_AABB(super.address);
@@ -2970,14 +2996,6 @@ final class RP3D_AABB extends Struct {
   static Pointer<RP3D_AABB> stackAlloc() {
     return Pointer<RP3D_AABB>(NativeLibrary.instance.stackAlloc<RP3D_AABB>(24));
   }
-}
-
-sealed class RP3D_DebugItem {
-  static const RP3D_DEBUG_ITEM_COLLIDER_AABB = 1;
-  static const RP3D_DEBUG_ITEM_COLLIDER_BROADPHASE_AABB = 2;
-  static const RP3D_DEBUG_ITEM_COLLISION_SHAPE = 4;
-  static const RP3D_DEBUG_ITEM_CONTACT_POINT = 8;
-  static const RP3D_DEBUG_ITEM_CONTACT_NORMAL = 16;
 }
 
 extension RP3D_BallAndSocketJointExt on Pointer<RP3D_BallAndSocketJoint> {
@@ -3008,46 +3026,53 @@ extension RP3D_BallAndSocketJointInfoExt
 
 final class RP3D_BallAndSocketJointInfo extends Struct {
   Pointer<RP3D_BallAndSocketJointInfo> get address => super.address.cast();
-  RP3D_Vector3 get anchorPointWorldSpace {
-    final addr = Pointer<RP3D_BallAndSocketJointInfo>(this.address.addr + 0);
-    final value = NativeLibrary.instance.getValue(addr, '*');
-    return RP3D_Vector3(Pointer<RP3D_Vector3>(addr));
-  }
-
+  RP3D_Vector3 get anchorPointWorldSpace =>
+      RP3D_Vector3(Pointer<RP3D_Vector3>(this.address.addr + 0));
   set anchorPointWorldSpace(RP3D_Vector3 val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_BallAndSocketJointInfo>(this.address.addr + 0),
-      val.address.toJS,
-      '*',
-    );
+    final heap = NativeLibrary.instance.HEAPU8.toDart;
+    final source = val.address.addr;
+    final bytes = heap.sublist(source, source + 12);
+    heap.setRange(this.address.addr + 0, this.address.addr + 0 + 12, bytes);
   }
 
   Pointer<RP3D_RigidBody> get body1 {
     final addr = Pointer<RP3D_BallAndSocketJointInfo>(this.address.addr + 12);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return Pointer<RP3D_RigidBody>(data.getUint32(addr.addr, Endian.little));
+    }
     final value = NativeLibrary.instance.getValue(addr, '*');
     return Pointer<RP3D_RigidBody>(value.toDartInt);
   }
 
   set body1(Pointer<RP3D_RigidBody> val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_BallAndSocketJointInfo>(this.address.addr + 12),
-      val.toJS,
-      '*',
-    );
+    final addr = Pointer<RP3D_BallAndSocketJointInfo>(this.address.addr + 12);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setUint32(addr.addr, val.addr, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, '*');
   }
 
   Pointer<RP3D_RigidBody> get body2 {
     final addr = Pointer<RP3D_BallAndSocketJointInfo>(this.address.addr + 16);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return Pointer<RP3D_RigidBody>(data.getUint32(addr.addr, Endian.little));
+    }
     final value = NativeLibrary.instance.getValue(addr, '*');
     return Pointer<RP3D_RigidBody>(value.toDartInt);
   }
 
   set body2(Pointer<RP3D_RigidBody> val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_BallAndSocketJointInfo>(this.address.addr + 16),
-      val.toJS,
-      '*',
-    );
+    final addr = Pointer<RP3D_BallAndSocketJointInfo>(this.address.addr + 16);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setUint32(addr.addr, val.addr, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, '*');
   }
 
   int get isCollisionEnabled {
@@ -3057,18 +3082,15 @@ final class RP3D_BallAndSocketJointInfo extends Struct {
   }
 
   set isCollisionEnabled(int val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_BallAndSocketJointInfo>(this.address.addr + 20),
-      val.toJS,
-      'i8',
-    );
+    final addr = Pointer<RP3D_BallAndSocketJointInfo>(this.address.addr + 20);
+    NativeLibrary.instance.setValue(addr, val.toJS, 'i8');
   }
 
   RP3D_BallAndSocketJointInfo(super.address);
 
   static Pointer<RP3D_BallAndSocketJointInfo> stackAlloc() {
     return Pointer<RP3D_BallAndSocketJointInfo>(
-      NativeLibrary.instance.stackAlloc<RP3D_BallAndSocketJointInfo>(21),
+      NativeLibrary.instance.stackAlloc<RP3D_BallAndSocketJointInfo>(24),
     );
   }
 }
@@ -3098,60 +3120,62 @@ extension RP3D_HingeJointInfoExt on Pointer<RP3D_HingeJointInfo> {
 
 final class RP3D_HingeJointInfo extends Struct {
   Pointer<RP3D_HingeJointInfo> get address => super.address.cast();
-  RP3D_Vector3 get anchorPointWorldSpace {
-    final addr = Pointer<RP3D_HingeJointInfo>(this.address.addr + 0);
-    final value = NativeLibrary.instance.getValue(addr, '*');
-    return RP3D_Vector3(Pointer<RP3D_Vector3>(addr));
-  }
-
+  RP3D_Vector3 get anchorPointWorldSpace =>
+      RP3D_Vector3(Pointer<RP3D_Vector3>(this.address.addr + 0));
   set anchorPointWorldSpace(RP3D_Vector3 val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_HingeJointInfo>(this.address.addr + 0),
-      val.address.toJS,
-      '*',
-    );
+    final heap = NativeLibrary.instance.HEAPU8.toDart;
+    final source = val.address.addr;
+    final bytes = heap.sublist(source, source + 12);
+    heap.setRange(this.address.addr + 0, this.address.addr + 0 + 12, bytes);
   }
 
-  RP3D_Vector3 get rotationAxisWorld {
-    final addr = Pointer<RP3D_HingeJointInfo>(this.address.addr + 12);
-    final value = NativeLibrary.instance.getValue(addr, '*');
-    return RP3D_Vector3(Pointer<RP3D_Vector3>(addr));
-  }
-
+  RP3D_Vector3 get rotationAxisWorld =>
+      RP3D_Vector3(Pointer<RP3D_Vector3>(this.address.addr + 12));
   set rotationAxisWorld(RP3D_Vector3 val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_HingeJointInfo>(this.address.addr + 12),
-      val.address.toJS,
-      '*',
-    );
+    final heap = NativeLibrary.instance.HEAPU8.toDart;
+    final source = val.address.addr;
+    final bytes = heap.sublist(source, source + 12);
+    heap.setRange(this.address.addr + 12, this.address.addr + 12 + 12, bytes);
   }
 
   Pointer<RP3D_RigidBody> get body1 {
     final addr = Pointer<RP3D_HingeJointInfo>(this.address.addr + 24);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return Pointer<RP3D_RigidBody>(data.getUint32(addr.addr, Endian.little));
+    }
     final value = NativeLibrary.instance.getValue(addr, '*');
     return Pointer<RP3D_RigidBody>(value.toDartInt);
   }
 
   set body1(Pointer<RP3D_RigidBody> val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_HingeJointInfo>(this.address.addr + 24),
-      val.toJS,
-      '*',
-    );
+    final addr = Pointer<RP3D_HingeJointInfo>(this.address.addr + 24);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setUint32(addr.addr, val.addr, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, '*');
   }
 
   Pointer<RP3D_RigidBody> get body2 {
     final addr = Pointer<RP3D_HingeJointInfo>(this.address.addr + 28);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return Pointer<RP3D_RigidBody>(data.getUint32(addr.addr, Endian.little));
+    }
     final value = NativeLibrary.instance.getValue(addr, '*');
     return Pointer<RP3D_RigidBody>(value.toDartInt);
   }
 
   set body2(Pointer<RP3D_RigidBody> val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_HingeJointInfo>(this.address.addr + 28),
-      val.toJS,
-      '*',
-    );
+    final addr = Pointer<RP3D_HingeJointInfo>(this.address.addr + 28);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setUint32(addr.addr, val.addr, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, '*');
   }
 
   int get isCollisionEnabled {
@@ -3161,11 +3185,8 @@ final class RP3D_HingeJointInfo extends Struct {
   }
 
   set isCollisionEnabled(int val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_HingeJointInfo>(this.address.addr + 32),
-      val.toJS,
-      'i8',
-    );
+    final addr = Pointer<RP3D_HingeJointInfo>(this.address.addr + 32);
+    NativeLibrary.instance.setValue(addr, val.toJS, 'i8');
   }
 
   int get isLimitEnabled {
@@ -3175,11 +3196,8 @@ final class RP3D_HingeJointInfo extends Struct {
   }
 
   set isLimitEnabled(int val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_HingeJointInfo>(this.address.addr + 33),
-      val.toJS,
-      'i8',
-    );
+    final addr = Pointer<RP3D_HingeJointInfo>(this.address.addr + 33);
+    NativeLibrary.instance.setValue(addr, val.toJS, 'i8');
   }
 
   int get isMotorEnabled {
@@ -3189,74 +3207,95 @@ final class RP3D_HingeJointInfo extends Struct {
   }
 
   set isMotorEnabled(int val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_HingeJointInfo>(this.address.addr + 34),
-      val.toJS,
-      'i8',
-    );
+    final addr = Pointer<RP3D_HingeJointInfo>(this.address.addr + 34);
+    NativeLibrary.instance.setValue(addr, val.toJS, 'i8');
   }
 
   double get minAngleLimit {
-    final addr = Pointer<RP3D_HingeJointInfo>(this.address.addr + 35);
+    final addr = Pointer<RP3D_HingeJointInfo>(this.address.addr + 36);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return data.getFloat32(addr.addr, Endian.little);
+    }
     final value = NativeLibrary.instance.getValue(addr, 'float').toDartDouble;
     return value;
   }
 
   set minAngleLimit(double val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_HingeJointInfo>(this.address.addr + 35),
-      val.toJS,
-      'float',
-    );
+    final addr = Pointer<RP3D_HingeJointInfo>(this.address.addr + 36);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setFloat32(addr.addr, val, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, 'float');
   }
 
   double get maxAngleLimit {
-    final addr = Pointer<RP3D_HingeJointInfo>(this.address.addr + 39);
+    final addr = Pointer<RP3D_HingeJointInfo>(this.address.addr + 40);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return data.getFloat32(addr.addr, Endian.little);
+    }
     final value = NativeLibrary.instance.getValue(addr, 'float').toDartDouble;
     return value;
   }
 
   set maxAngleLimit(double val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_HingeJointInfo>(this.address.addr + 39),
-      val.toJS,
-      'float',
-    );
+    final addr = Pointer<RP3D_HingeJointInfo>(this.address.addr + 40);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setFloat32(addr.addr, val, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, 'float');
   }
 
   double get motorSpeed {
-    final addr = Pointer<RP3D_HingeJointInfo>(this.address.addr + 43);
+    final addr = Pointer<RP3D_HingeJointInfo>(this.address.addr + 44);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return data.getFloat32(addr.addr, Endian.little);
+    }
     final value = NativeLibrary.instance.getValue(addr, 'float').toDartDouble;
     return value;
   }
 
   set motorSpeed(double val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_HingeJointInfo>(this.address.addr + 43),
-      val.toJS,
-      'float',
-    );
+    final addr = Pointer<RP3D_HingeJointInfo>(this.address.addr + 44);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setFloat32(addr.addr, val, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, 'float');
   }
 
   double get maxMotorTorque {
-    final addr = Pointer<RP3D_HingeJointInfo>(this.address.addr + 47);
+    final addr = Pointer<RP3D_HingeJointInfo>(this.address.addr + 48);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return data.getFloat32(addr.addr, Endian.little);
+    }
     final value = NativeLibrary.instance.getValue(addr, 'float').toDartDouble;
     return value;
   }
 
   set maxMotorTorque(double val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_HingeJointInfo>(this.address.addr + 47),
-      val.toJS,
-      'float',
-    );
+    final addr = Pointer<RP3D_HingeJointInfo>(this.address.addr + 48);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setFloat32(addr.addr, val, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, 'float');
   }
 
   RP3D_HingeJointInfo(super.address);
 
   static Pointer<RP3D_HingeJointInfo> stackAlloc() {
     return Pointer<RP3D_HingeJointInfo>(
-      NativeLibrary.instance.stackAlloc<RP3D_HingeJointInfo>(51),
+      NativeLibrary.instance.stackAlloc<RP3D_HingeJointInfo>(52),
     );
   }
 }
@@ -3286,60 +3325,62 @@ extension RP3D_SliderJointInfoExt on Pointer<RP3D_SliderJointInfo> {
 
 final class RP3D_SliderJointInfo extends Struct {
   Pointer<RP3D_SliderJointInfo> get address => super.address.cast();
-  RP3D_Vector3 get anchorPointWorldSpace {
-    final addr = Pointer<RP3D_SliderJointInfo>(this.address.addr + 0);
-    final value = NativeLibrary.instance.getValue(addr, '*');
-    return RP3D_Vector3(Pointer<RP3D_Vector3>(addr));
-  }
-
+  RP3D_Vector3 get anchorPointWorldSpace =>
+      RP3D_Vector3(Pointer<RP3D_Vector3>(this.address.addr + 0));
   set anchorPointWorldSpace(RP3D_Vector3 val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_SliderJointInfo>(this.address.addr + 0),
-      val.address.toJS,
-      '*',
-    );
+    final heap = NativeLibrary.instance.HEAPU8.toDart;
+    final source = val.address.addr;
+    final bytes = heap.sublist(source, source + 12);
+    heap.setRange(this.address.addr + 0, this.address.addr + 0 + 12, bytes);
   }
 
-  RP3D_Vector3 get sliderAxisWorldSpace {
-    final addr = Pointer<RP3D_SliderJointInfo>(this.address.addr + 12);
-    final value = NativeLibrary.instance.getValue(addr, '*');
-    return RP3D_Vector3(Pointer<RP3D_Vector3>(addr));
-  }
-
+  RP3D_Vector3 get sliderAxisWorldSpace =>
+      RP3D_Vector3(Pointer<RP3D_Vector3>(this.address.addr + 12));
   set sliderAxisWorldSpace(RP3D_Vector3 val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_SliderJointInfo>(this.address.addr + 12),
-      val.address.toJS,
-      '*',
-    );
+    final heap = NativeLibrary.instance.HEAPU8.toDart;
+    final source = val.address.addr;
+    final bytes = heap.sublist(source, source + 12);
+    heap.setRange(this.address.addr + 12, this.address.addr + 12 + 12, bytes);
   }
 
   Pointer<RP3D_RigidBody> get body1 {
     final addr = Pointer<RP3D_SliderJointInfo>(this.address.addr + 24);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return Pointer<RP3D_RigidBody>(data.getUint32(addr.addr, Endian.little));
+    }
     final value = NativeLibrary.instance.getValue(addr, '*');
     return Pointer<RP3D_RigidBody>(value.toDartInt);
   }
 
   set body1(Pointer<RP3D_RigidBody> val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_SliderJointInfo>(this.address.addr + 24),
-      val.toJS,
-      '*',
-    );
+    final addr = Pointer<RP3D_SliderJointInfo>(this.address.addr + 24);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setUint32(addr.addr, val.addr, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, '*');
   }
 
   Pointer<RP3D_RigidBody> get body2 {
     final addr = Pointer<RP3D_SliderJointInfo>(this.address.addr + 28);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return Pointer<RP3D_RigidBody>(data.getUint32(addr.addr, Endian.little));
+    }
     final value = NativeLibrary.instance.getValue(addr, '*');
     return Pointer<RP3D_RigidBody>(value.toDartInt);
   }
 
   set body2(Pointer<RP3D_RigidBody> val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_SliderJointInfo>(this.address.addr + 28),
-      val.toJS,
-      '*',
-    );
+    final addr = Pointer<RP3D_SliderJointInfo>(this.address.addr + 28);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setUint32(addr.addr, val.addr, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, '*');
   }
 
   int get isCollisionEnabled {
@@ -3349,11 +3390,8 @@ final class RP3D_SliderJointInfo extends Struct {
   }
 
   set isCollisionEnabled(int val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_SliderJointInfo>(this.address.addr + 32),
-      val.toJS,
-      'i8',
-    );
+    final addr = Pointer<RP3D_SliderJointInfo>(this.address.addr + 32);
+    NativeLibrary.instance.setValue(addr, val.toJS, 'i8');
   }
 
   int get isLimitEnabled {
@@ -3363,11 +3401,8 @@ final class RP3D_SliderJointInfo extends Struct {
   }
 
   set isLimitEnabled(int val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_SliderJointInfo>(this.address.addr + 33),
-      val.toJS,
-      'i8',
-    );
+    final addr = Pointer<RP3D_SliderJointInfo>(this.address.addr + 33);
+    NativeLibrary.instance.setValue(addr, val.toJS, 'i8');
   }
 
   int get isMotorEnabled {
@@ -3377,74 +3412,95 @@ final class RP3D_SliderJointInfo extends Struct {
   }
 
   set isMotorEnabled(int val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_SliderJointInfo>(this.address.addr + 34),
-      val.toJS,
-      'i8',
-    );
+    final addr = Pointer<RP3D_SliderJointInfo>(this.address.addr + 34);
+    NativeLibrary.instance.setValue(addr, val.toJS, 'i8');
   }
 
   double get minTranslationLimit {
-    final addr = Pointer<RP3D_SliderJointInfo>(this.address.addr + 35);
+    final addr = Pointer<RP3D_SliderJointInfo>(this.address.addr + 36);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return data.getFloat32(addr.addr, Endian.little);
+    }
     final value = NativeLibrary.instance.getValue(addr, 'float').toDartDouble;
     return value;
   }
 
   set minTranslationLimit(double val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_SliderJointInfo>(this.address.addr + 35),
-      val.toJS,
-      'float',
-    );
+    final addr = Pointer<RP3D_SliderJointInfo>(this.address.addr + 36);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setFloat32(addr.addr, val, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, 'float');
   }
 
   double get maxTranslationLimit {
-    final addr = Pointer<RP3D_SliderJointInfo>(this.address.addr + 39);
+    final addr = Pointer<RP3D_SliderJointInfo>(this.address.addr + 40);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return data.getFloat32(addr.addr, Endian.little);
+    }
     final value = NativeLibrary.instance.getValue(addr, 'float').toDartDouble;
     return value;
   }
 
   set maxTranslationLimit(double val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_SliderJointInfo>(this.address.addr + 39),
-      val.toJS,
-      'float',
-    );
+    final addr = Pointer<RP3D_SliderJointInfo>(this.address.addr + 40);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setFloat32(addr.addr, val, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, 'float');
   }
 
   double get motorSpeed {
-    final addr = Pointer<RP3D_SliderJointInfo>(this.address.addr + 43);
+    final addr = Pointer<RP3D_SliderJointInfo>(this.address.addr + 44);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return data.getFloat32(addr.addr, Endian.little);
+    }
     final value = NativeLibrary.instance.getValue(addr, 'float').toDartDouble;
     return value;
   }
 
   set motorSpeed(double val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_SliderJointInfo>(this.address.addr + 43),
-      val.toJS,
-      'float',
-    );
+    final addr = Pointer<RP3D_SliderJointInfo>(this.address.addr + 44);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setFloat32(addr.addr, val, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, 'float');
   }
 
   double get maxMotorForce {
-    final addr = Pointer<RP3D_SliderJointInfo>(this.address.addr + 47);
+    final addr = Pointer<RP3D_SliderJointInfo>(this.address.addr + 48);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return data.getFloat32(addr.addr, Endian.little);
+    }
     final value = NativeLibrary.instance.getValue(addr, 'float').toDartDouble;
     return value;
   }
 
   set maxMotorForce(double val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_SliderJointInfo>(this.address.addr + 47),
-      val.toJS,
-      'float',
-    );
+    final addr = Pointer<RP3D_SliderJointInfo>(this.address.addr + 48);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setFloat32(addr.addr, val, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, 'float');
   }
 
   RP3D_SliderJointInfo(super.address);
 
   static Pointer<RP3D_SliderJointInfo> stackAlloc() {
     return Pointer<RP3D_SliderJointInfo>(
-      NativeLibrary.instance.stackAlloc<RP3D_SliderJointInfo>(51),
+      NativeLibrary.instance.stackAlloc<RP3D_SliderJointInfo>(52),
     );
   }
 }
@@ -3474,46 +3530,53 @@ extension RP3D_FixedJointInfoExt on Pointer<RP3D_FixedJointInfo> {
 
 final class RP3D_FixedJointInfo extends Struct {
   Pointer<RP3D_FixedJointInfo> get address => super.address.cast();
-  RP3D_Vector3 get anchorPointWorldSpace {
-    final addr = Pointer<RP3D_FixedJointInfo>(this.address.addr + 0);
-    final value = NativeLibrary.instance.getValue(addr, '*');
-    return RP3D_Vector3(Pointer<RP3D_Vector3>(addr));
-  }
-
+  RP3D_Vector3 get anchorPointWorldSpace =>
+      RP3D_Vector3(Pointer<RP3D_Vector3>(this.address.addr + 0));
   set anchorPointWorldSpace(RP3D_Vector3 val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_FixedJointInfo>(this.address.addr + 0),
-      val.address.toJS,
-      '*',
-    );
+    final heap = NativeLibrary.instance.HEAPU8.toDart;
+    final source = val.address.addr;
+    final bytes = heap.sublist(source, source + 12);
+    heap.setRange(this.address.addr + 0, this.address.addr + 0 + 12, bytes);
   }
 
   Pointer<RP3D_RigidBody> get body1 {
     final addr = Pointer<RP3D_FixedJointInfo>(this.address.addr + 12);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return Pointer<RP3D_RigidBody>(data.getUint32(addr.addr, Endian.little));
+    }
     final value = NativeLibrary.instance.getValue(addr, '*');
     return Pointer<RP3D_RigidBody>(value.toDartInt);
   }
 
   set body1(Pointer<RP3D_RigidBody> val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_FixedJointInfo>(this.address.addr + 12),
-      val.toJS,
-      '*',
-    );
+    final addr = Pointer<RP3D_FixedJointInfo>(this.address.addr + 12);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setUint32(addr.addr, val.addr, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, '*');
   }
 
   Pointer<RP3D_RigidBody> get body2 {
     final addr = Pointer<RP3D_FixedJointInfo>(this.address.addr + 16);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return Pointer<RP3D_RigidBody>(data.getUint32(addr.addr, Endian.little));
+    }
     final value = NativeLibrary.instance.getValue(addr, '*');
     return Pointer<RP3D_RigidBody>(value.toDartInt);
   }
 
   set body2(Pointer<RP3D_RigidBody> val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_FixedJointInfo>(this.address.addr + 16),
-      val.toJS,
-      '*',
-    );
+    final addr = Pointer<RP3D_FixedJointInfo>(this.address.addr + 16);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setUint32(addr.addr, val.addr, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, '*');
   }
 
   int get isCollisionEnabled {
@@ -3523,18 +3586,15 @@ final class RP3D_FixedJointInfo extends Struct {
   }
 
   set isCollisionEnabled(int val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_FixedJointInfo>(this.address.addr + 20),
-      val.toJS,
-      'i8',
-    );
+    final addr = Pointer<RP3D_FixedJointInfo>(this.address.addr + 20);
+    NativeLibrary.instance.setValue(addr, val.toJS, 'i8');
   }
 
   RP3D_FixedJointInfo(super.address);
 
   static Pointer<RP3D_FixedJointInfo> stackAlloc() {
     return Pointer<RP3D_FixedJointInfo>(
-      NativeLibrary.instance.stackAlloc<RP3D_FixedJointInfo>(21),
+      NativeLibrary.instance.stackAlloc<RP3D_FixedJointInfo>(24),
     );
   }
 }
@@ -3551,31 +3611,45 @@ final class RP3D_CollisionCallbackData extends Struct {
   Pointer<RP3D_CollisionCallbackData> get address => super.address.cast();
   int get nbContactPairs {
     final addr = Pointer<RP3D_CollisionCallbackData>(this.address.addr + 0);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return data.getUint32(addr.addr, Endian.little);
+    }
     final value = NativeLibrary.instance.getValue(addr, 'i32').toDartInt;
     return value;
   }
 
   set nbContactPairs(int val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_CollisionCallbackData>(this.address.addr + 0),
-      val.toJS,
-      'i32',
-    );
+    final addr = Pointer<RP3D_CollisionCallbackData>(this.address.addr + 0);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setUint32(addr.addr, val, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, 'i32');
   }
 
   /// Array of contact pairs
   Pointer<RP3D_ContactPairData> get contactPairs {
     final addr = Pointer<RP3D_CollisionCallbackData>(this.address.addr + 4);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return Pointer<RP3D_ContactPairData>(
+        data.getUint32(addr.addr, Endian.little),
+      );
+    }
     final value = NativeLibrary.instance.getValue(addr, '*');
     return Pointer<RP3D_ContactPairData>(value.toDartInt);
   }
 
   set contactPairs(Pointer<RP3D_ContactPairData> val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_CollisionCallbackData>(this.address.addr + 4),
-      val.toJS,
-      '*',
-    );
+    final addr = Pointer<RP3D_CollisionCallbackData>(this.address.addr + 4);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setUint32(addr.addr, val.addr, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, '*');
   }
 
   RP3D_CollisionCallbackData(super.address);
@@ -3599,102 +3673,146 @@ final class RP3D_ContactPairData extends Struct {
   Pointer<RP3D_ContactPairData> get address => super.address.cast();
   Pointer<Void> get body1 {
     final addr = Pointer<RP3D_ContactPairData>(this.address.addr + 0);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return Pointer<Void>(data.getUint32(addr.addr, Endian.little));
+    }
     final value = NativeLibrary.instance.getValue(addr, '*');
     return Pointer<Void>(value.toDartInt);
   }
 
   set body1(Pointer<Void> val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_ContactPairData>(this.address.addr + 0),
-      val.toJS,
-      '*',
-    );
+    final addr = Pointer<RP3D_ContactPairData>(this.address.addr + 0);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setUint32(addr.addr, val.addr, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, '*');
   }
 
   Pointer<Void> get body2 {
     final addr = Pointer<RP3D_ContactPairData>(this.address.addr + 4);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return Pointer<Void>(data.getUint32(addr.addr, Endian.little));
+    }
     final value = NativeLibrary.instance.getValue(addr, '*');
     return Pointer<Void>(value.toDartInt);
   }
 
   set body2(Pointer<Void> val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_ContactPairData>(this.address.addr + 4),
-      val.toJS,
-      '*',
-    );
+    final addr = Pointer<RP3D_ContactPairData>(this.address.addr + 4);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setUint32(addr.addr, val.addr, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, '*');
   }
 
   Pointer<Void> get collider1 {
     final addr = Pointer<RP3D_ContactPairData>(this.address.addr + 8);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return Pointer<Void>(data.getUint32(addr.addr, Endian.little));
+    }
     final value = NativeLibrary.instance.getValue(addr, '*');
     return Pointer<Void>(value.toDartInt);
   }
 
   set collider1(Pointer<Void> val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_ContactPairData>(this.address.addr + 8),
-      val.toJS,
-      '*',
-    );
+    final addr = Pointer<RP3D_ContactPairData>(this.address.addr + 8);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setUint32(addr.addr, val.addr, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, '*');
   }
 
   Pointer<Void> get collider2 {
     final addr = Pointer<RP3D_ContactPairData>(this.address.addr + 12);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return Pointer<Void>(data.getUint32(addr.addr, Endian.little));
+    }
     final value = NativeLibrary.instance.getValue(addr, '*');
     return Pointer<Void>(value.toDartInt);
   }
 
   set collider2(Pointer<Void> val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_ContactPairData>(this.address.addr + 12),
-      val.toJS,
-      '*',
-    );
+    final addr = Pointer<RP3D_ContactPairData>(this.address.addr + 12);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setUint32(addr.addr, val.addr, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, '*');
   }
 
   /// 0=ContactStart, 1=ContactStay, 2=ContactExit
   int get eventType {
     final addr = Pointer<RP3D_ContactPairData>(this.address.addr + 16);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return data.getInt32(addr.addr, Endian.little);
+    }
     final value = NativeLibrary.instance.getValue(addr, 'i32').toDartInt;
     return value;
   }
 
   set eventType(int val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_ContactPairData>(this.address.addr + 16),
-      val.toJS,
-      'i32',
-    );
+    final addr = Pointer<RP3D_ContactPairData>(this.address.addr + 16);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setInt32(addr.addr, val, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, 'i32');
   }
 
   int get nbContactPoints {
     final addr = Pointer<RP3D_ContactPairData>(this.address.addr + 20);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return data.getUint32(addr.addr, Endian.little);
+    }
     final value = NativeLibrary.instance.getValue(addr, 'i32').toDartInt;
     return value;
   }
 
   set nbContactPoints(int val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_ContactPairData>(this.address.addr + 20),
-      val.toJS,
-      'i32',
-    );
+    final addr = Pointer<RP3D_ContactPairData>(this.address.addr + 20);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setUint32(addr.addr, val, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, 'i32');
   }
 
   /// Array of contact points
   Pointer<RP3D_ContactPointData> get contactPoints {
     final addr = Pointer<RP3D_ContactPairData>(this.address.addr + 24);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return Pointer<RP3D_ContactPointData>(
+        data.getUint32(addr.addr, Endian.little),
+      );
+    }
     final value = NativeLibrary.instance.getValue(addr, '*');
     return Pointer<RP3D_ContactPointData>(value.toDartInt);
   }
 
   set contactPoints(Pointer<RP3D_ContactPointData> val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_ContactPairData>(this.address.addr + 24),
-      val.toJS,
-      '*',
-    );
+    final addr = Pointer<RP3D_ContactPairData>(this.address.addr + 24);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setUint32(addr.addr, val.addr, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, '*');
   }
 
   RP3D_ContactPairData(super.address);
@@ -3718,58 +3836,49 @@ final class RP3D_ContactPointData extends Struct {
   Pointer<RP3D_ContactPointData> get address => super.address.cast();
   double get penetrationDepth {
     final addr = Pointer<RP3D_ContactPointData>(this.address.addr + 0);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return data.getFloat32(addr.addr, Endian.little);
+    }
     final value = NativeLibrary.instance.getValue(addr, 'float').toDartDouble;
     return value;
   }
 
   set penetrationDepth(double val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_ContactPointData>(this.address.addr + 0),
-      val.toJS,
-      'float',
-    );
+    final addr = Pointer<RP3D_ContactPointData>(this.address.addr + 0);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setFloat32(addr.addr, val, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, 'float');
   }
 
-  RP3D_Vector3 get worldNormal {
-    final addr = Pointer<RP3D_ContactPointData>(this.address.addr + 4);
-    final value = NativeLibrary.instance.getValue(addr, '*');
-    return RP3D_Vector3(Pointer<RP3D_Vector3>(addr));
-  }
-
+  RP3D_Vector3 get worldNormal =>
+      RP3D_Vector3(Pointer<RP3D_Vector3>(this.address.addr + 4));
   set worldNormal(RP3D_Vector3 val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_ContactPointData>(this.address.addr + 4),
-      val.address.toJS,
-      '*',
-    );
+    final heap = NativeLibrary.instance.HEAPU8.toDart;
+    final source = val.address.addr;
+    final bytes = heap.sublist(source, source + 12);
+    heap.setRange(this.address.addr + 4, this.address.addr + 4 + 12, bytes);
   }
 
-  RP3D_Vector3 get localPointOnCollider1 {
-    final addr = Pointer<RP3D_ContactPointData>(this.address.addr + 16);
-    final value = NativeLibrary.instance.getValue(addr, '*');
-    return RP3D_Vector3(Pointer<RP3D_Vector3>(addr));
-  }
-
+  RP3D_Vector3 get localPointOnCollider1 =>
+      RP3D_Vector3(Pointer<RP3D_Vector3>(this.address.addr + 16));
   set localPointOnCollider1(RP3D_Vector3 val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_ContactPointData>(this.address.addr + 16),
-      val.address.toJS,
-      '*',
-    );
+    final heap = NativeLibrary.instance.HEAPU8.toDart;
+    final source = val.address.addr;
+    final bytes = heap.sublist(source, source + 12);
+    heap.setRange(this.address.addr + 16, this.address.addr + 16 + 12, bytes);
   }
 
-  RP3D_Vector3 get localPointOnCollider2 {
-    final addr = Pointer<RP3D_ContactPointData>(this.address.addr + 28);
-    final value = NativeLibrary.instance.getValue(addr, '*');
-    return RP3D_Vector3(Pointer<RP3D_Vector3>(addr));
-  }
-
+  RP3D_Vector3 get localPointOnCollider2 =>
+      RP3D_Vector3(Pointer<RP3D_Vector3>(this.address.addr + 28));
   set localPointOnCollider2(RP3D_Vector3 val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_ContactPointData>(this.address.addr + 28),
-      val.address.toJS,
-      '*',
-    );
+    final heap = NativeLibrary.instance.HEAPU8.toDart;
+    final source = val.address.addr;
+    final bytes = heap.sublist(source, source + 12);
+    heap.setRange(this.address.addr + 28, this.address.addr + 28 + 12, bytes);
   }
 
   RP3D_ContactPointData(super.address);
@@ -3808,31 +3917,45 @@ final class RP3D_OverlapCallbackData extends Struct {
   Pointer<RP3D_OverlapCallbackData> get address => super.address.cast();
   int get nbOverlapPairs {
     final addr = Pointer<RP3D_OverlapCallbackData>(this.address.addr + 0);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return data.getUint32(addr.addr, Endian.little);
+    }
     final value = NativeLibrary.instance.getValue(addr, 'i32').toDartInt;
     return value;
   }
 
   set nbOverlapPairs(int val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_OverlapCallbackData>(this.address.addr + 0),
-      val.toJS,
-      'i32',
-    );
+    final addr = Pointer<RP3D_OverlapCallbackData>(this.address.addr + 0);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setUint32(addr.addr, val, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, 'i32');
   }
 
   /// Array of overlap pairs
   Pointer<RP3D_OverlapPairData> get overlapPairs {
     final addr = Pointer<RP3D_OverlapCallbackData>(this.address.addr + 4);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return Pointer<RP3D_OverlapPairData>(
+        data.getUint32(addr.addr, Endian.little),
+      );
+    }
     final value = NativeLibrary.instance.getValue(addr, '*');
     return Pointer<RP3D_OverlapPairData>(value.toDartInt);
   }
 
   set overlapPairs(Pointer<RP3D_OverlapPairData> val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_OverlapCallbackData>(this.address.addr + 4),
-      val.toJS,
-      '*',
-    );
+    final addr = Pointer<RP3D_OverlapCallbackData>(this.address.addr + 4);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setUint32(addr.addr, val.addr, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, '*');
   }
 
   RP3D_OverlapCallbackData(super.address);
@@ -3856,73 +3979,103 @@ final class RP3D_OverlapPairData extends Struct {
   Pointer<RP3D_OverlapPairData> get address => super.address.cast();
   Pointer<Void> get body1 {
     final addr = Pointer<RP3D_OverlapPairData>(this.address.addr + 0);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return Pointer<Void>(data.getUint32(addr.addr, Endian.little));
+    }
     final value = NativeLibrary.instance.getValue(addr, '*');
     return Pointer<Void>(value.toDartInt);
   }
 
   set body1(Pointer<Void> val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_OverlapPairData>(this.address.addr + 0),
-      val.toJS,
-      '*',
-    );
+    final addr = Pointer<RP3D_OverlapPairData>(this.address.addr + 0);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setUint32(addr.addr, val.addr, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, '*');
   }
 
   Pointer<Void> get body2 {
     final addr = Pointer<RP3D_OverlapPairData>(this.address.addr + 4);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return Pointer<Void>(data.getUint32(addr.addr, Endian.little));
+    }
     final value = NativeLibrary.instance.getValue(addr, '*');
     return Pointer<Void>(value.toDartInt);
   }
 
   set body2(Pointer<Void> val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_OverlapPairData>(this.address.addr + 4),
-      val.toJS,
-      '*',
-    );
+    final addr = Pointer<RP3D_OverlapPairData>(this.address.addr + 4);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setUint32(addr.addr, val.addr, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, '*');
   }
 
   Pointer<Void> get collider1 {
     final addr = Pointer<RP3D_OverlapPairData>(this.address.addr + 8);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return Pointer<Void>(data.getUint32(addr.addr, Endian.little));
+    }
     final value = NativeLibrary.instance.getValue(addr, '*');
     return Pointer<Void>(value.toDartInt);
   }
 
   set collider1(Pointer<Void> val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_OverlapPairData>(this.address.addr + 8),
-      val.toJS,
-      '*',
-    );
+    final addr = Pointer<RP3D_OverlapPairData>(this.address.addr + 8);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setUint32(addr.addr, val.addr, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, '*');
   }
 
   Pointer<Void> get collider2 {
     final addr = Pointer<RP3D_OverlapPairData>(this.address.addr + 12);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return Pointer<Void>(data.getUint32(addr.addr, Endian.little));
+    }
     final value = NativeLibrary.instance.getValue(addr, '*');
     return Pointer<Void>(value.toDartInt);
   }
 
   set collider2(Pointer<Void> val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_OverlapPairData>(this.address.addr + 12),
-      val.toJS,
-      '*',
-    );
+    final addr = Pointer<RP3D_OverlapPairData>(this.address.addr + 12);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setUint32(addr.addr, val.addr, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, '*');
   }
 
   /// 0=OverlapStart, 1=OverlapStay, 2=OverlapExit
   int get eventType {
     final addr = Pointer<RP3D_OverlapPairData>(this.address.addr + 16);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      return data.getInt32(addr.addr, Endian.little);
+    }
     final value = NativeLibrary.instance.getValue(addr, 'i32').toDartInt;
     return value;
   }
 
   set eventType(int val) {
-    NativeLibrary.instance.setValue(
-      Pointer<RP3D_OverlapPairData>(this.address.addr + 16),
-      val.toJS,
-      'i32',
-    );
+    final addr = Pointer<RP3D_OverlapPairData>(this.address.addr + 16);
+    if (addr.addr % 4 != 0) {
+      final data = ByteData.sublistView(NativeLibrary.instance.HEAPU8.toDart);
+      data.setInt32(addr.addr, val, Endian.little);
+      return;
+    }
+    NativeLibrary.instance.setValue(addr, val.toJS, 'i32');
   }
 
   RP3D_OverlapPairData(super.address);

@@ -21,7 +21,7 @@
 # Usage: scripts/build_web_artifacts.sh
 #
 # Environment:
-#   RP3D_ENGINE_REF   engine tag to build (default: v0.10.2)
+#   RP3D_ENGINE_REF   engine tag/commit to build (default: delegated to scripts/fetch_engine.sh)
 #   RP3D_ENGINE_DIR   where to clone the engine (default: build/third_party/reactphysics3d)
 #   EMSDK             emsdk root; if unset the script assumes emcmake/emmake
 #                     are already on PATH
@@ -29,7 +29,6 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-RP3D_ENGINE_REF="${RP3D_ENGINE_REF:-v0.10.2}"
 RP3D_ENGINE_DIR="${RP3D_ENGINE_DIR:-${REPO_ROOT}/build/third_party/reactphysics3d}"
 ENGINE_BUILD_DIR="${RP3D_ENGINE_DIR}/build-web"
 MODULE_BUILD_DIR="${REPO_ROOT}/build/web"

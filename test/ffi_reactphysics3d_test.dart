@@ -44,20 +44,14 @@ void main() {
         expect(boxShape, isA<BoxShape>());
       });
 
-      test('createBoxShape should handle zero extent', () {
+      test('createBoxShape should reject zero extent', () {
         final extent = Vector3.zero();
-        final boxShape = physics3D.createBoxShape(extent);
-
-        expect(boxShape, isNotNull);
-        expect(boxShape, isA<BoxShape>());
+        expect(() => physics3D.createBoxShape(extent), throwsArgumentError);
       });
 
-      test('createBoxShape should handle negative extent values', () {
+      test('createBoxShape should reject negative extent values', () {
         final extent = Vector3(-1.0, -2.0, -3.0);
-        final boxShape = physics3D.createBoxShape(extent);
-
-        expect(boxShape, isNotNull);
-        expect(boxShape, isA<BoxShape>());
+        expect(() => physics3D.createBoxShape(extent), throwsArgumentError);
       });
 
       test(
@@ -71,20 +65,14 @@ void main() {
         },
       );
 
-      test('createSphereShape should handle zero radius', () {
+      test('createSphereShape should reject zero radius', () {
         const radius = 0.0;
-        final sphereShape = physics3D.createSphereShape(radius);
-
-        expect(sphereShape, isNotNull);
-        expect(sphereShape, isA<SphereShape>());
+        expect(() => physics3D.createSphereShape(radius), throwsArgumentError);
       });
 
-      test('createSphereShape should handle negative radius', () {
+      test('createSphereShape should reject negative radius', () {
         const radius = -1.5;
-        final sphereShape = physics3D.createSphereShape(radius);
-
-        expect(sphereShape, isNotNull);
-        expect(sphereShape, isA<SphereShape>());
+        expect(() => physics3D.createSphereShape(radius), throwsArgumentError);
       });
 
       test(
@@ -99,22 +87,22 @@ void main() {
         },
       );
 
-      test('createCapsuleShape should handle zero radius and height', () {
+      test('createCapsuleShape should reject zero radius and height', () {
         const radius = 0.0;
         const height = 0.0;
-        final capsuleShape = physics3D.createCapsuleShape(radius, height);
-
-        expect(capsuleShape, isNotNull);
-        expect(capsuleShape, isA<CapsuleShape>());
+        expect(
+          () => physics3D.createCapsuleShape(radius, height),
+          throwsArgumentError,
+        );
       });
 
-      test('createCapsuleShape should handle negative radius and height', () {
+      test('createCapsuleShape should reject negative radius and height', () {
         const radius = -1.0;
         const height = -2.0;
-        final capsuleShape = physics3D.createCapsuleShape(radius, height);
-
-        expect(capsuleShape, isNotNull);
-        expect(capsuleShape, isA<CapsuleShape>());
+        expect(
+          () => physics3D.createCapsuleShape(radius, height),
+          throwsArgumentError,
+        );
       });
     });
 
@@ -1418,21 +1406,17 @@ void main() {
             expect(convexMesh, isNotNull);
             expect(convexMesh, isA<ConvexMesh>());
 
-            // Create convex mesh shape with zero scaling
+            // Zero scaling causes division-by-zero in face normal scaling and must be rejected
             final zeroScale = Vector3.zero();
-            final convexShape = physics3D.createConvexMeshShape(
-              convexMesh,
-              scaling: zeroScale,
+            expect(
+              () => physics3D.createConvexMeshShape(
+                convexMesh,
+                scaling: zeroScale,
+              ),
+              throwsArgumentError,
             );
 
-            expect(convexShape, isNotNull);
-            expect(convexShape, isA<ConvexMeshShape>());
-
-            // Even with zero scaling, the shape should be created
-            expect(convexShape.handle.address, isNonZero);
-
             // Clean up
-            convexShape.dispose();
             convexMesh.dispose();
           } finally {
             triangleArray.dispose();
