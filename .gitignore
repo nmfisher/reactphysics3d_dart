@@ -5,6 +5,10 @@ build/
 pubspec.lock
 *.log
 
+# Local hook experiments
+/hook/link.dart
+/hook/log.dart
+
 # IDE
 .idea/
 .vscode/

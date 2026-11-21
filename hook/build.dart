@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:code_assets/code_assets.dart';
 import 'package:hooks/hooks.dart';
+import 'package:logging/logging.dart';
 import 'package:native_toolchain_c/native_toolchain_c.dart';
 import 'package:path/path.dart' as path;
-import 'log.dart';
 
 void main(List<String> args) async {
   await build(args, (BuildInput input, BuildOutputBuilder output) async {
@@ -11,7 +11,16 @@ void main(List<String> args) async {
     final pkgRootFilePath = packageRoot.toFilePath(windows: Platform.isWindows);
 
     final outputDirectory = input.outputDirectory;
-    final logger = createLogger(outputDirectory.toFilePath(), "build.log");
+    final logFile = File.fromUri(outputDirectory.resolve('build.log'));
+    final logger = Logger.root
+      ..level = Level.ALL
+      ..onRecord.listen(
+        (record) => logFile.writeAsStringSync(
+          '${record.message}\n',
+          mode: FileMode.append,
+          flush: true,
+        ),
+      );
 
     if (!input.config.buildCodeAssets) {
       logger.info("buildCodeAssets is false, assumed to be building for web");
